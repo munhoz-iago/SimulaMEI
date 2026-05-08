@@ -96,7 +96,22 @@ function makeQuery<T>(result: T) {
   return query
 }
 
-function makeAdminClient() {
+function makeAdminClient(options?: {
+  clients?: Array<{ id: string; name: string; cnae: string; tipo_mei: string }>
+  latestSimulations?: Array<{ id: string; client_id: string; resultado: ResultadoSimulacao; created_at: string }>
+}) {
+  const clients = options?.clients ?? [{
+    id: 'client-1',
+    name: 'Loja Modelo',
+    cnae: '4712-1/00',
+    tipo_mei: 'geral',
+  }]
+  const latestSimulations = options?.latestSimulations ?? [{
+    id: 'simulation-1',
+    client_id: 'client-1',
+    resultado: makeResultado(0.96),
+    created_at: '2026-05-01T12:00:00.000Z',
+  }]
   const alertInsertResult = {
     data: {
       id: 'alert-1',
@@ -139,12 +154,7 @@ function makeAdminClient() {
     if (table === 'office_clients') {
       return {
         select: vi.fn(() => makeQuery({
-          data: [{
-            id: 'client-1',
-            name: 'Loja Modelo',
-            cnae: '4712-1/00',
-            tipo_mei: 'geral',
-          }],
+          data: clients,
           error: null,
         })),
       }
@@ -192,9 +202,19 @@ function makeAdminClient() {
   })
 
   return {
-    client: { from: fromMock },
+    client: {
+      from: fromMock,
+      rpc: vi.fn((fn: string, args: Record<string, unknown>) => {
+        if (fn !== 'get_latest_simulations_by_office' || args.p_office_id !== 'office-1') {
+          throw new Error(`Unexpected rpc: ${fn}`)
+        }
+
+        return Promise.resolve({ data: latestSimulations, error: null })
+      }),
+    },
     alertInsertMock,
     alertUpdateMock,
+    fromMock,
   }
 }
 
@@ -228,5 +248,38 @@ describe('runOfficeAlertsMonitor', () => {
       clientName: 'Loja Modelo',
     }))
     expect(admin.alertUpdateMock).not.toHaveBeenCalled()
+  })
+
+  it('loads latest simulations once per office instead of querying per client', async () => {
+    const admin = makeAdminClient({
+      clients: [
+        { id: 'client-1', name: 'Loja Modelo', cnae: '4712-1/00', tipo_mei: 'geral' },
+        { id: 'client-2', name: 'Servico Modelo', cnae: '6204-0/00', tipo_mei: 'geral' },
+      ],
+      latestSimulations: [
+        {
+          id: 'simulation-1',
+          client_id: 'client-1',
+          resultado: makeResultado(0.96),
+          created_at: '2026-05-01T12:00:00.000Z',
+        },
+        {
+          id: 'simulation-2',
+          client_id: 'client-2',
+          resultado: makeResultado(0.82),
+          created_at: '2026-05-01T12:05:00.000Z',
+        },
+      ],
+    })
+
+    const summary = await runOfficeAlertsMonitor({
+      admin: admin.client,
+      sendEmail: vi.fn().mockResolvedValue({ ok: true }),
+      now: new Date('2026-05-01T12:00:00.000Z'),
+    })
+
+    expect(summary.clientsScanned).toBe(2)
+    expect(admin.client.rpc).toHaveBeenCalledTimes(1)
+    expect(admin.fromMock).not.toHaveBeenCalledWith('office_simulations')
   })
 })

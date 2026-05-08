@@ -36,6 +36,7 @@ const CARTEIRA_COLOR: Record<string, string> = {
 
 const STATUS_OPTIONS = ['novo', 'contactado', 'qualificado', 'descartado']
 const CARTEIRA_OPTIONS = ['1-20', '21-50', '51-150', '150+']
+const PAGE_SIZE = 50
 
 function toFetchErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message
@@ -46,15 +47,23 @@ function toFetchErrorMessage(error: unknown) {
 }
 
 interface PageProps {
-  searchParams: Promise<{ status?: string; carteira?: string }>
+  searchParams: Promise<{ status?: string; carteira?: string; page?: string }>
+}
+
+function parsePage(value: string | undefined) {
+  const page = Number(value ?? '1')
+  return Number.isInteger(page) && page > 0 ? page : 1
 }
 
 export default async function AdminLeadsPage({ searchParams }: PageProps) {
   const sp = await searchParams
   const filterStatus = STATUS_OPTIONS.includes(sp.status ?? '') ? sp.status : undefined
   const filterCarteira = CARTEIRA_OPTIONS.includes(sp.carteira ?? '') ? sp.carteira : undefined
+  const currentPage = parsePage(sp.page)
+  const offset = (currentPage - 1) * PAGE_SIZE
 
   let leads: AccountantLead[] = []
+  let totalLeads = 0
   let fetchError: string | null = null
 
   try {
@@ -62,18 +71,31 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let query = (admin as any)
       .from('accountant_leads')
-      .select('id,email,nome_escritorio,telefone,carteira_range,ferramenta_atual,status,created_at')
+      .select('id,email,nome_escritorio,telefone,carteira_range,ferramenta_atual,status,created_at', {
+        count: 'exact',
+      })
       .order('created_at', { ascending: false })
 
     if (filterStatus) query = query.eq('status', filterStatus)
     if (filterCarteira) query = query.eq('carteira_range', filterCarteira)
 
-    const { data, error } = await query
+    const { data, error, count } = await query.range(offset, offset + PAGE_SIZE - 1)
     if (error) throw error
     leads = data ?? []
+    totalLeads = count ?? leads.length
   } catch (err) {
     fetchError = toFetchErrorMessage(err)
     console.error('[admin/leads] fetch error:', fetchError)
+  }
+
+  const totalPages = Math.max(1, Math.ceil(totalLeads / PAGE_SIZE))
+  const buildPageHref = (page: number) => {
+    const params = new URLSearchParams()
+    if (filterStatus) params.set('status', filterStatus)
+    if (filterCarteira) params.set('carteira', filterCarteira)
+    if (page > 1) params.set('page', String(page))
+    const query = params.toString()
+    return query ? `/admin/leads?${query}` : '/admin/leads'
   }
 
   return (
@@ -82,7 +104,7 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 900 }}>Leads Contadores</h1>
         <span style={{ fontSize: 13, color: 'var(--text3)' }}>
-          {leads.length} {leads.length === 1 ? 'lead encontrado' : 'leads encontrados'}
+          {totalLeads} {totalLeads === 1 ? 'lead encontrado' : 'leads encontrados'}
         </span>
       </div>
 
@@ -186,6 +208,39 @@ export default async function AdminLeadsPage({ searchParams }: PageProps) {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <nav
+          aria-label="Paginação de leads"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 16 }}
+        >
+          <a
+            href={buildPageHref(Math.max(1, currentPage - 1))}
+            aria-disabled={currentPage <= 1}
+            style={{
+              ...btnStyle,
+              pointerEvents: currentPage <= 1 ? 'none' : 'auto',
+              opacity: currentPage <= 1 ? 0.45 : 1,
+            }}
+          >
+            Anterior
+          </a>
+          <span style={{ fontSize: 12, color: 'var(--text3)' }}>
+            Página {currentPage} de {totalPages}
+          </span>
+          <a
+            href={buildPageHref(Math.min(totalPages, currentPage + 1))}
+            aria-disabled={currentPage >= totalPages}
+            style={{
+              ...btnStyle,
+              pointerEvents: currentPage >= totalPages ? 'none' : 'auto',
+              opacity: currentPage >= totalPages ? 0.45 : 1,
+            }}
+          >
+            Próxima
+          </a>
+        </nav>
+      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { canAccessAdminLeads, getProfileAccess } from '@/lib/auth/profile-access'
+import { buildContentSecurityPolicy } from '@/lib/security/csp'
 import { updateSession } from '@/lib/supabase/middleware'
 
 const PROTECTED_PATHS = ['/dashboard', '/onboarding', '/contador', '/admin', '/relatorio', '/upgrade', '/api/v1']
@@ -9,17 +10,36 @@ function matchesPrefix(pathname: string, paths: string[]) {
   return paths.some(path => pathname === path || pathname.startsWith(`${path}/`))
 }
 
-function redirectWithSessionCookies(request: NextRequest, supabaseResponse: NextResponse, path: string) {
+function createNonce() {
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  return btoa(String.fromCharCode(...bytes))
+}
+
+function applyContentSecurityPolicy(response: NextResponse, nonce: string) {
+  response.headers.set('Content-Security-Policy', buildContentSecurityPolicy(nonce))
+  return response
+}
+
+function redirectWithSessionCookies(
+  request: NextRequest,
+  supabaseResponse: NextResponse,
+  path: string,
+  nonce: string,
+) {
   const url = new URL(path, request.url)
   const response = NextResponse.redirect(url)
   supabaseResponse.cookies.getAll().forEach(cookie => response.cookies.set(cookie))
-  return response
+  return applyContentSecurityPolicy(response, nonce)
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const nonce = createNonce()
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-nonce', nonce)
 
-  const { supabaseResponse, supabase, user } = await updateSession(request)
+  const { supabaseResponse, supabase, user } = await updateSession(request, requestHeaders)
   const isProtected = matchesPrefix(pathname, PROTECTED_PATHS)
   const isAuth = matchesPrefix(pathname, AUTH_PATHS)
 
@@ -29,28 +49,28 @@ export async function proxy(request: NextRequest) {
     loginUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`)
     const response = NextResponse.redirect(loginUrl)
     supabaseResponse.cookies.getAll().forEach(cookie => response.cookies.set(cookie))
-    return response
+    return applyContentSecurityPolicy(response, nonce)
   }
 
   if (!user || (!isProtected && !isAuth)) {
-    return supabaseResponse
+    return applyContentSecurityPolicy(supabaseResponse, nonce)
   }
 
   const access = await getProfileAccess(supabase, user)
 
   if (isAuth) {
-    return redirectWithSessionCookies(request, supabaseResponse, access.isComplete ? '/dashboard' : '/onboarding')
+    return redirectWithSessionCookies(request, supabaseResponse, access.isComplete ? '/dashboard' : '/onboarding', nonce)
   }
 
   if (pathname.startsWith('/admin/leads') && !canAccessAdminLeads(access.profile, user)) {
-    return redirectWithSessionCookies(request, supabaseResponse, '/dashboard')
+    return redirectWithSessionCookies(request, supabaseResponse, '/dashboard', nonce)
   }
 
   if (!pathname.startsWith('/onboarding') && !access.isComplete) {
-    return redirectWithSessionCookies(request, supabaseResponse, '/onboarding')
+    return redirectWithSessionCookies(request, supabaseResponse, '/onboarding', nonce)
   }
 
-  return supabaseResponse
+  return applyContentSecurityPolicy(supabaseResponse, nonce)
 }
 
 export const config = {

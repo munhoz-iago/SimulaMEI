@@ -41,6 +41,7 @@ interface UpdateQuery extends PromiseLike<QueryResult<unknown>> {
 
 interface SupabaseAdminLike {
   from(table: string): unknown
+  rpc?: unknown
 }
 
 interface OfficeMonitorOfficeRow {
@@ -62,6 +63,7 @@ interface OfficeMonitorClientRow extends OfficeAlertClientLike {
 
 interface OfficeMonitorSimulationRow {
   id: string
+  client_id: string
   resultado: ResultadoSimulacao
   created_at: string
 }
@@ -153,23 +155,19 @@ async function listActiveOfficeClients(admin: SupabaseAdminLike, officeId: strin
   return all
 }
 
-async function getLatestClientSimulation(
-  admin: SupabaseAdminLike,
-  officeId: string,
-  clientId: string,
-) {
-  const table = admin.from('office_simulations') as {
-    select(columns: string): Query<OfficeMonitorSimulationRow[]>
+async function listLatestClientSimulationsByOffice(admin: SupabaseAdminLike, officeId: string) {
+  if (typeof admin.rpc !== 'function') {
+    throw new Error('Supabase admin client does not support RPC calls.')
   }
-  const { data, error } = await table
-    .select('id, resultado, created_at')
-    .eq('office_id', officeId)
-    .eq('client_id', clientId)
-    .order('created_at', { ascending: false })
-    .limit(1)
+
+  const rpc = admin.rpc as (fn: string, args: Record<string, unknown>) => PromiseLike<QueryResult<unknown>>
+  const { data, error } = await rpc('get_latest_simulations_by_office', {
+    p_office_id: officeId,
+  })
 
   if (error) throw new Error(error.message)
-  return data?.[0] ?? null
+  const rows = (data ?? []) as OfficeMonitorSimulationRow[]
+  return new Map(rows.map(row => [row.client_id, row]))
 }
 
 async function listOfficeAlertRecipients(admin: SupabaseAdminLike, officeId: string) {
@@ -257,15 +255,16 @@ export async function runOfficeAlertsMonitor({
     }
 
     summary.officesScanned += 1
-    const [clients, recipients] = await Promise.all([
+    const [clients, recipients, simulationsByClientId] = await Promise.all([
       listActiveOfficeClients(admin, office.id),
       listOfficeAlertRecipients(admin, office.id),
+      listLatestClientSimulationsByOffice(admin, office.id),
     ])
 
     for (const client of clients) {
       summary.clientsScanned += 1
       try {
-        const simulation = await getLatestClientSimulation(admin, office.id, client.id)
+        const simulation = simulationsByClientId.get(client.id) ?? null
         const candidate = buildOfficeAlertCandidate({
           officeId: office.id,
           client,

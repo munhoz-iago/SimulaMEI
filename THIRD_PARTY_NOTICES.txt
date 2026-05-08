@@ -1,0 +1,1510 @@
+Third-party notices generated with: npx license-checker --production --out THIRD_PARTY_NOTICES.txt
+
+License review notes:
+- npm audit reports 0 vulnerabilities after replacing xlsx with exceljs and overriding Next's transitive postcss to 8.5.10.
+- No AGPL dependency was detected in production dependencies.
+- jszip is dual-licensed as MIT OR GPL-3.0-or-later; this project uses it under MIT.
+- @img/sharp-win32-x64 is listed as Apache-2.0 AND LGPL-3.0-or-later. It is a transitive, platform-specific Sharp binary used by Next/image tooling. Keep this notice with distributions and revalidate obligations with legal before closed-source redistribution.
+
+├─ @anthropic-ai/sdk@0.92.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/anthropics/anthropic-sdk-typescript
+│  ├─ publisher: Anthropic
+│  ├─ email: support@anthropic.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@anthropic-ai\sdk
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@anthropic-ai\sdk\LICENSE
+├─ @babel/runtime@7.29.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@babel\runtime
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@babel\runtime\LICENSE
+├─ @fast-csv/format@4.3.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/C2FO/fast-csv
+│  ├─ publisher: doug-martin
+│  ├─ email: doug@dougamartin.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@fast-csv\format
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@fast-csv\format\LICENSE
+├─ @fast-csv/parse@4.3.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/C2FO/fast-csv
+│  ├─ publisher: doug-martin
+│  ├─ email: doug@dougamartin.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@fast-csv\parse
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@fast-csv\parse\LICENSE
+├─ @img/colour@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lovell/colour
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@img\colour
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@img\colour\LICENSE.md
+├─ @img/sharp-win32-x64@0.34.5
+│  ├─ licenses: Apache-2.0 AND LGPL-3.0-or-later
+│  ├─ repository: https://github.com/lovell/sharp
+│  ├─ publisher: Lovell Fuller
+│  ├─ email: npm@lovell.info
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@img\sharp-win32-x64
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@img\sharp-win32-x64\LICENSE
+├─ @next/env@16.2.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vercel/next.js
+│  ├─ publisher: Next.js Team
+│  ├─ email: support@vercel.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@next\env
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@next\env\README.md
+├─ @next/swc-win32-x64-msvc@16.2.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vercel/next.js
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@next\swc-win32-x64-msvc
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@next\swc-win32-x64-msvc\README.md
+├─ @noble/ciphers@1.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/paulmillr/noble-ciphers
+│  ├─ publisher: Paul Miller
+│  ├─ url: https://paulmillr.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@noble\ciphers
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@noble\ciphers\LICENSE
+├─ @noble/hashes@1.8.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/paulmillr/noble-hashes
+│  ├─ publisher: Paul Miller
+│  ├─ url: https://paulmillr.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@noble\hashes
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@noble\hashes\LICENSE
+├─ @opentelemetry/api-logs@0.208.0
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\api-logs
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\api-logs\LICENSE
+├─ @opentelemetry/api@1.9.1
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\api
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\api\LICENSE
+├─ @opentelemetry/core@2.2.0
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\core
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\core\LICENSE
+├─ @opentelemetry/core@2.7.1
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\resources\node_modules\@opentelemetry\core
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\resources\node_modules\@opentelemetry\core\LICENSE
+├─ @opentelemetry/exporter-logs-otlp-http@0.208.0
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\exporter-logs-otlp-http
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\exporter-logs-otlp-http\LICENSE
+├─ @opentelemetry/otlp-exporter-base@0.208.0
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\otlp-exporter-base
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\otlp-exporter-base\LICENSE
+├─ @opentelemetry/otlp-transformer@0.208.0
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\otlp-transformer
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\otlp-transformer\LICENSE
+├─ @opentelemetry/resources@2.2.0
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\otlp-transformer\node_modules\@opentelemetry\resources
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\otlp-transformer\node_modules\@opentelemetry\resources\LICENSE
+├─ @opentelemetry/resources@2.7.1
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\resources
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\resources\LICENSE
+├─ @opentelemetry/sdk-logs@0.208.0
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\sdk-logs
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\sdk-logs\LICENSE
+├─ @opentelemetry/sdk-metrics@2.2.0
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\sdk-metrics
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\sdk-metrics\LICENSE
+├─ @opentelemetry/sdk-trace-base@2.2.0
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\sdk-trace-base
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\sdk-trace-base\LICENSE
+├─ @opentelemetry/semantic-conventions@1.40.0
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/open-telemetry/opentelemetry-js
+│  ├─ publisher: OpenTelemetry Authors
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\semantic-conventions
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@opentelemetry\semantic-conventions\LICENSE
+├─ @posthog/core@1.27.9
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/PostHog/posthog-js
+│  └─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@posthog\core
+├─ @posthog/types@1.372.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/PostHog/posthog-js
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@posthog\types
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@posthog\types\LICENSE
+├─ @protobufjs/aspromise@1.1.2
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/dcodeIO/protobuf.js
+│  ├─ publisher: Daniel Wirtz
+│  ├─ email: dcode+protobufjs@dcode.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\aspromise
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\aspromise\LICENSE
+├─ @protobufjs/base64@1.1.2
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/dcodeIO/protobuf.js
+│  ├─ publisher: Daniel Wirtz
+│  ├─ email: dcode+protobufjs@dcode.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\base64
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\base64\LICENSE
+├─ @protobufjs/codegen@2.0.5
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/dcodeIO/protobuf.js
+│  ├─ publisher: Daniel Wirtz
+│  ├─ email: dcode+protobufjs@dcode.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\codegen
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\codegen\LICENSE
+├─ @protobufjs/eventemitter@1.1.0
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/dcodeIO/protobuf.js
+│  ├─ publisher: Daniel Wirtz
+│  ├─ email: dcode+protobufjs@dcode.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\eventemitter
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\eventemitter\LICENSE
+├─ @protobufjs/fetch@1.1.0
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/dcodeIO/protobuf.js
+│  ├─ publisher: Daniel Wirtz
+│  ├─ email: dcode+protobufjs@dcode.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\fetch
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\fetch\LICENSE
+├─ @protobufjs/float@1.0.2
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/dcodeIO/protobuf.js
+│  ├─ publisher: Daniel Wirtz
+│  ├─ email: dcode+protobufjs@dcode.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\float
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\float\LICENSE
+├─ @protobufjs/inquire@1.1.1
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/dcodeIO/protobuf.js
+│  ├─ publisher: Daniel Wirtz
+│  ├─ email: dcode+protobufjs@dcode.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\inquire
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\inquire\LICENSE
+├─ @protobufjs/path@1.1.2
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/dcodeIO/protobuf.js
+│  ├─ publisher: Daniel Wirtz
+│  ├─ email: dcode+protobufjs@dcode.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\path
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\path\LICENSE
+├─ @protobufjs/pool@1.1.0
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/dcodeIO/protobuf.js
+│  ├─ publisher: Daniel Wirtz
+│  ├─ email: dcode+protobufjs@dcode.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\pool
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\pool\LICENSE
+├─ @protobufjs/utf8@1.1.1
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/dcodeIO/protobuf.js
+│  ├─ publisher: Daniel Wirtz
+│  ├─ email: dcode+protobufjs@dcode.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\utf8
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@protobufjs\utf8\LICENSE
+├─ @react-pdf/fns@3.1.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ publisher: Diego Muracciole
+│  ├─ email: diegomuracciole@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\fns
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\fns\README.md
+├─ @react-pdf/font@4.0.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ publisher: Diego Muracciole
+│  ├─ email: diegomuracciole@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\font
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\font\README.md
+├─ @react-pdf/image@3.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ publisher: Diego Muracciole
+│  ├─ email: diegomuracciole@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\image
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\image\README.md
+├─ @react-pdf/layout@4.6.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ publisher: Diego Muracciole
+│  ├─ email: diegomuracciole@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\layout
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\layout\README.md
+├─ @react-pdf/pdfkit@5.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ publisher: Devon Govett
+│  ├─ email: devongovett@gmail.com
+│  ├─ url: http://badassjs.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\pdfkit
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\pdfkit\LICENSE
+├─ @react-pdf/primitives@4.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ publisher: Diego Muracciole
+│  ├─ email: diegomuracciole@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\primitives
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\primitives\README.md
+├─ @react-pdf/reconciler@2.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ publisher: Diego Muracciole
+│  ├─ email: diegomuracciole@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\reconciler
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\reconciler\README.md
+├─ @react-pdf/render@4.5.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ publisher: Diego Muracciole
+│  ├─ email: diegomuracciole@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\render
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\render\README.md
+├─ @react-pdf/renderer@4.5.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ publisher: Diego Muracciole
+│  ├─ email: diegomuracciole@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\renderer
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\renderer\README.md
+├─ @react-pdf/stylesheet@6.2.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ publisher: Diego Muracciole
+│  ├─ email: diegomuracciole@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\stylesheet
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\stylesheet\README.md
+├─ @react-pdf/svg@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ publisher: Diego Muracciole
+│  ├─ email: diegomuracciole@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\svg
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\svg\README.md
+├─ @react-pdf/textkit@6.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\textkit
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\textkit\README.md
+├─ @react-pdf/types@2.11.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/diegomura/react-pdf
+│  ├─ publisher: Diego Muracciole
+│  ├─ email: diegomuracciole@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\types
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\types\README.md
+├─ @stablelib/base64@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/StableLib/stablelib
+│  ├─ publisher: Dmitry Chestnykh
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@stablelib\base64
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@stablelib\base64\LICENSE
+├─ @supabase/auth-js@2.105.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/supabase/supabase-js
+│  ├─ publisher: Supabase
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\auth-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\auth-js\LICENSE
+├─ @supabase/functions-js@2.105.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/supabase/supabase-js
+│  ├─ publisher: Supabase
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\functions-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\functions-js\README.md
+├─ @supabase/phoenix@0.4.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/supabase/phoenix
+│  ├─ publisher: Chris McCord
+│  ├─ email: chris@chrismccord.com
+│  ├─ url: https://www.phoenixframework.org
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\phoenix
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\phoenix\LICENSE.md
+├─ @supabase/postgrest-js@2.105.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/supabase/supabase-js
+│  ├─ publisher: Supabase
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\postgrest-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\postgrest-js\README.md
+├─ @supabase/realtime-js@2.105.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/supabase/supabase-js
+│  ├─ publisher: Supabase
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\realtime-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\realtime-js\README.md
+├─ @supabase/ssr@0.6.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/supabase/ssr
+│  ├─ publisher: Supabase, Inc.
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\ssr
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\ssr\LICENSE
+├─ @supabase/storage-js@2.105.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/supabase/supabase-js
+│  ├─ publisher: Supabase
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\storage-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\storage-js\README.md
+├─ @supabase/supabase-js@2.105.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/supabase/supabase-js
+│  ├─ publisher: Supabase
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\supabase-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@supabase\supabase-js\README.md
+├─ @swc/helpers@0.5.15
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/swc-project/swc
+│  ├─ publisher: 강동윤
+│  ├─ email: kdy1997.dev@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@swc\helpers
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@swc\helpers\LICENSE
+├─ @types/node@14.18.63
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@fast-csv\format\node_modules\@types\node
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@fast-csv\format\node_modules\@types\node\LICENSE
+├─ @types/node@20.19.39
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@types\node
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@types\node\LICENSE
+├─ @types/trusted-types@2.0.7
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@types\trusted-types
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@types\trusted-types\LICENSE
+├─ @types/ws@8.18.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@types\ws
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@types\ws\LICENSE
+├─ abs-svg-path@0.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jkroso/abs-svg-path
+│  ├─ publisher: Jake Rosoman
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\abs-svg-path
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\abs-svg-path\Readme.md
+├─ archiver-utils@2.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/archiverjs/archiver-utils
+│  ├─ publisher: Chris Talkington
+│  ├─ url: http://christalkington.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\archiver-utils
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\archiver-utils\LICENSE
+├─ archiver-utils@3.0.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/archiverjs/archiver-utils
+│  ├─ publisher: Chris Talkington
+│  ├─ url: http://christalkington.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\zip-stream\node_modules\archiver-utils
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\zip-stream\node_modules\archiver-utils\LICENSE
+├─ archiver@5.3.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/archiverjs/node-archiver
+│  ├─ publisher: Chris Talkington
+│  ├─ url: http://christalkington.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\archiver
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\archiver\LICENSE
+├─ async@3.2.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/caolan/async
+│  ├─ publisher: Caolan McMahon
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\async
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\async\LICENSE
+├─ balanced-match@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/juliangruber/balanced-match
+│  ├─ publisher: Julian Gruber
+│  ├─ email: mail@juliangruber.com
+│  ├─ url: http://juliangruber.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\balanced-match
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\balanced-match\LICENSE.md
+├─ base64-js@0.0.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/beatgammit/base64-js
+│  ├─ publisher: T. Jameson Little
+│  ├─ email: t.jameson.little@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\linebreak\node_modules\base64-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\linebreak\node_modules\base64-js\LICENSE.MIT
+├─ base64-js@1.5.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/beatgammit/base64-js
+│  ├─ publisher: T. Jameson Little
+│  ├─ email: t.jameson.little@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\base64-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\base64-js\LICENSE
+├─ baseline-browser-mapping@2.10.24
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/web-platform-dx/baseline-browser-mapping
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\baseline-browser-mapping
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\baseline-browser-mapping\LICENSE.txt
+├─ bidi-js@1.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lojjic/bidi-js
+│  ├─ publisher: Jason Johnston
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\bidi-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\bidi-js\LICENSE.txt
+├─ big-integer@1.6.52
+│  ├─ licenses: Unlicense
+│  ├─ repository: https://github.com/peterolson/BigInteger.js
+│  ├─ publisher: Peter Olson
+│  ├─ email: peter.e.c.olson+npm@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\big-integer
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\big-integer\LICENSE
+├─ binary@0.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/substack/node-binary
+│  ├─ publisher: James Halliday
+│  ├─ email: mail@substack.net
+│  ├─ url: http://substack.net
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\binary
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\binary\README.markdown
+├─ bl@4.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/rvagg/bl
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\bl
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\bl\LICENSE.md
+├─ bluebird@3.4.7
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/petkaantonov/bluebird
+│  ├─ publisher: Petka Antonov
+│  ├─ email: petka_antonov@hotmail.com
+│  ├─ url: http://github.com/petkaantonov/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\bluebird
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\bluebird\LICENSE
+├─ brace-expansion@1.1.14
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/juliangruber/brace-expansion
+│  ├─ publisher: Julian Gruber
+│  ├─ email: mail@juliangruber.com
+│  ├─ url: http://juliangruber.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\brace-expansion
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\brace-expansion\LICENSE
+├─ brace-expansion@2.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/juliangruber/brace-expansion
+│  ├─ publisher: Julian Gruber
+│  ├─ email: mail@juliangruber.com
+│  ├─ url: http://juliangruber.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\readdir-glob\node_modules\brace-expansion
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\readdir-glob\node_modules\brace-expansion\LICENSE
+├─ brotli@1.3.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/devongovett/brotli.js
+│  ├─ publisher: Devon Govett
+│  ├─ email: devongovett@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\brotli
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\brotli\readme.md
+├─ browserify-zlib@0.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/devongovett/browserify-zlib
+│  ├─ publisher: Devon Govett
+│  ├─ email: devongovett@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\browserify-zlib
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\browserify-zlib\LICENSE
+├─ buffer-crc32@0.2.13
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/brianloveswords/buffer-crc32
+│  ├─ publisher: Brian J. Brennan
+│  ├─ email: brianloveswords@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\buffer-crc32
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\buffer-crc32\LICENSE
+├─ buffer-indexof-polyfill@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sarosia/buffer-indexof-polyfill
+│  ├─ publisher: https://github.com/sarosia
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\buffer-indexof-polyfill
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\buffer-indexof-polyfill\LICENSE
+├─ buffer@5.7.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/feross/buffer
+│  ├─ publisher: Feross Aboukhadijeh
+│  ├─ email: feross@feross.org
+│  ├─ url: https://feross.org
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\buffer
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\buffer\LICENSE
+├─ buffers@0.1.1
+│  ├─ licenses: Custom: http://github.com/substack/node-bufferlist
+│  ├─ repository: https://github.com/substack/node-buffers
+│  ├─ publisher: James Halliday
+│  ├─ email: mail@substack.net
+│  ├─ url: http://substack.net
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\buffers
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\buffers\README.markdown
+├─ caniuse-lite@1.0.30001791
+│  ├─ licenses: CC-BY-4.0
+│  ├─ repository: https://github.com/browserslist/caniuse-lite
+│  ├─ publisher: Ben Briggs
+│  ├─ email: beneb.info@gmail.com
+│  ├─ url: http://beneb.info
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\caniuse-lite
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\caniuse-lite\LICENSE
+├─ chainsaw@0.1.0
+│  ├─ licenses: MIT*
+│  ├─ repository: https://github.com/substack/node-chainsaw
+│  ├─ publisher: James Halliday
+│  ├─ email: mail@substack.net
+│  ├─ url: http://substack.net
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\chainsaw
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\chainsaw\README.markdown
+├─ client-only@0.0.1
+│  ├─ licenses: MIT
+│  └─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\client-only
+├─ clone@2.1.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/pvorb/node-clone
+│  ├─ publisher: Paul Vorbach
+│  ├─ email: paul@vorba.ch
+│  ├─ url: http://paul.vorba.ch/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\clone
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\clone\LICENSE
+├─ color-name@2.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/colorjs/color-name
+│  ├─ publisher: Dmitry Iv
+│  ├─ email: dfcreative@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\color-string\node_modules\color-name
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\color-string\node_modules\color-name\LICENSE
+├─ color-string@2.1.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/Qix-/color-string
+│  ├─ publisher: Josh Junon
+│  ├─ url: https://github.com/qix-
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\color-string
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\color-string\LICENSE
+├─ compress-commons@4.1.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/archiverjs/node-compress-commons
+│  ├─ publisher: Chris Talkington
+│  ├─ url: http://christalkington.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\compress-commons
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\compress-commons\LICENSE
+├─ concat-map@0.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/substack/node-concat-map
+│  ├─ publisher: James Halliday
+│  ├─ email: mail@substack.net
+│  ├─ url: http://substack.net
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\concat-map
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\concat-map\LICENSE
+├─ cookie@1.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jshttp/cookie
+│  ├─ publisher: Roman Shtylman
+│  ├─ email: shtylman@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\cookie
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\cookie\LICENSE
+├─ core-js@3.49.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/zloirock/core-js
+│  ├─ publisher: Denis Pushkarev
+│  ├─ email: zloirock@zloirock.ru
+│  ├─ url: http://zloirock.ru
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\core-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\core-js\LICENSE
+├─ core-util-is@1.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/isaacs/core-util-is
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\core-util-is
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\core-util-is\LICENSE
+├─ crc-32@1.2.2
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/SheetJS/js-crc32
+│  ├─ publisher: sheetjs
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\crc-32
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\crc-32\LICENSE
+├─ crc32-stream@4.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/archiverjs/node-crc32-stream
+│  ├─ publisher: Chris Talkington
+│  ├─ url: http://christalkington.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\crc32-stream
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\crc32-stream\LICENSE
+├─ dayjs@1.11.20
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/iamkun/dayjs
+│  ├─ publisher: iamkun
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\dayjs
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\dayjs\LICENSE
+├─ detect-libc@2.1.2
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/lovell/detect-libc
+│  ├─ publisher: Lovell Fuller
+│  ├─ email: npm@lovell.info
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\detect-libc
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\detect-libc\LICENSE
+├─ dfa@1.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/devongovett/dfa
+│  ├─ publisher: Devon Govett
+│  ├─ email: devongovett@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\dfa
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\dfa\README.md
+├─ dompurify@3.4.1
+│  ├─ licenses: (MPL-2.0 OR Apache-2.0)
+│  ├─ repository: https://github.com/cure53/DOMPurify
+│  ├─ publisher: Dr.-Ing. Mario Heiderich, Cure53
+│  ├─ email: mario@cure53.de
+│  ├─ url: https://cure53.de/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\dompurify
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\dompurify\LICENSE
+├─ duplexer2@0.1.4
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/deoxxa/duplexer2
+│  ├─ publisher: Conrad Pankoff
+│  ├─ email: deoxxa@fknsrs.biz
+│  ├─ url: http://www.fknsrs.biz/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\duplexer2
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\duplexer2\LICENSE.md
+├─ emoji-regex-xs@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/slevithan/emoji-regex-xs
+│  ├─ publisher: Steven Levithan
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\emoji-regex-xs
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\emoji-regex-xs\LICENSE
+├─ end-of-stream@1.4.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mafintosh/end-of-stream
+│  ├─ publisher: Mathias Buus
+│  ├─ email: mathiasbuus@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\end-of-stream
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\end-of-stream\LICENSE
+├─ events@3.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/Gozala/events
+│  ├─ publisher: Irakli Gozalishvili
+│  ├─ email: rfobic@gmail.com
+│  ├─ url: http://jeditoolkit.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\events
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\events\LICENSE
+├─ exceljs@4.4.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/exceljs/exceljs
+│  ├─ publisher: Guyon Roche
+│  ├─ email: guyon@live.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\exceljs
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\exceljs\LICENSE
+├─ fast-csv@4.3.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/C2FO/fast-csv
+│  ├─ publisher: Doug Martin
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fast-csv
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fast-csv\LICENSE
+├─ fast-deep-equal@3.1.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/epoberezkin/fast-deep-equal
+│  ├─ publisher: Evgeny Poberezkin
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fast-deep-equal
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fast-deep-equal\LICENSE
+├─ fast-sha256@1.3.0
+│  ├─ licenses: Unlicense
+│  ├─ repository: https://github.com/dchest/fast-sha256-js
+│  ├─ publisher: Dmitry Chestnykh
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fast-sha256
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fast-sha256\LICENSE
+├─ fflate@0.4.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/101arrowz/fflate
+│  ├─ publisher: Arjun Barrett
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\posthog-js\node_modules\fflate
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\posthog-js\node_modules\fflate\LICENSE
+├─ fflate@0.8.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/101arrowz/fflate
+│  ├─ publisher: Arjun Barrett
+│  ├─ email: arjunbarrett@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fflate
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fflate\LICENSE
+├─ fontkit@2.0.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/foliojs/fontkit
+│  ├─ publisher: Devon Govett
+│  ├─ email: devongovett@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fontkit
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fontkit\README.md
+├─ fs-constants@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mafintosh/fs-constants
+│  ├─ publisher: Mathias Buus
+│  ├─ url: @mafintosh
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fs-constants
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fs-constants\LICENSE
+├─ fs.realpath@1.0.0
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/fs.realpath
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fs.realpath
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fs.realpath\LICENSE
+├─ fstream@1.0.12
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/npm/fstream
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fstream
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\fstream\LICENSE
+├─ glob@7.2.3
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/node-glob
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\glob
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\glob\LICENSE
+├─ graceful-fs@4.2.11
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/node-graceful-fs
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\graceful-fs
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\graceful-fs\LICENSE
+├─ hsl-to-hex@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/davidmarkclements/hsl-to-hex
+│  ├─ publisher: David Mark Clements
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\hsl-to-hex
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\hsl-to-hex\readme.md
+├─ hsl-to-rgb-for-reals@1.1.1
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/davidmarkclements/hsl_rgb_converter
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\hsl-to-rgb-for-reals
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\hsl-to-rgb-for-reals\README.md
+├─ hyphen@1.14.1
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/ytiurin/hyphen
+│  ├─ publisher: Eugene Tiurin
+│  ├─ email: yevhentiurin@gmail.com
+│  ├─ url: https://github.com/ytiurin
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\hyphen
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\hyphen\LICENSE
+├─ iceberg-js@0.8.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/supabase/iceberg-js
+│  ├─ publisher: mandarini
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\iceberg-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\iceberg-js\LICENSE
+├─ ieee754@1.2.1
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/feross/ieee754
+│  ├─ publisher: Feross Aboukhadijeh
+│  ├─ email: feross@feross.org
+│  ├─ url: https://feross.org
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\ieee754
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\ieee754\LICENSE
+├─ immediate@3.0.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/calvinmetcalf/immediate
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\immediate
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\immediate\LICENSE.txt
+├─ inflight@1.0.6
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/npm/inflight
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\inflight
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\inflight\LICENSE
+├─ inherits@2.0.4
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/inherits
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\inherits
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\inherits\LICENSE
+├─ is-url@1.2.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/segmentio/is-url
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\is-url
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\is-url\LICENSE-MIT
+├─ isarray@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/juliangruber/isarray
+│  ├─ publisher: Julian Gruber
+│  ├─ email: mail@juliangruber.com
+│  ├─ url: http://juliangruber.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lazystream\node_modules\isarray
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lazystream\node_modules\isarray\README.md
+├─ jay-peg@1.1.1
+│  ├─ licenses: MIT
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\jay-peg
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\jay-peg\LICENSE
+├─ js-md5@0.8.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/emn178/js-md5
+│  ├─ publisher: Chen, Yi-Cyuan
+│  ├─ email: emn178@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\js-md5
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\js-md5\LICENSE.txt
+├─ js-tokens@4.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lydell/js-tokens
+│  ├─ publisher: Simon Lydell
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\js-tokens
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\js-tokens\LICENSE
+├─ json-schema-to-ts@3.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ThomasAribart/json-schema-to-ts
+│  ├─ publisher: Thomas Aribart
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\json-schema-to-ts
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\json-schema-to-ts\LICENSE
+├─ jszip@3.10.1
+│  ├─ licenses: (MIT OR GPL-3.0-or-later)
+│  ├─ repository: https://github.com/Stuk/jszip
+│  ├─ publisher: Stuart Knightley
+│  ├─ email: stuart@stuartk.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\jszip
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\jszip\LICENSE.markdown
+├─ lazystream@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jpommerening/node-lazystream
+│  ├─ publisher: Jonas Pommerening
+│  ├─ email: jonas.pommerening@gmail.com
+│  ├─ url: https://npmjs.org/~jpommerening
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lazystream
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lazystream\LICENSE
+├─ lie@3.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/calvinmetcalf/lie
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lie
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lie\license.md
+├─ linebreak@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/devongovett/linebreaker
+│  ├─ publisher: Devon Govett
+│  ├─ email: devongovett@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\linebreak
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\linebreak\LICENSE
+├─ listenercount@1.0.1
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/jden/node-listenercount
+│  ├─ publisher: jden
+│  ├─ email: jason@denizac.org
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\listenercount
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\listenercount\LICENSE.md
+├─ lodash.defaults@4.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.defaults
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.defaults\LICENSE
+├─ lodash.difference@4.5.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.difference
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.difference\LICENSE
+├─ lodash.escaperegexp@4.1.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.escaperegexp
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.escaperegexp\LICENSE
+├─ lodash.flatten@4.4.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.flatten
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.flatten\LICENSE
+├─ lodash.groupby@4.6.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.groupby
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.groupby\LICENSE
+├─ lodash.isboolean@3.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.isboolean
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.isboolean\LICENSE
+├─ lodash.isequal@4.5.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.isequal
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.isequal\LICENSE
+├─ lodash.isfunction@3.0.9
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.isfunction
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.isfunction\LICENSE
+├─ lodash.isnil@4.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.isnil
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.isnil\LICENSE
+├─ lodash.isplainobject@4.0.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.isplainobject
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.isplainobject\LICENSE
+├─ lodash.isundefined@3.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.isundefined
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.isundefined\LICENSE.txt
+├─ lodash.union@4.6.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.union
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.union\LICENSE
+├─ lodash.uniq@4.5.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.uniq
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lodash.uniq\LICENSE
+├─ long@5.3.2
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/dcodeIO/long.js
+│  ├─ publisher: Daniel Wirtz
+│  ├─ email: dcode@dcode.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\long
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\long\LICENSE
+├─ loose-envify@1.4.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/zertosh/loose-envify
+│  ├─ publisher: Andres Suarez
+│  ├─ email: zertosh@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\loose-envify
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\loose-envify\LICENSE
+├─ media-engine@1.0.3
+│  ├─ licenses: MIT
+│  ├─ publisher: Diego Muracciole
+│  ├─ email: diegomuracciole@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\media-engine
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\media-engine\README.md
+├─ minimatch@3.1.5
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/minimatch
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\minimatch
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\minimatch\LICENSE
+├─ minimatch@5.1.9
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/minimatch
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\readdir-glob\node_modules\minimatch
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\readdir-glob\node_modules\minimatch\LICENSE
+├─ minimist@1.2.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/minimistjs/minimist
+│  ├─ publisher: James Halliday
+│  ├─ email: mail@substack.net
+│  ├─ url: http://substack.net
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\minimist
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\minimist\LICENSE
+├─ mkdirp@0.5.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/substack/node-mkdirp
+│  ├─ publisher: James Halliday
+│  ├─ email: mail@substack.net
+│  ├─ url: http://substack.net
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\mkdirp
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\mkdirp\LICENSE
+├─ nanoid@3.3.11
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ai/nanoid
+│  ├─ publisher: Andrey Sitnik
+│  ├─ email: andrey@sitnik.ru
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\nanoid
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\nanoid\LICENSE
+├─ next@16.2.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vercel/next.js
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\next
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\next\license.md
+├─ normalize-path@3.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jonschlinkert/normalize-path
+│  ├─ publisher: Jon Schlinkert
+│  ├─ url: https://github.com/jonschlinkert
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\normalize-path
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\normalize-path\LICENSE
+├─ normalize-svg-path@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jkroso/normalize-svg-path
+│  ├─ publisher: Jake Rosoman
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\normalize-svg-path
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\normalize-svg-path\license.md
+├─ object-assign@4.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/object-assign
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: sindresorhus.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\object-assign
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\object-assign\license
+├─ once@1.4.0
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/once
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\once
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\once\LICENSE
+├─ pako@0.2.9
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/nodeca/pako
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\unicode-trie\node_modules\pako
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\unicode-trie\node_modules\pako\LICENSE
+├─ pako@1.0.11
+│  ├─ licenses: (MIT AND Zlib)
+│  ├─ repository: https://github.com/nodeca/pako
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\pako
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\pako\LICENSE
+├─ parse-svg-path@0.1.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jkroso/parse-svg-path
+│  ├─ publisher: Jake Rosoman
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\parse-svg-path
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\parse-svg-path\License
+├─ path-is-absolute@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/path-is-absolute
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: sindresorhus.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\path-is-absolute
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\path-is-absolute\license
+├─ picocolors@1.1.1
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/alexeyraspopov/picocolors
+│  ├─ publisher: Alexey Raspopov
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\picocolors
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\picocolors\LICENSE
+├─ png-js@2.0.0
+│  ├─ licenses: MIT*
+│  ├─ repository: https://github.com/devongovett/png.js
+│  ├─ publisher: Devon Govett
+│  ├─ email: devongovett@gmail.com
+│  ├─ url: http://badassjs.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\png-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\png-js\LICENSE
+├─ postal-mime@2.7.4
+│  ├─ licenses: MIT-0
+│  ├─ repository: https://github.com/postalsys/postal-mime
+│  ├─ publisher: Andris Reinman
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\postal-mime
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\postal-mime\LICENSE.txt
+├─ postcss-value-parser@4.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/TrySound/postcss-value-parser
+│  ├─ publisher: Bogdan Chadkin
+│  ├─ email: trysound@yandex.ru
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\postcss-value-parser
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\postcss-value-parser\LICENSE
+├─ postcss@8.5.10
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/postcss/postcss
+│  ├─ publisher: Andrey Sitnik
+│  ├─ email: andrey@sitnik.es
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\next\node_modules\postcss
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\next\node_modules\postcss\LICENSE
+├─ posthog-js@1.372.5
+│  ├─ licenses: MIT*
+│  ├─ repository: https://github.com/PostHog/posthog-js
+│  ├─ publisher: engineering@posthog.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\posthog-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\posthog-js\LICENSE
+├─ preact@10.29.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/preactjs/preact
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\preact
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\preact\LICENSE
+├─ process-nextick-args@2.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/calvinmetcalf/process-nextick-args
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\process-nextick-args
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\process-nextick-args\license.md
+├─ prop-types@15.8.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/facebook/prop-types
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\prop-types
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\prop-types\LICENSE
+├─ protobufjs@7.5.6
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/protobufjs/protobuf.js
+│  ├─ publisher: Daniel Wirtz
+│  ├─ email: dcode+protobufjs@dcode.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\protobufjs
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\protobufjs\LICENSE
+├─ query-selector-shadow-dom@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/webdriverio/query-selector-shadow-dom
+│  ├─ publisher: George Griffiths
+│  ├─ email: GeorgeGriff
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\query-selector-shadow-dom
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\query-selector-shadow-dom\LICENSE
+├─ queue@6.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jessetane/queue
+│  ├─ publisher: Jesse Tane
+│  ├─ email: jesse.tane@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\queue
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\queue\LICENSE
+├─ react-dom@19.2.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/facebook/react
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\react-dom
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\react-dom\LICENSE
+├─ react-is@16.13.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/facebook/react
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\react-is
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\react-is\LICENSE
+├─ react@19.2.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/facebook/react
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\react
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\react\LICENSE
+├─ readable-stream@2.3.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/nodejs/readable-stream
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lazystream\node_modules\readable-stream
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lazystream\node_modules\readable-stream\LICENSE
+├─ readable-stream@3.6.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/nodejs/readable-stream
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\readable-stream
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\readable-stream\LICENSE
+├─ readdir-glob@1.1.3
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/Yqnn/node-readdir-glob
+│  ├─ publisher: Yann Armelin
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\readdir-glob
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\readdir-glob\LICENSE
+├─ require-from-string@2.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/floatdrop/require-from-string
+│  ├─ publisher: Vsevolod Strukchinsky
+│  ├─ email: floatdrop@gmail.com
+│  ├─ url: github.com/floatdrop
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\require-from-string
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\require-from-string\license
+├─ resend@6.12.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/resend/resend-node
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\resend
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\resend\LICENSE
+├─ restructure@3.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/devongovett/restructure
+│  ├─ publisher: Devon Govett
+│  ├─ email: devongovett@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\restructure
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\restructure\LICENSE
+├─ rimraf@2.7.1
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/rimraf
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\rimraf
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\rimraf\LICENSE
+├─ safe-buffer@5.1.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/feross/safe-buffer
+│  ├─ publisher: Feross Aboukhadijeh
+│  ├─ email: feross@feross.org
+│  ├─ url: http://feross.org
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lazystream\node_modules\safe-buffer
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lazystream\node_modules\safe-buffer\LICENSE
+├─ safe-buffer@5.2.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/feross/safe-buffer
+│  ├─ publisher: Feross Aboukhadijeh
+│  ├─ email: feross@feross.org
+│  ├─ url: https://feross.org
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\safe-buffer
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\safe-buffer\LICENSE
+├─ saxes@5.0.1
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/lddubeau/saxes
+│  ├─ publisher: Louis-Dominique Dubeau
+│  ├─ email: ldd@lddubeau.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\saxes
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\saxes\README.md
+├─ scheduler@0.25.0-rc-603e6108-20241029
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/facebook/react
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\reconciler\node_modules\scheduler
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\@react-pdf\reconciler\node_modules\scheduler\LICENSE
+├─ scheduler@0.27.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/facebook/react
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\scheduler
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\scheduler\LICENSE
+├─ semver@7.7.4
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/npm/node-semver
+│  ├─ publisher: GitHub Inc.
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\sharp\node_modules\semver
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\sharp\node_modules\semver\LICENSE
+├─ setimmediate@1.0.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/YuzuJS/setImmediate
+│  ├─ publisher: YuzuJS
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\setimmediate
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\setimmediate\LICENSE.txt
+├─ sharp@0.34.5
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/lovell/sharp
+│  ├─ publisher: Lovell Fuller
+│  ├─ email: npm@lovell.info
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\sharp
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\sharp\LICENSE
+├─ simulamei@0.1.0
+│  ├─ licenses: UNLICENSED
+│  ├─ private: true
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\README.md
+├─ source-map-js@1.2.1
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/7rulnik/source-map-js
+│  ├─ publisher: Valentin 7rulnik Semirulnik
+│  ├─ email: v7rulnik@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\source-map-js
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\source-map-js\LICENSE
+├─ standardwebhooks@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/standard-webhooks/standard-webhooks
+│  ├─ publisher: Standard Webhooks
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\standardwebhooks
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\standardwebhooks\README.md
+├─ string_decoder@1.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/nodejs/string_decoder
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lazystream\node_modules\string_decoder
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\lazystream\node_modules\string_decoder\LICENSE
+├─ string_decoder@1.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/nodejs/string_decoder
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\string_decoder
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\string_decoder\LICENSE
+├─ stripe@22.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/stripe/stripe-node
+│  ├─ publisher: Stripe
+│  ├─ email: support@stripe.com
+│  ├─ url: https://stripe.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\stripe
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\stripe\LICENSE
+├─ styled-jsx@5.1.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vercel/styled-jsx
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\styled-jsx
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\styled-jsx\license.md
+├─ svg-arc-to-cubic-bezier@3.2.0
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/colinmeinke/svg-arc-to-cubic-bezier
+│  ├─ publisher: Colin Meinke
+│  ├─ email: hello@colinmeinke.com
+│  ├─ url: https://colinmeinke.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\svg-arc-to-cubic-bezier
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\svg-arc-to-cubic-bezier\LICENSE.md
+├─ svix@1.90.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/svix/svix-webhooks
+│  ├─ publisher: svix
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\svix
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\svix\README.md
+├─ tar-stream@2.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mafintosh/tar-stream
+│  ├─ publisher: Mathias Buus
+│  ├─ email: mathiasbuus@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\tar-stream
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\tar-stream\LICENSE
+├─ tiny-inflate@1.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/devongovett/tiny-inflate
+│  ├─ publisher: Devon Govett
+│  ├─ email: devongovett@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\tiny-inflate
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\tiny-inflate\LICENSE
+├─ tmp@0.2.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/raszi/node-tmp
+│  ├─ publisher: KARASZI István
+│  ├─ email: github@spam.raszi.hu
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\tmp
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\tmp\LICENSE
+├─ traverse@0.3.9
+│  ├─ licenses: MIT*
+│  ├─ repository: https://github.com/substack/js-traverse
+│  ├─ publisher: James Halliday
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\traverse
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\traverse\LICENSE
+├─ ts-algebra@2.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ThomasAribart/ts-algebra
+│  ├─ publisher: Thomas Aribart
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\ts-algebra
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\ts-algebra\LICENSE
+├─ tslib@2.8.1
+│  ├─ licenses: 0BSD
+│  ├─ repository: https://github.com/Microsoft/tslib
+│  ├─ publisher: Microsoft Corp.
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\tslib
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\tslib\LICENSE.txt
+├─ undici-types@6.21.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/nodejs/undici
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\undici-types
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\undici-types\LICENSE
+├─ unicode-properties@1.4.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/devongovett/unicode-properties
+│  ├─ publisher: Devon Govett
+│  ├─ email: devongovett@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\unicode-properties
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\unicode-properties\LICENSE
+├─ unicode-trie@2.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/devongovett/unicode-trie
+│  ├─ publisher: Devon Govett
+│  ├─ email: devongovett@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\unicode-trie
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\unicode-trie\LICENSE
+├─ unzipper@0.10.14
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ZJONSSON/node-unzipper
+│  ├─ publisher: Evan Oxfeld
+│  ├─ email: eoxfeld@gmail.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\unzipper
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\unzipper\LICENSE
+├─ util-deprecate@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/TooTallNate/util-deprecate
+│  ├─ publisher: Nathan Rajlich
+│  ├─ email: nathan@tootallnate.net
+│  ├─ url: http://n8.io/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\util-deprecate
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\util-deprecate\LICENSE
+├─ uuid@10.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/uuidjs/uuid
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\uuid
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\uuid\LICENSE.md
+├─ uuid@8.3.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/uuidjs/uuid
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\exceljs\node_modules\uuid
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\exceljs\node_modules\uuid\LICENSE.md
+├─ vite-compatible-readable-stream@3.6.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/TechInSite/readable-stream
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\vite-compatible-readable-stream
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\vite-compatible-readable-stream\LICENSE
+├─ web-vitals@5.2.0
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/GoogleChrome/web-vitals
+│  ├─ publisher: Philip Walton
+│  ├─ email: philip@philipwalton.com
+│  ├─ url: http://philipwalton.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\web-vitals
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\web-vitals\LICENSE
+├─ wrappy@1.0.2
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/npm/wrappy
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\wrappy
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\wrappy\LICENSE
+├─ ws@8.20.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/websockets/ws
+│  ├─ publisher: Einar Otto Stangvik
+│  ├─ email: einaros@gmail.com
+│  ├─ url: http://2x.io
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\ws
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\ws\LICENSE
+├─ xmlchars@2.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lddubeau/xmlchars
+│  ├─ publisher: Louis-Dominique Dubeau
+│  ├─ email: ldd@lddubeau.com
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\xmlchars
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\xmlchars\LICENSE
+├─ yoga-layout@3.2.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/facebook/yoga
+│  ├─ publisher: Meta Open Source
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\yoga-layout
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\yoga-layout\README.md
+├─ zip-stream@4.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/archiverjs/node-zip-stream
+│  ├─ publisher: Chris Talkington
+│  ├─ url: http://christalkington.com/
+│  ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\zip-stream
+│  └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\zip-stream\LICENSE
+└─ zod@4.4.3
+   ├─ licenses: MIT
+   ├─ repository: https://github.com/colinhacks/zod
+   ├─ publisher: Colin McDonnell
+   ├─ email: zod@colinhacks.com
+   ├─ path: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\zod
+   └─ licenseFile: C:\Users\iagom\Downloads\📁 Organizado\Projetos e Código\SimulaMEI\simulamei\node_modules\zod\LICENSE

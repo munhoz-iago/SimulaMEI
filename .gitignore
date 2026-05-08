@@ -18,6 +18,10 @@
 # generated official-data downloads
 /data/cnae/raw/
 /.superpowers/
+/supabase/.temp/
+/.claude/
+/.agents/
+/.github/context-mode/
 
 # next.js
 /.next/

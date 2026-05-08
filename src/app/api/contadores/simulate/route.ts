@@ -8,14 +8,29 @@ interface ApiKeyRow {
   id: string
   user_id: string
   tier: 'free' | 'pro'
-  requests_month: number | null
   revoked_at: string | null
+}
+
+interface QuotaRow {
+  requests_month: number
+  monthly_limit: number
 }
 
 const TIER_MONTHLY_LIMIT: Record<ApiKeyRow['tier'], number> = {
   free: 1000,
   pro: 500000,
 }
+
+function getApiKeyHashSecret() {
+  const secret = process.env.SIMULAMEI_API_KEY_SECRET
+  if (!secret) {
+    throw new Error('SIMULAMEI_API_KEY_SECRET é obrigatório para validar chaves da API pública.')
+  }
+
+  return secret
+}
+
+const API_KEY_HASH_SECRET = getApiKeyHashSecret()
 
 function getBearerToken(request: NextRequest) {
   const header = request.headers.get('authorization') ?? ''
@@ -26,10 +41,7 @@ function getBearerToken(request: NextRequest) {
 }
 
 function hashApiKey(key: string) {
-  const secret = process.env.SIMULAMEI_API_KEY_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!secret) return null
-
-  return createHmac('sha256', secret).update(key).digest('hex')
+  return createHmac('sha256', API_KEY_HASH_SECRET).update(key).digest('hex')
 }
 
 function parseNumberParam(request: NextRequest, name: string) {
@@ -52,14 +64,11 @@ export async function GET(request: NextRequest) {
   }
 
   const keyHash = hashApiKey(token)
-  if (!keyHash) {
-    return NextResponse.json({ error: 'API keys não configuradas neste ambiente.' }, { status: 503 })
-  }
 
   const admin = createAdminClient()
   const { data: apiKey, error: apiKeyError } = await admin
     .from('api_keys')
-    .select('id,user_id,tier,requests_month,revoked_at')
+    .select('id,user_id,tier,revoked_at')
     .eq('key_hash', keyHash)
     .maybeSingle()
 
@@ -71,15 +80,6 @@ export async function GET(request: NextRequest) {
   const key = apiKey as ApiKeyRow | null
   if (!key || key.revoked_at) {
     return NextResponse.json({ error: 'Chave inválida ou revogada.' }, { status: 401 })
-  }
-
-  const monthlyLimit = TIER_MONTHLY_LIMIT[key.tier] ?? TIER_MONTHLY_LIMIT.free
-  const currentUsage = key.requests_month ?? 0
-  if (currentUsage >= monthlyLimit) {
-    return NextResponse.json(
-      { error: 'Limite mensal da API atingido.', limit: monthlyLimit, used: currentUsage },
-      { status: 429 },
-    )
   }
 
   const faturamentoAcumulado = parseNumberParam(request, 'faturamentoAcumulado')
@@ -109,6 +109,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'CNAE não reconhecido.' }, { status: 400 })
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: quotaData, error: quotaError } = await (admin as any)
+    .rpc('increment_quota', { p_api_key_id: key.id })
+
+  if (quotaError) {
+    console.error('[/api/contadores/simulate] quota rpc error:', quotaError.message)
+    return NextResponse.json({ error: 'Não foi possível contabilizar o uso da chave.' }, { status: 500 })
+  }
+
+  const quota = (Array.isArray(quotaData) ? quotaData[0] : quotaData) as QuotaRow | undefined
+  if (!quota) {
+    return NextResponse.json(
+      {
+        error: 'Limite mensal da API atingido.',
+        limit: TIER_MONTHLY_LIMIT[key.tier] ?? TIER_MONTHLY_LIMIT.free,
+      },
+      { status: 429 },
+    )
+  }
+
   const entrada: EntradaSimulacao = {
     faturamentoAcumulado,
     mesAtual,
@@ -118,20 +138,11 @@ export async function GET(request: NextRequest) {
   }
   const resultado = simular(entrada)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (admin as any)
-    .from('api_keys')
-    .update({
-      requests_month: currentUsage + 1,
-      last_used_at: new Date().toISOString(),
-    })
-    .eq('id', key.id)
-
   return NextResponse.json({
     ok: true,
     usage: {
-      used: currentUsage + 1,
-      limit: monthlyLimit,
+      used: quota.requests_month,
+      limit: quota.monthly_limit,
     },
     resultado,
   })

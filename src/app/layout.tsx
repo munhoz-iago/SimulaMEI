@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google'
+import { headers } from 'next/headers'
 import Script from 'next/script'
 import { PostHogProvider } from '@/components/providers/PostHogProvider'
 import {
@@ -74,11 +75,13 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const nonce = (await headers()).get('x-nonce') ?? undefined
+
   return (
     <html
       lang="pt-BR"
@@ -87,7 +90,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <Script id="simulamei-theme-init" strategy="beforeInteractive">
+        <Script id="simulamei-theme-init" strategy="beforeInteractive" nonce={nonce}>
           {`
             (function() {
               try {

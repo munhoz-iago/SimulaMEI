@@ -1,6 +1,0 @@
-export { Tooltip } from './Tooltip'
-export { Badge } from './Badge'
-export { Tag } from './Tag'
-export { MonoVal } from './MonoVal'
-export { Divider } from './Divider'
-export { LoadSpinner } from './LoadSpinner'

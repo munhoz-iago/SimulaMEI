@@ -2,6 +2,9 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { ResultadoSimulacao } from '@/types/tributario'
 import { getCnae } from '@/lib/tributario'
 
+const DIAGNOSTICO_MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5'
+const DIAGNOSTICO_MAX_TOKENS = 1024
+
 export interface DiagnosticoFiscal {
   resumoExecutivo: string
   situacaoTeto: {
@@ -136,8 +139,8 @@ export async function gerarDiagnosticoFiscal(
   const prompt = buildPrompt(resultado)
 
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5',
-    max_tokens: 2048,
+    model: DIAGNOSTICO_MODEL,
+    max_tokens: DIAGNOSTICO_MAX_TOKENS,
     messages: [{ role: 'user', content: prompt }],
   })
 
