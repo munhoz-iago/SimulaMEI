@@ -64,3 +64,35 @@
 .hero-gradient-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: linear-gradient(to bottom, transparent, var(--bg0)); pointer-events: none; }
 .alert-banner { position: relative; overflow: hidden; }
 section { width: 100%; }
+
+/* ── Simulator CTAs ─────────────────────────────────────────── */
+.sim-cta-primary {
+  flex: 1; padding: 16px 24px;
+  border-radius: var(--radius); font-weight: 700; font-size: 15px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition:
+    transform 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out),
+    background-color 160ms ease,
+    color 160ms ease;
+}
+.sim-cta-primary:not([disabled]):hover {
+  transform: translateY(-2px);
+  box-shadow: var(--lime-glow);
+}
+.sim-cta-primary[disabled] { cursor: not-allowed; }
+
+.sim-cta-secondary {
+  padding: 16px 20px;
+  background: none; color: var(--text2);
+  border: 1px solid var(--border2); border-radius: var(--radius);
+  font-size: 14px; font-weight: 500;
+  display: flex; align-items: center;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 160ms ease,
+    color 160ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .sim-cta-secondary:hover { border-color: var(--text2); color: var(--text1); transform: translateY(-1px); }
+}

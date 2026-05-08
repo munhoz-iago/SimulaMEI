@@ -144,8 +144,8 @@ export function SimulatorSection({ onResults }: SimulatorSectionProps) {
     <section id="simulador" style={{ padding: '92px 0 70px' }}>
       <div className="section-shell">
         <div className="im-section-header">
-          <span className="im-section-number">01 / Simulador</span>
-          <div>
+          <span className="im-section-number" data-reveal>01 / Simulador</span>
+          <div data-reveal style={{ '--reveal-delay': '80' } as React.CSSProperties}>
             <h2 className="im-section-title">Entrada curta, leitura fiscal completa.</h2>
             <p className="im-section-lead">
               O formulário mantém só o que muda a decisão: faturamento, mês, atividade e folha. A prévia lateral transforma cada ajuste em consequência tributária.
@@ -157,7 +157,7 @@ export function SimulatorSection({ onResults }: SimulatorSectionProps) {
           className="sim-grid"
         >
           {/* ── Left: form ───────────────────────────────────── */}
-          <div className="fade-up instrument-panel" style={{ padding: 28 }}>
+          <div className="instrument-panel" data-reveal style={{ '--reveal-delay': '140', padding: 28 } as React.CSSProperties}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               <div style={{ width: 28, height: 2, background: 'var(--lime)' }} />
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--lime)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
@@ -361,26 +361,12 @@ export function SimulatorSection({ onResults }: SimulatorSectionProps) {
             <div style={{ display: 'flex', gap: 12, marginTop: 36 }}>
               <button
                 type="button"
-                className="pressable"
+                className="pressable sim-cta-primary"
                 onClick={handleSimular}
                 disabled={!cnae || cnaePendente || loading}
                 style={{
-                  flex: 1, padding: '16px 24px',
                   background: cnae && !cnaePendente ? 'var(--lime)' : 'var(--bg3)',
                   color: cnae && !cnaePendente ? 'var(--ink-on-accent)' : 'var(--text3)',
-                  borderRadius: 'var(--radius)', fontWeight: 700, fontSize: 15,
-                  cursor: cnae && !cnaePendente ? 'pointer' : 'not-allowed',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                }}
-                onMouseEnter={e => {
-                  if (cnae && !cnaePendente) {
-                    e.currentTarget.style.transform = 'translateY(-1px)'
-                    e.currentTarget.style.boxShadow = 'var(--lime-glow)'
-                  }
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = 'none'
                 }}
               >
                 {loading ? (
@@ -396,23 +382,7 @@ export function SimulatorSection({ onResults }: SimulatorSectionProps) {
               </button>
               <a
                 href="#como-calcula"
-                className="pressable"
-                style={{
-                  padding: '16px 20px',
-                  background: 'none', color: 'var(--text2)',
-                  border: '1px solid var(--border2)', borderRadius: 'var(--radius)',
-                  fontSize: 14, fontWeight: 500, cursor: 'pointer',
-                  transition: 'transform 160ms var(--ease-out), border-color 160ms ease, color 160ms ease, background-color 160ms ease',
-                  display: 'flex', alignItems: 'center',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = 'var(--text2)'
-                  e.currentTarget.style.color = 'var(--text1)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'var(--border2)'
-                  e.currentTarget.style.color = 'var(--text2)'
-                }}
+                className="pressable sim-cta-secondary"
               >
                 Como calcula
               </a>
@@ -425,7 +395,7 @@ export function SimulatorSection({ onResults }: SimulatorSectionProps) {
           </div>
 
           {/* ── Right: live preview panel ─────────────────────── */}
-          <div className="fade-up-2 desktop-only">
+          <div className="desktop-only" data-reveal style={{ '--reveal-delay': '200' } as React.CSSProperties}>
             <LivePreviewPanel
               fat={fat}
               mes={mes}
