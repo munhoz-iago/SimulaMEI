@@ -21,17 +21,6 @@ const TIER_MONTHLY_LIMIT: Record<ApiKeyRow['tier'], number> = {
   pro: 500000,
 }
 
-function getApiKeyHashSecret() {
-  const secret = process.env.SIMULAMEI_API_KEY_SECRET
-  if (!secret) {
-    throw new Error('SIMULAMEI_API_KEY_SECRET é obrigatório para validar chaves da API pública.')
-  }
-
-  return secret
-}
-
-const API_KEY_HASH_SECRET = getApiKeyHashSecret()
-
 function getBearerToken(request: NextRequest) {
   const header = request.headers.get('authorization') ?? ''
   const [scheme, token] = header.split(/\s+/, 2)
@@ -40,8 +29,8 @@ function getBearerToken(request: NextRequest) {
   return token.trim()
 }
 
-function hashApiKey(key: string) {
-  return createHmac('sha256', API_KEY_HASH_SECRET).update(key).digest('hex')
+function hashApiKey(key: string, secret: string) {
+  return createHmac('sha256', secret).update(key).digest('hex')
 }
 
 function parseNumberParam(request: NextRequest, name: string) {
@@ -58,12 +47,17 @@ function parseTipoMei(value: string | null): EntradaSimulacao['tipoMei'] | null 
 }
 
 export async function GET(request: NextRequest) {
+  const secret = process.env.SIMULAMEI_API_KEY_SECRET
+  if (!secret) {
+    return NextResponse.json({ error: 'Configuração interna ausente.' }, { status: 500 })
+  }
+
   const token = getBearerToken(request)
   if (!token) {
     return NextResponse.json({ error: 'Authorization Bearer obrigatório.' }, { status: 401 })
   }
 
-  const keyHash = hashApiKey(token)
+  const keyHash = hashApiKey(token, secret)
 
   const admin = createAdminClient()
   const { data: apiKey, error: apiKeyError } = await admin
