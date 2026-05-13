@@ -326,10 +326,22 @@
   }
 }
 
-/* Pulse animation pro dot de "alertas abertos" */
+/* Pulse animation pro dot de "alertas abertos" e trial urgente */
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(1.15); }
+}
+
+/* Grid de planos da página assinatura — responsivo */
+@media (max-width: 960px) {
+  .acc-plans-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+@media (max-width: 600px) {
+  .acc-plans-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* details/summary com chevron rotacionando */

@@ -3,6 +3,9 @@
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BRAZIL_UF_OPTIONS } from '@/constants/onboarding'
+import { CnaeAutocomplete } from '@/components/simulador/CnaeAutocomplete'
+import { getCnae } from '@/lib/tributario'
+import type { CnaeInfo } from '@/types/tributario'
 import type { OfficeClientRecord } from '@/lib/accountant/server'
 
 interface OfficeClientFormProps {
@@ -35,7 +38,10 @@ export function OfficeClientForm({ mode, client }: OfficeClientFormProps) {
   const router = useRouter()
   const [nome, setNome] = useState(client?.name ?? '')
   const [email, setEmail] = useState(client?.email ?? '')
-  const [cnae, setCnae] = useState(client?.cnae ?? '')
+  // CNAE agora vem do autocomplete — pre-popula em edição via getCnae()
+  const initialCnae = client?.cnae ? getCnae(client.cnae) ?? null : null
+  const [cnaeInfo, setCnaeInfo] = useState<CnaeInfo | null>(initialCnae)
+  const cnae = cnaeInfo?.cnae ?? ''
   const [tipoMei, setTipoMei] = useState(client?.tipo_mei ?? 'geral')
   const [uf, setUf] = useState(client?.uf ?? '')
   const [municipio, setMunicipio] = useState(client?.municipio ?? '')
@@ -45,6 +51,11 @@ export function OfficeClientForm({ mode, client }: OfficeClientFormProps) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!cnae) {
+      setError('Selecione um CNAE da lista para continuar.')
+      setState('error')
+      return
+    }
     setState('loading')
     setError('')
 
@@ -91,13 +102,27 @@ export function OfficeClientForm({ mode, client }: OfficeClientFormProps) {
         </label>
       </div>
 
-      <div className="accountant-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 0.6fr 0.5fr', gap: 14 }}>
-        <label htmlFor="office-client-cnae" style={labelStyle}>
-          CNAE
-          <input id="office-client-cnae" value={cnae} onChange={event => setCnae(event.target.value)} required placeholder="4712-1/00" style={inputStyle} />
-        </label>
+      <div style={labelStyle}>
+        <label htmlFor="office-client-cnae">CNAE</label>
+        <CnaeAutocomplete
+          inputId="office-client-cnae"
+          value={cnaeInfo}
+          onChange={(next) => {
+            setCnaeInfo(next)
+            // Auto-detecta MEI caminhoneiro pelo código
+            if (next?.cnae === '4930-2/02') setTipoMei('caminhoneiro')
+            else if (cnaeInfo?.cnae === '4930-2/02' && next?.cnae !== '4930-2/02') setTipoMei('geral')
+          }}
+          origin="contador-clientes-novo"
+        />
+        <p style={{ fontSize: 11, color: 'var(--text3)', margin: '4px 0 0', fontWeight: 500 }}>
+          Busque pelo código (ex: 6201-5/01) ou descrição da atividade. 1.331 CNAEs oficiais cadastrados.
+        </p>
+      </div>
+
+      <div className="accountant-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <label htmlFor="office-client-tipo" style={labelStyle}>
-          Tipo
+          Tipo de MEI
           <select id="office-client-tipo" value={tipoMei} onChange={event => setTipoMei(event.target.value)} style={inputStyle}>
             <option value="geral">MEI geral</option>
             <option value="caminhoneiro">MEI caminhoneiro</option>
@@ -106,7 +131,7 @@ export function OfficeClientForm({ mode, client }: OfficeClientFormProps) {
         <label htmlFor="office-client-uf" style={labelStyle}>
           UF
           <select id="office-client-uf" value={uf} onChange={event => setUf(event.target.value)} style={inputStyle}>
-            <option value="">UF</option>
+            <option value="">Selecione</option>
             {BRAZIL_UF_OPTIONS.map(option => (
               <option key={option} value={option}>{option}</option>
             ))}
