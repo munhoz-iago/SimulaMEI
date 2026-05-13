@@ -1,9 +1,11 @@
 export function Pill({
   children,
   color = 'var(--text3)',
+  style,
 }: {
   children: React.ReactNode
   color?: string
+  style?: React.CSSProperties
 }) {
   return (
     <span
@@ -20,6 +22,7 @@ export function Pill({
         textTransform: 'uppercase',
         letterSpacing: 0,
         whiteSpace: 'nowrap',
+        ...style,
       }}
     >
       {children}

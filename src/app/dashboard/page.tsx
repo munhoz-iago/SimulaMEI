@@ -237,415 +237,577 @@ export default async function DashboardPage() {
     !simulationsError,
   ].filter(Boolean).length
 
+  const userName = profile?.nome ?? user.email?.split('@')[0] ?? 'você'
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
+  const fatorRValue = latest?.fatorR?.fatorR
+  const tetoColor = metricTone(tetoTone)
+
   return (
-    <main style={{
-      minHeight: '100vh',
-      background: 'var(--bg0)',
-      color: 'var(--text1)',
-      padding: '32px 24px 56px',
-    }}>
-      <div style={{ maxWidth: 1220, margin: '0 auto' }}>
-        <header className="dashboard-header" style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) auto',
-          gap: 24,
-          alignItems: 'start',
-          marginBottom: 28,
-        }}>
-          <div>
-            <Link href="/" className="quiet-link">
-              Voltar ao simulador
-            </Link>
-            <h1 style={{
-              fontSize: 'clamp(28px, 6vw, 56px)',
-              margin: '14px 0 10px',
-              lineHeight: 0.96,
-              letterSpacing: 0,
-              maxWidth: 760,
-            }}>
-              Central fiscal do seu MEI
-            </h1>
-            <p style={{ color: 'var(--text2)', fontSize: 14, lineHeight: 1.7, maxWidth: 700 }}>
-              {user.email} · Motor {TAX_RULE_VERSION} · {CNAE_OFICIAL_TOTAL.toLocaleString('pt-BR')} CNAEs oficiais monitorados
-            </p>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg0)', color: 'var(--text1)' }}>
+
+      {/* ── Sidebar ─────────────────────────────────────────────── */}
+      <aside style={{
+        width: 64,
+        background: 'var(--bg1)',
+        borderRight: '1px solid var(--border)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '20px 0 16px',
+        gap: 4,
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        flexShrink: 0,
+        zIndex: 10,
+      }}>
+        {/* Logo mark */}
+        <Link href="/" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 32, height: 32, background: 'var(--lime)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-on-accent)" strokeWidth="2.5">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
           </div>
+        </Link>
 
-          <div className="dashboard-header-actions" style={{ display: 'grid', gap: 12, justifyItems: 'end' }}>
-            <Pill color={PLAN_ACCENT_COLORS[currentPlan]}>
-              {PLAN_LABELS[currentPlan]}
-            </Pill>
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="dashboard-action dashboard-secondary-action"
-                style={{
-                  padding: '10px 14px',
-                  fontSize: 13,
-                  fontWeight: 700,
-                }}
-              >
-                Sair
-              </button>
-            </form>
-          </div>
-        </header>
+        {/* Nav icons */}
+        {[
+          { href: '/dashboard', label: 'Dashboard', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></> },
+          { href: '/#simulador', label: 'Simulador', icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></> },
+          { href: '/relatorio', label: 'Relatório', icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></> },
+          { href: '/aprenda', label: 'Aprenda', icon: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></> },
+        ].map(nav => (
+          <Link
+            key={nav.href}
+            href={nav.href}
+            title={nav.label}
+            style={{
+              width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: 8, color: 'var(--text3)', transition: 'all .15s',
+            }}
+            onMouseEnter={undefined}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              {nav.icon}
+            </svg>
+          </Link>
+        ))}
 
-        <section className="dashboard-hero-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: '1.25fr 0.75fr',
-          gap: 16,
-          marginBottom: 16,
-        }}>
-          <Panel style={{ padding: 28, minHeight: 260 }}>
-            <div className="dashboard-radar-header" style={{ display: 'flex', justifyContent: 'space-between', gap: 20, alignItems: 'start', marginBottom: 26 }}>
-              <div>
-                <Pill color={metricTone(tetoTone)}>Radar principal</Pill>
-                <h2 style={{ fontSize: 28, lineHeight: 1.05, margin: '14px 0 8px', maxWidth: 620 }}>
-                  {latest
-                    ? latest.alertaTeto.cenario === 'dentro_limite'
-                      ? 'Seu cenário mais recente ainda cabe no MEI'
-                      : 'Seu cenário mais recente exige atenção tributária'
-                    : 'Faça a primeira simulação para ativar o radar'}
-                </h2>
-                <p style={{ color: 'var(--text2)', lineHeight: 1.7, fontSize: 14, maxWidth: 620 }}>
-                  {latest
-                    ? `Última simulação: CNAE ${latest.entrada.cnae}${latestCnae ? ` · ${latestCnae.descricao}` : ''}.`
-                    : 'O dashboard nasce das simulações. Depois da primeira análise, ele passa a acompanhar teto MEI, Fator R, regime mais barato e oportunidades.'}
-                </p>
-              </div>
-              <div className="dashboard-radar-score" style={{ textAlign: 'right', minWidth: 150 }}>
-                <div style={{ color: 'var(--text3)', fontSize: 11, textTransform: 'uppercase', fontWeight: 800, marginBottom: 6 }}>
-                  Uso do teto
-                </div>
-                <div style={{
-                  fontFamily: 'var(--mono)',
-                  color: metricTone(tetoTone),
-                  fontSize: 42,
-                  fontWeight: 800,
-                  lineHeight: 1,
-                }}>
-                  {latest ? fmtPct(usoTeto) : '0,0%'}
-                </div>
-              </div>
+        {/* Bottom: logout */}
+        <form action={logoutAction} style={{ marginTop: 'auto' }}>
+          <button
+            type="submit"
+            title="Sair"
+            style={{
+              width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: 8, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer',
+              transition: 'all .15s',
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </form>
+      </aside>
+
+      {/* ── Main content ─────────────────────────────────────────── */}
+      <main style={{ flex: 1, minWidth: 0, padding: '32px 32px 56px', overflowX: 'hidden' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+
+          {/* ── Top header ──────────────────────────────────────── */}
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, gap: 20 }}>
+            <div>
+              <h1 style={{ fontSize: 'clamp(22px, 3vw, 28px)', fontWeight: 800, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+                {greeting}, {userName}
+              </h1>
+              <p style={{ color: 'var(--text3)', fontSize: 13, margin: 0 }}>
+                Acompanhe seu teto MEI, regime fiscal e oportunidades em tempo real.
+              </p>
             </div>
-
-            <div
-              role="progressbar"
-              aria-label="Uso do teto MEI"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(Math.min(100, Math.max(0, usoTeto * 100)) * 10) / 10}
-              style={{
-              height: 12,
-              background: 'var(--bg2)',
-              borderRadius: 999,
-              border: '1px solid var(--border)',
-              overflow: 'hidden',
-              marginBottom: 22,
-            }}>
-              <div style={{
-                width: `${Math.min(100, Math.max(0, usoTeto * 100))}%`,
-                height: '100%',
-                background: metricTone(tetoTone),
-                borderRadius: 999,
-              }} />
-            </div>
-
-            <div className="dashboard-radar-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
-              {[
-                ['Projeção anual', latest ? fmt(latest.alertaTeto.projecaoAnual) : 'Sem dados'],
-                ['Melhor regime', latest ? REGIME_LABELS[latest.comparativo.melhorRegime] : 'Aguardando'],
-                ['Impacto estimado', impactoTotal > 0 ? `${fmt(impactoTotal)}/ano` : latest ? 'Sem economia clara' : 'Aguardando'],
-              ].map(([label, value]) => (
-                <div key={label} className="metric-card">
-                  <div className="metric-card-label">
-                    {label}
-                  </div>
-                  <div className="metric-card-value">{value}</div>
-                </div>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel style={{ padding: 24 }}>
-            <Pill color="var(--blue)">Perspectivas</Pill>
-            <h2 style={{ fontSize: 22, lineHeight: 1.1, margin: '14px 0 18px' }}>
-              Maturidade do sistema
-            </h2>
-            <div style={{ display: 'grid', gap: 12 }}>
-              {[
-                ['Simulação fiscal', latest ? 'ativa' : 'pendente'],
-                ['Oportunidades', oportunidades.length ? `${oportunidades.length} achadas` : 'sem leitura'],
-                ['CNAEs monitorados', monitoredCnaes ? `${monitoredCnaes} nesta conta` : 'sem histórico'],
-                ['Fonte oficial', simulationsError ? 'schema pendente' : 'operacional'],
-              ].map(([label, status]) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
-                  <span style={{ color: 'var(--text2)', fontSize: 13 }}>{label}</span>
-                  <strong style={{ color: 'var(--text1)', fontSize: 13 }}>{status}</strong>
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 20, fontFamily: 'var(--mono)', fontSize: 34, color: 'var(--lime)', fontWeight: 800 }}>
-              {completedPerspectiveCount}/4
-            </div>
-            <p style={{ color: 'var(--text3)', fontSize: 12, lineHeight: 1.6, marginTop: 6 }}>
-              Quanto mais dados de simulação, mais forte fica o diagnóstico mensal.
-            </p>
-          </Panel>
-        </section>
-
-        <section className="dashboard-kpi-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-          gap: 16,
-          marginBottom: 16,
-        }}>
-          {[
-            ['Simulações', simulations.length.toString(), 'histórico salvo'],
-            ['CNAEs', monitoredCnaes.toString(), 'usados nesta conta'],
-            ['Alertas', latest && latest.alertaTeto.cenario !== 'dentro_limite' ? '1' : '0', 'teto MEI'],
-            ['Oportunidades', oportunidades.length.toString(), impactoTotal > 0 ? fmt(impactoTotal) : 'sem economia'],
-          ].map(([label, value, detail]) => (
-            <Panel key={label} className="surface-hover" style={{ padding: 20 }}>
-              <div style={{ color: 'var(--text3)', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', marginBottom: 8 }}>
-                {label}
-              </div>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 32, color: 'var(--text1)', fontWeight: 800, lineHeight: 1 }}>
-                {value}
-              </div>
-              <div style={{ color: 'var(--text2)', fontSize: 12, marginTop: 8 }}>{detail}</div>
-            </Panel>
-          ))}
-        </section>
-
-        <section className="dashboard-main-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 16,
-          marginBottom: 16,
-        }}>
-          <Panel style={{ padding: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', marginBottom: 18 }}>
-              <div>
-                <Pill color="var(--lime)">Motor de oportunidades</Pill>
-                <h2 style={{ fontSize: 22, margin: '12px 0 0' }}>Próximas melhores ações</h2>
-              </div>
-              <Link
-                href={freeSimulationLimitReached ? '/upgrade' : '/#simulador'}
-                className="dashboard-action dashboard-primary-action"
-                style={{
-                  padding: '10px 13px',
-                  fontSize: 13,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {freeSimulationLimitReached ? 'Fazer upgrade' : 'Nova simulação'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
+                Motor {TAX_RULE_VERSION}
+              </span>
+              <Pill color={PLAN_ACCENT_COLORS[currentPlan]}>
+                {PLAN_LABELS[currentPlan]}
+              </Pill>
+              <Link href="/" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>
+                ← Simulador
               </Link>
             </div>
+          </header>
 
-            {currentPlan === 'free' && (
-              <div style={{
-                marginBottom: 16,
-                padding: '13px 14px',
-                borderRadius: 'var(--radius)',
-                border: `1px solid ${freeSimulationLimitReached ? 'rgba(255,74,74,0.28)' : 'var(--border)'}`,
-                background: freeSimulationLimitReached ? 'rgba(255,74,74,0.08)' : 'var(--bg2)',
-                color: freeSimulationLimitReached ? 'var(--red)' : 'var(--text2)',
-                fontSize: 13,
-                lineHeight: 1.55,
-              }}>
-                {simulationsUsed} de {FREE_SIMULATION_LIMIT} simulações usadas no Plano Free.
-                {freeSimulationLimitReached && (
-                  <strong style={{ color: 'var(--text1)' }}> Faça upgrade para liberar novas análises.</strong>
-                )}
+          {/* ── Row 1: 3 colunas principais ─────────────────────── */}
+          <section style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr 0.9fr', gap: 16, marginBottom: 16 }} className="db-row1">
+
+            {/* Card 1: Teto MEI (= Total Balance) */}
+            <Panel style={{ padding: 28 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>
+                  Uso do Teto MEI
+                </span>
+                <Pill color={tetoColor}>{tetoTone === 'ok' ? 'Saudável' : tetoTone === 'warn' ? 'Atenção' : tetoTone === 'danger' ? 'Crítico' : 'Neutro'}</Pill>
               </div>
-            )}
 
-            {oportunidades.length > 0 ? (
-              <div style={{ display: 'grid', gap: 12 }}>
-                {oportunidades.slice(0, 3).map(item => (
-                  <article key={item.id} style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 16 }}>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-                      <Pill color={item.prioridade === 'alta' ? 'var(--lime)' : 'var(--yellow)'}>
-                        {item.prioridade}
-                      </Pill>
-                      <Pill>{item.confianca}</Pill>
-                    </div>
-                    <h3 style={{ fontSize: 15, margin: '0 0 6px', lineHeight: 1.3 }}>{item.titulo}</h3>
-                    <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.6, margin: 0 }}>{item.resumo}</p>
-                  </article>
-                ))}
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 48, fontWeight: 900, color: tetoColor, lineHeight: 1, marginBottom: 6 }}>
+                {latest ? fmtPct(usoTeto) : '—'}
               </div>
-            ) : (
-              <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 18 }}>
-                <h3 style={{ fontSize: 16, margin: '0 0 8px' }}>Ainda sem oportunidade calculada</h3>
-                <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
-                  Rode uma simulação com faturamento, CNAE e folha para o motor gerar economia potencial, alerta de teto e comparativo de regimes.
-                </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 24 }}>
+                <span style={{ fontSize: 12, color: tetoColor }}>
+                  {latest
+                    ? latest.alertaTeto.cenario === 'dentro_limite' ? '↑ dentro do limite' : '⚠ fora do limite'
+                    : 'sem simulação'}
+                </span>
+                <span style={{ fontSize: 12, color: 'var(--text3)' }}>em relação ao teto anual</span>
               </div>
-            )}
-          </Panel>
 
-          <Panel style={{ padding: 24 }}>
-            <Pill color="var(--blue)">Histórico</Pill>
-            <h2 style={{ fontSize: 22, margin: '12px 0 18px' }}>Últimas simulações</h2>
-
-            {simulationsError ? (
-              <div style={{ background: 'rgba(255,204,0,0.08)', border: '1px solid rgba(255,204,0,0.24)', borderRadius: 'var(--radius)', padding: 16 }}>
-                <h3 style={{ fontSize: 15, margin: '0 0 8px', color: 'var(--yellow)' }}>Schema pendente no Supabase</h3>
-                <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
-                  Não consegui ler a tabela <strong>simulations</strong>. O dashboard continua funcional, mas o histórico precisa da tabela e das políticas RLS.
-                </p>
+              {/* Botões de ação */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+                <Link
+                  href={freeSimulationLimitReached ? '/upgrade' : '/#simulador'}
+                  className="dashboard-action dashboard-primary-action"
+                  style={{ padding: '9px 16px', fontSize: 13, flex: 1, justifyContent: 'center' }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  {freeSimulationLimitReached ? 'Upgrade' : 'Simular'}
+                </Link>
+                <Link
+                  href="/relatorio"
+                  className="dashboard-action dashboard-secondary-action"
+                  style={{ padding: '9px 16px', fontSize: 13 }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  PDF
+                </Link>
               </div>
-            ) : simulations.length > 0 ? (
-              <div style={{ display: 'grid', gap: 10 }}>
-                {simulations.map(item => (
-                  <div key={item.id} style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr auto',
-                    gap: 12,
-                    alignItems: 'center',
-                    padding: '13px 0',
-                    borderBottom: '1px solid var(--border)',
-                  }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 800 }}>{item.entrada.cnae}</div>
-                      <div style={{ color: 'var(--text3)', fontSize: 12, marginTop: 4 }}>
-                        {formatDate(item.created_at)} · {fmt(item.resultado.alertaTeto.projecaoAnual)} projetado
-                      </div>
-                    </div>
-                    <Pill color={item.resultado.alertaTeto.cenario === 'dentro_limite' ? 'var(--lime)' : 'var(--yellow)'}>
-                      {item.resultado.alertaTeto.cenario.replace('_', ' ')}
-                    </Pill>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 18 }}>
-                <h3 style={{ fontSize: 16, margin: '0 0 8px' }}>Nenhuma simulação salva ainda</h3>
-                <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
-                  Faça uma simulação logado para começar o histórico e ativar o acompanhamento mensal.
-                </p>
-              </div>
-            )}
-          </Panel>
-        </section>
 
-        <section className="dashboard-main-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 16,
-          marginBottom: 16,
-        }}>
-          <Panel style={{ padding: 24 }}>
-            <Pill color="var(--lime)">Monitor recorrente</Pill>
-            <h2 style={{ fontSize: 22, margin: '12px 0 18px' }}>Rotina mensal do regime</h2>
-            {profile?.cnae_principal && profile?.tipo_mei ? (
-              <MonthlyMonitorSection
-                cnae={profile.cnae_principal}
-                tipoMei={profile.tipo_mei}
-                defaultMonth={profile.mes_atual ?? currentMonth}
-                defaultYear={currentYear}
-                defaultRevenue={profile.faturamento_mensal_estimado ?? 0}
-                defaultPayroll={profile.folha_mensal ?? 0}
-                initialSummary={monitorSummary}
-                initialTransition={monitorTransition}
-                recentRows={monthlyInputs.map(item => ({
-                  ano: item.ano,
-                  mes: item.mes,
-                  faturamentoMes: Number(item.faturamento_mes),
-                  folhaMes: Number(item.folha_mes),
-                  anexoCalculado: item.anexo_calculado,
-                  fatorR: item.fator_r,
-                }))}
-                monthlyInputsError={monthlyInputsError}
-              />
-            ) : (
-              <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
-                Complete o onboarding para ativar o monitor mensal com histórico e alerta de anexo.
-              </p>
-            )}
-          </Panel>
-
-          <Panel style={{ padding: 24 }}>
-            <Pill color="var(--blue)">Calendário fiscal</Pill>
-            <h2 style={{ fontSize: 22, margin: '12px 0 18px' }}>Próximos toques do sistema</h2>
-            <div style={{ display: 'grid', gap: 12 }}>
-              {calendarItems.map(item => (
-                <article key={item.title} style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
-                    <strong style={{ fontSize: 14 }}>{item.title}</strong>
-                    <Pill color={item.channel === 'email' ? 'var(--lime)' : 'var(--blue)'}>
-                      {item.channel}
-                    </Pill>
-                  </div>
-                  <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
-                    {item.body}
-                  </p>
-                </article>
-              ))}
-            </div>
-
-            {latest?.fatorR && (
-              <div style={{ marginTop: 18 }}>
-                <Pill color="var(--yellow)">Pró-labore interativo</Pill>
-                <div style={{ marginTop: 12 }}>
-                  <FatorRInterativo
-                    projecao={latest.alertaTeto.projecaoAnual}
-                    fatorRInicial={latest.fatorR.fatorR}
-                  />
+              {/* Barra de teto */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>Teto MEI {new Date().getFullYear()}</span>
+                  <span style={{ fontSize: 11, fontFamily: 'var(--mono)', color: tetoColor }}>
+                    {latest ? fmt(latest.alertaTeto.faturamentoAcumulado) : 'R$ 0'} de {latest ? fmt(latest.alertaTeto.tetoAnual) : 'R$ 130.000'}
+                  </span>
+                </div>
+                <div role="progressbar" aria-label="Uso do teto MEI" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(Math.min(100, usoTeto * 100))} style={{ height: 8, background: 'var(--bg3)', borderRadius: 999, overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.min(100, Math.max(0, usoTeto * 100))}%`, height: '100%', background: tetoColor, borderRadius: 999 }} />
                 </div>
               </div>
-            )}
-          </Panel>
-        </section>
 
-        <section style={{ marginBottom: 16 }}>
-          <Panel className="surface-hover" style={{
-            padding: 28,
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) auto',
-            gap: 18,
-            alignItems: 'center',
-            borderColor: 'rgba(200,241,53,0.24)',
-          }}>
-            <div>
-              <Pill color="var(--lime)">Relatório premium</Pill>
-              <h2 style={{ fontSize: 24, margin: '14px 0 8px' }}>PDF fiscal pronto para enviar ao contador</h2>
-              <p style={{ color: 'var(--text2)', fontSize: 14, lineHeight: 1.7, margin: 0, maxWidth: 760 }}>
-                Converta o cenário mais recente em memória de cálculo, comparativo de regimes e evidências de teto em um arquivo compartilhável.
-              </p>
+              {/* 3 métricas */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                {[
+                  { label: 'Projeção 12m', value: latest ? fmt(latest.alertaTeto.projecaoAnual) : '—' },
+                  { label: 'Melhor regime', value: latest ? REGIME_LABELS[latest.comparativo.melhorRegime] : '—' },
+                  { label: 'Economia est.', value: impactoTotal > 0 ? fmt(impactoTotal) : latest ? '—' : '—' },
+                ].map(m => (
+                  <div key={m.label} style={{ background: 'var(--bg2)', borderRadius: 'var(--radius)', padding: '10px 12px' }}>
+                    <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.value}</div>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+
+            {/* Card 2: 2×2 métricas rápidas */}
+            <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 16 }}>
+              {/* Linha superior */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <Panel style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'var(--lime)', borderRadius: '8px 8px 0 0' }} />
+                  <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>Projeção</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 900, color: 'var(--lime)', lineHeight: 1 }}>
+                    {latest ? fmt(latest.alertaTeto.projecaoAnual) : '—'}
+                  </span>
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>anual estimado</span>
+                </Panel>
+                <Panel style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: fatorRValue != null ? (fatorRValue >= 0.28 ? 'var(--lime)' : 'var(--orange)') : 'var(--border)', borderRadius: '8px 8px 0 0' }} />
+                  <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>Fator R</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 900, color: fatorRValue != null ? (fatorRValue >= 0.28 ? 'var(--lime)' : 'var(--orange)') : 'var(--text3)', lineHeight: 1 }}>
+                    {fatorRValue != null ? fmtPct(fatorRValue) : '—'}
+                  </span>
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>{fatorRValue != null ? (fatorRValue >= 0.28 ? 'elegível Anexo III' : 'abaixo de 28%') : 'não calculado'}</span>
+                </Panel>
+              </div>
+              {/* Linha inferior */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <Panel style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'var(--blue)', borderRadius: '8px 8px 0 0' }} />
+                  <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>Simulações</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 900, color: 'var(--blue)', lineHeight: 1 }}>
+                    {simulationsUsed}
+                  </span>
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    {currentPlan === 'free' ? `de ${FREE_SIMULATION_LIMIT} no free` : 'ilimitadas'}
+                  </span>
+                </Panel>
+                <Panel style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: oportunidades.length > 0 ? 'var(--yellow)' : 'var(--border)', borderRadius: '8px 8px 0 0' }} />
+                  <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>Oportunidades</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 900, color: oportunidades.length > 0 ? 'var(--yellow)' : 'var(--text3)', lineHeight: 1 }}>
+                    {oportunidades.length}
+                  </span>
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    {impactoTotal > 0 ? `${fmt(impactoTotal)}/ano` : 'identificadas'}
+                  </span>
+                </Panel>
+              </div>
             </div>
-            <Link
-              href="/relatorio"
-              className="dashboard-action dashboard-primary-action"
-              style={{ padding: '13px 18px', fontSize: 14, fontWeight: 850, whiteSpace: 'nowrap' }}
-            >
-              Gerar relatório
-            </Link>
-          </Panel>
-        </section>
 
-        <section className="dashboard-main-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 16,
-        }}>
-          <Panel style={{ padding: 22 }}>
-            <Pill color={PLAN_ACCENT_COLORS[currentPlan]}>Conta</Pill>
-            <h2 style={{ fontSize: 20, margin: '14px 0 8px' }}>{PLAN_LABELS[currentPlan]}</h2>
-            <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
-              {PLAN_DESCRIPTIONS[currentPlan]}
-            </p>
-          </Panel>
+            {/* Card 3: Maturidade do sistema */}
+            <Panel style={{ padding: 24, display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 16 }}>
+                Maturidade
+              </span>
 
-          <Panel style={{ padding: 22 }}>
-            <Pill color="var(--red)">Zona sensível</Pill>
-            <h2 style={{ fontSize: 20, margin: '14px 0 8px' }}>Excluir conta</h2>
-            <DeleteAccountSection />
-          </Panel>
-        </section>
-      </div>
-    </main>
+              {/* Ring visual — SVG simples */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="var(--bg3)" strokeWidth="10"/>
+                  <circle
+                    cx="50" cy="50" r="38" fill="none"
+                    stroke="var(--lime)" strokeWidth="10"
+                    strokeDasharray={`${(completedPerspectiveCount / 4) * 238.76} 238.76`}
+                    strokeLinecap="round"
+                    transform="rotate(-90 50 50)"
+                    style={{ transition: 'stroke-dasharray 0.6s ease' }}
+                  />
+                  <text x="50" y="46" textAnchor="middle" fill="var(--text1)" fontSize="20" fontWeight="800" fontFamily="monospace">{completedPerspectiveCount}</text>
+                  <text x="50" y="62" textAnchor="middle" fill="var(--text3)" fontSize="11">/4 ativas</text>
+                </svg>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0, flex: 1 }}>
+                {[
+                  { label: 'Simulação fiscal', ok: Boolean(latest) },
+                  { label: 'Oportunidades', ok: oportunidades.length > 0 },
+                  { label: 'CNAEs monitorados', ok: monitoredCnaes > 0 },
+                  { label: 'Fonte de dados', ok: !simulationsError },
+                ].map((item, i, arr) => (
+                  <div key={item.label} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '10px 0',
+                    borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}>
+                    <span style={{ fontSize: 12, color: 'var(--text2)' }}>{item.label}</span>
+                    <span style={{
+                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                      background: item.ok ? 'var(--lime)' : 'var(--border2)',
+                      boxShadow: item.ok ? '0 0 6px var(--lime)' : 'none',
+                    }} />
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          </section>
+
+          {/* ── Row 2: Atividades recentes + Monitor ─────────────── */}
+          <section style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 16, marginBottom: 16 }} className="db-row2">
+
+            {/* Tabela de simulações */}
+            <Panel style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', display: 'block', marginBottom: 2 }}>
+                    Histórico
+                  </span>
+                  <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Simulações recentes</h2>
+                </div>
+                <Link
+                  href={freeSimulationLimitReached ? '/upgrade' : '/#simulador'}
+                  className="dashboard-action dashboard-primary-action"
+                  style={{ padding: '8px 14px', fontSize: 12 }}
+                >
+                  + Nova simulação
+                </Link>
+              </div>
+
+              {simulationsError ? (
+                <div style={{ padding: '20px 24px', background: 'rgba(255,204,0,0.05)' }}>
+                  <p style={{ fontSize: 13, color: 'var(--yellow)', margin: '0 0 4px', fontWeight: 700 }}>Schema pendente no Supabase</p>
+                  <p style={{ fontSize: 12, color: 'var(--text3)', margin: 0, lineHeight: 1.6 }}>
+                    Tabela <code>simulations</code> não encontrada. O dashboard funciona, mas o histórico precisa da tabela e das políticas RLS.
+                  </p>
+                </div>
+              ) : simulations.length > 0 ? (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg2)' }}>
+                      {['ID', 'CNAE', 'Projeção', 'Cenário', 'Data'].map(col => (
+                        <th key={col} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text3)', whiteSpace: 'nowrap' }}>
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {simulations.map((item, i) => {
+                      const isOk = item.resultado.alertaTeto.cenario === 'dentro_limite'
+                      const isDanger = item.resultado.alertaTeto.cenario === 'excesso_grave'
+                      const statusColor = isOk ? 'var(--lime)' : isDanger ? 'var(--red)' : 'var(--yellow)'
+                      const statusLabel = isOk ? 'Saudável' : isDanger ? 'Crítico' : 'Atenção'
+                      return (
+                        <tr key={item.id} style={{ borderTop: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.012)' }}>
+                          <td style={{ padding: '13px 16px', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text3)', whiteSpace: 'nowrap' }}>
+                            #{item.id.slice(-6).toUpperCase()}
+                          </td>
+                          <td style={{ padding: '13px 16px', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontSize: 13, fontWeight: 600 }}>{item.entrada.cnae.slice(0, 32)}{item.entrada.cnae.length > 32 ? '…' : ''}</span>
+                          </td>
+                          <td style={{ padding: '13px 16px', fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 700, color: 'var(--text1)', whiteSpace: 'nowrap' }}>
+                            {fmt(item.resultado.alertaTeto.projecaoAnual)}
+                          </td>
+                          <td style={{ padding: '13px 16px' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
+                              <span style={{ width: 7, height: 7, borderRadius: '50%', background: statusColor, flexShrink: 0, boxShadow: `0 0 5px ${statusColor}` }} />
+                              <span style={{ color: statusColor, fontWeight: 700 }}>{statusLabel}</span>
+                            </span>
+                          </td>
+                          <td style={{ padding: '13px 16px', color: 'var(--text3)', fontSize: 12, whiteSpace: 'nowrap' }}>
+                            {formatDate(item.created_at)}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ padding: '32px 24px', textAlign: 'center' }}>
+                  <p style={{ color: 'var(--text3)', fontSize: 13, lineHeight: 1.7, margin: '0 0 14px' }}>
+                    Nenhuma simulação salva ainda. Faça uma simulação logado para ativar o histórico.
+                  </p>
+                  <Link href="/#simulador" className="dashboard-action dashboard-primary-action" style={{ padding: '9px 16px', fontSize: 13 }}>
+                    Ir para o simulador
+                  </Link>
+                </div>
+              )}
+
+              {currentPlan === 'free' && (
+                <div style={{
+                  padding: '12px 20px', borderTop: '1px solid var(--border)',
+                  background: freeSimulationLimitReached ? 'rgba(255,74,74,0.06)' : 'var(--bg2)',
+                  fontSize: 12, color: freeSimulationLimitReached ? 'var(--red)' : 'var(--text3)',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}>
+                  <span>{simulationsUsed} de {FREE_SIMULATION_LIMIT} simulações usadas</span>
+                  {freeSimulationLimitReached && (
+                    <Link href="/upgrade" style={{ fontSize: 12, fontWeight: 800, color: 'var(--lime)', textDecoration: 'none' }}>
+                      Fazer upgrade →
+                    </Link>
+                  )}
+                </div>
+              )}
+            </Panel>
+
+            {/* Monitor mensal */}
+            <Panel style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', display: 'block', marginBottom: 2 }}>
+                  Recorrência
+                </span>
+                <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Monitor mensal</h2>
+              </div>
+              <div style={{ padding: '20px 24px' }}>
+                {profile?.cnae_principal && profile?.tipo_mei ? (
+                  <MonthlyMonitorSection
+                    cnae={profile.cnae_principal}
+                    tipoMei={profile.tipo_mei}
+                    defaultMonth={profile.mes_atual ?? currentMonth}
+                    defaultYear={currentYear}
+                    defaultRevenue={profile.faturamento_mensal_estimado ?? 0}
+                    defaultPayroll={profile.folha_mensal ?? 0}
+                    initialSummary={monitorSummary}
+                    initialTransition={monitorTransition}
+                    recentRows={monthlyInputs.map(item => ({
+                      ano: item.ano,
+                      mes: item.mes,
+                      faturamentoMes: Number(item.faturamento_mes),
+                      folhaMes: Number(item.folha_mes),
+                      anexoCalculado: item.anexo_calculado,
+                      fatorR: item.fator_r,
+                    }))}
+                    monthlyInputsError={monthlyInputsError}
+                  />
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                    <div style={{ fontSize: 32, marginBottom: 12 }}>📅</div>
+                    <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7, margin: '0 0 14px' }}>
+                      Complete o onboarding para ativar o monitor mensal com histórico e alerta de anexo.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Panel>
+          </section>
+
+          {/* ── Row 3: Oportunidades + Calendário ────────────────── */}
+          <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+
+            <Panel style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', display: 'block', marginBottom: 2 }}>
+                    Motor fiscal
+                  </span>
+                  <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Próximas melhores ações</h2>
+                </div>
+                {oportunidades.length > 0 && impactoTotal > 0 && (
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 800, color: 'var(--lime)' }}>
+                    {fmt(impactoTotal)}/ano
+                  </span>
+                )}
+              </div>
+              <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {oportunidades.length > 0 ? oportunidades.slice(0, 3).map(item => (
+                  <article key={item.id} style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: item.prioridade === 'alta' ? 'var(--lime)' : 'var(--yellow)', background: item.prioridade === 'alta' ? 'rgba(200,241,53,0.1)' : 'rgba(245,197,66,0.1)', padding: '3px 7px', borderRadius: 4 }}>
+                        {item.prioridade === 'alta' ? '▲' : '→'} {item.prioridade}
+                      </span>
+                      <span style={{ fontSize: 10, color: 'var(--text3)', background: 'var(--bg3)', padding: '3px 7px', borderRadius: 4, fontWeight: 600 }}>{item.confianca}</span>
+                    </div>
+                    <h3 style={{ fontSize: 14, margin: '0 0 4px', lineHeight: 1.3, fontWeight: 700 }}>{item.titulo}</h3>
+                    <p style={{ color: 'var(--text2)', fontSize: 12, lineHeight: 1.6, margin: 0 }}>{item.resumo}</p>
+                  </article>
+                )) : (
+                  <div style={{ padding: '20px 0', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text3)', fontSize: 13, lineHeight: 1.7, margin: '0 0 12px' }}>
+                      Rode uma simulação com CNAE e folha para o motor identificar oportunidades de economia.
+                    </p>
+                    <Link href="/#simulador" className="dashboard-action dashboard-primary-action" style={{ padding: '8px 14px', fontSize: 12 }}>
+                      Simular agora
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </Panel>
+
+            <Panel style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', display: 'block', marginBottom: 2 }}>
+                  Agenda
+                </span>
+                <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Calendário fiscal</h2>
+              </div>
+              <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {calendarItems.map((item, i, arr) => (
+                  <div key={item.title} style={{ padding: '12px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: item.channel === 'email' ? 'rgba(200,241,53,0.1)' : 'rgba(96,165,250,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={item.channel === 'email' ? 'var(--lime)' : 'var(--blue)'} strokeWidth="2">
+                        {item.channel === 'email'
+                          ? <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>
+                          : <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>
+                        }
+                      </svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{item.title}</div>
+                      <p style={{ color: 'var(--text3)', fontSize: 11, lineHeight: 1.55, margin: 0 }}>{item.body}</p>
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: item.channel === 'email' ? 'var(--lime)' : 'var(--blue)', background: item.channel === 'email' ? 'rgba(200,241,53,0.1)' : 'rgba(96,165,250,0.1)', padding: '3px 7px', borderRadius: 4, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                      {item.channel}
+                    </span>
+                  </div>
+                ))}
+
+                {latest?.fatorR && (
+                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 10 }}>
+                      Pró-labore interativo
+                    </div>
+                    <FatorRInterativo
+                      projecao={latest.alertaTeto.projecaoAnual}
+                      fatorRInicial={latest.fatorR.fatorR}
+                    />
+                  </div>
+                )}
+              </div>
+            </Panel>
+          </section>
+
+          {/* ── PDF CTA banner ───────────────────────────────────── */}
+          <section style={{ marginBottom: 16 }}>
+            <Panel style={{
+              padding: '24px 32px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 24,
+              borderColor: 'rgba(200,241,53,0.2)',
+              background: 'linear-gradient(135deg, var(--bg1) 0%, rgba(200,241,53,0.03) 100%)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(200,241,53,0.1)', border: '1px solid rgba(200,241,53,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--lime)', marginBottom: 4 }}>Relatório premium</div>
+                  <h2 style={{ fontSize: 17, fontWeight: 800, margin: '0 0 4px' }}>PDF fiscal pronto para enviar ao contador</h2>
+                  <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.6, margin: 0 }}>
+                    Comparativo de regimes, evidências de teto e memória de cálculo em um arquivo compartilhável.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/relatorio"
+                className="dashboard-action dashboard-primary-action"
+                style={{ padding: '12px 22px', fontSize: 14, fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                Gerar relatório
+              </Link>
+            </Panel>
+          </section>
+
+          {/* ── Bottom: Conta + Zona sensível ────────────────────── */}
+          <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <Panel style={{ padding: '24px 28px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: `${PLAN_ACCENT_COLORS[currentPlan]}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={PLAN_ACCENT_COLORS[currentPlan]} strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>Conta</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>{PLAN_LABELS[currentPlan]}</div>
+                </div>
+                <Pill color={PLAN_ACCENT_COLORS[currentPlan]} style={{ marginLeft: 'auto' }}>
+                  {hasFullAdminAccess ? 'admin' : currentPlan}
+                </Pill>
+              </div>
+              <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7, margin: '0 0 4px' }}>
+                {PLAN_DESCRIPTIONS[currentPlan]}
+              </p>
+              <p style={{ color: 'var(--text3)', fontSize: 12, lineHeight: 1.6, margin: 0 }}>
+                {user.email} · {CNAE_OFICIAL_TOTAL.toLocaleString('pt-BR')} CNAEs monitorados
+              </p>
+            </Panel>
+
+            <Panel style={{ padding: '24px 28px', borderColor: 'rgba(255,74,74,0.15)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(255,74,74,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--red)' }}>Zona sensível</div>
+                  <div style={{ fontSize: 15, fontWeight: 800 }}>Excluir conta</div>
+                </div>
+              </div>
+              <DeleteAccountSection />
+            </Panel>
+          </section>
+
+        </div>
+      </main>
+    </div>
   )
 }
