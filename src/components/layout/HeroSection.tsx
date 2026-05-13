@@ -1,6 +1,6 @@
 'use client'
 
-import { LIMITES_MEI } from '@/lib/tributario'
+import { CNAE_OFICIAL_TOTAL, LIMITES_MEI } from '@/lib/tributario'
 import { fmt, fmtPct } from '@/lib/format'
 import { MonoVal, Badge } from '@/components/ui'
 
@@ -125,8 +125,8 @@ export function HeroSection() {
             {/* Stats: tabular */}
             <div className="fade-up-4" style={{ display: 'flex', gap: 36, flexWrap: 'wrap', marginBottom: 36, alignItems: 'flex-end' }}>
               {[
-                { value: '18.300+', label: 'simulações realizadas' },
-                { value: '1.331', label: 'CNAEs mapeados' },
+                { value: CNAE_OFICIAL_TOTAL.toLocaleString('pt-BR'), label: 'CNAEs oficiais' },
+                { value: '4', label: 'regimes comparados' },
                 { value: '100%', label: 'gratuito, sem cadastro' },
               ].map((s, i) => (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>

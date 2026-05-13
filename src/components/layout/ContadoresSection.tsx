@@ -89,6 +89,12 @@ export function ContadoresSection() {
                     href="#contadores-form"
                     className="pressable"
                     onClick={() => {
+                      try {
+                        sessionStorage.setItem('accountantPreselect', JSON.stringify({
+                          plan: plan.name,
+                          carteiraRange: plan.carteiraHint,
+                        }))
+                      } catch {}
                       const el = document.getElementById('contadores-form')
                       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
                     }}

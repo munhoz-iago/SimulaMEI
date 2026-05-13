@@ -14,12 +14,39 @@ function getSingleParam(params: SearchParams, key: string) {
   return Array.isArray(value) ? value[0] : value
 }
 
+interface SharePayload {
+  fat: unknown
+  mes: unknown
+  cnae: unknown
+  folha?: unknown
+  tipo?: unknown
+}
+
+function decodeBase64Share(raw: string | undefined): SharePayload | null {
+  if (!raw) return null
+  try {
+    // base64url → base64 normal
+    const b64 = raw.replace(/-/g, '+').replace(/_/g, '/')
+    const pad = b64.length % 4 ? b64 + '='.repeat(4 - (b64.length % 4)) : b64
+    const json = decodeURIComponent(escape(Buffer.from(pad, 'base64').toString('binary')))
+    const parsed = JSON.parse(json)
+    return typeof parsed === 'object' && parsed !== null ? parsed as SharePayload : null
+  } catch {
+    return null
+  }
+}
+
 function getSharedResultado(params: SearchParams): ResultadoSimulacao | null {
-  const faturamentoAcumulado = Number(getSingleParam(params, 'fat'))
-  const mesAtual = Number(getSingleParam(params, 'mes'))
-  const cnae = getSingleParam(params, 'cnae')?.trim()
-  const folhaMensal = Number(getSingleParam(params, 'folha') ?? 0)
-  const tipoParam = getSingleParam(params, 'tipo')
+  // Formato novo: ?s=<base64url-encoded JSON>
+  const encoded = getSingleParam(params, 's')
+  const decoded = decodeBase64Share(encoded)
+
+  const faturamentoAcumulado = Number(decoded?.fat ?? getSingleParam(params, 'fat'))
+  const mesAtual = Number(decoded?.mes ?? getSingleParam(params, 'mes'))
+  const cnaeRaw = decoded?.cnae ?? getSingleParam(params, 'cnae')
+  const cnae = typeof cnaeRaw === 'string' ? cnaeRaw.trim() : ''
+  const folhaMensal = Number(decoded?.folha ?? getSingleParam(params, 'folha') ?? 0)
+  const tipoParam = decoded?.tipo ?? getSingleParam(params, 'tipo')
   const tipoMei: TipoMei = tipoParam === 'caminhoneiro' ? 'caminhoneiro' : 'geral'
 
   if (
@@ -67,6 +94,23 @@ export default async function HomePage({
     '@context': 'https://schema.org',
     '@graph': [
       {
+        '@type': 'Organization',
+        '@id': `${siteUrl}/#organization`,
+        name: SITE_NAME,
+        url: siteUrl,
+        logo: `${siteUrl}/icons/icon-512.png`,
+        description: SITE_DESCRIPTION,
+        sameAs: [],
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${siteUrl}/#website`,
+        url: siteUrl,
+        name: SITE_NAME,
+        publisher: { '@id': `${siteUrl}/#organization` },
+        inLanguage: 'pt-BR',
+      },
+      {
         '@type': 'WebApplication',
         '@id': `${siteUrl}/#webapp`,
         name: SITE_NAME,
@@ -75,6 +119,7 @@ export default async function HomePage({
         applicationCategory: 'FinanceApplication',
         operatingSystem: 'Web',
         inLanguage: 'pt-BR',
+        publisher: { '@id': `${siteUrl}/#organization` },
         offers: {
           '@type': 'Offer',
           price: '0',

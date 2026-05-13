@@ -67,6 +67,50 @@
   }
 }
 
+/* ── Footer ───────────────────────────────────────────────── */
+.footer-link {
+  transition: color 160ms ease;
+}
+.footer-link:hover {
+  color: var(--text1) !important;
+}
+@media (max-width: 720px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+@media (max-width: 480px) {
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Dashboard sidebar nav ────────────────────────────────── */
+.db-nav-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--text3);
+  text-decoration: none;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.db-nav-icon[data-active="true"],
+.db-nav-icon[aria-current="page"] {
+  background: rgba(200, 241, 53, 0.12);
+  color: var(--lime);
+}
+.db-nav-icon:hover {
+  background: var(--bg2);
+  color: var(--text1);
+}
+.db-nav-icon:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
+
 /* ── Dashboard responsive grid ────────────────────────────── */
 @media (max-width: 1100px) {
   .db-row1 {

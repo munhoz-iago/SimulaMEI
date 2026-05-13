@@ -7,7 +7,6 @@ import {
   CNAE_OFICIAL_TOTAL,
   TAX_RULE_VERSION,
   gerarOportunidadesFiscais,
-  getCnae,
 } from '@/lib/tributario'
 import { FatorRInterativo } from '@/components/resultado/FatorRInterativo'
 import { summarizeMonthlyMonitor, detectAnexoTransition, getFiscalCalendarItems } from '@/lib/monitor'
@@ -138,7 +137,7 @@ async function getCachedOportunidades(simulation: SimulationRow | undefined) {
 
   return unstable_cache(
     async () => gerarOportunidadesFiscais(simulation.resultado),
-    ['dashboard-oportunidades-v1', simulation.id],
+    ['dashboard-oportunidades', TAX_RULE_VERSION, simulation.id],
     { revalidate: 60 * 60 },
   )()
 }
@@ -181,7 +180,6 @@ export default async function DashboardPage() {
   const freeSimulationLimitReached = currentPlan === 'free' && simulationsUsed >= FREE_SIMULATION_LIMIT
   const latestSimulation = simulations[0]
   const latest = latestSimulation?.resultado
-  const latestCnae = latest ? getCnae(latest.entrada.cnae) : null
   const oportunidades = await getCachedOportunidades(latestSimulation)
   const impactoTotal = oportunidades.reduce((sum, item) => sum + item.impactoEstimadoAnual, 0)
   const usoTeto = latest?.alertaTeto.percentualUtilizado ?? 0
@@ -238,8 +236,12 @@ export default async function DashboardPage() {
   ].filter(Boolean).length
 
   const userName = profile?.nome ?? user.email?.split('@')[0] ?? 'você'
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
+  // Horário do Brasil (não do servidor Vercel que roda UTC)
+  const brHour = Number(
+    new Intl.DateTimeFormat('pt-BR', { hour: 'numeric', hour12: false, timeZone: 'America/Sao_Paulo' })
+      .format(new Date()),
+  )
+  const greeting = brHour < 12 ? 'Bom dia' : brHour < 18 ? 'Boa tarde' : 'Boa noite'
   const fatorRValue = latest?.fatorR?.fatorR
   const tetoColor = metricTone(tetoTone)
 
@@ -247,7 +249,7 @@ export default async function DashboardPage() {
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg0)', color: 'var(--text1)' }}>
 
       {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside style={{
+      <aside aria-label="Navegação do dashboard" className="db-sidebar" style={{
         width: 64,
         background: 'var(--bg1)',
         borderRight: '1px solid var(--border)',
@@ -273,20 +275,19 @@ export default async function DashboardPage() {
 
         {/* Nav icons */}
         {[
-          { href: '/dashboard', label: 'Dashboard', icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></> },
-          { href: '/#simulador', label: 'Simulador', icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></> },
-          { href: '/relatorio', label: 'Relatório', icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></> },
-          { href: '/aprenda', label: 'Aprenda', icon: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></> },
+          { href: '/dashboard', label: 'Dashboard', active: true, icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></> },
+          { href: '/#simulador', label: 'Simulador', active: false, icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></> },
+          { href: '/relatorio', label: 'Relatório', active: false, icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></> },
+          { href: '/aprenda', label: 'Aprenda', active: false, icon: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></> },
         ].map(nav => (
           <Link
             key={nav.href}
             href={nav.href}
             title={nav.label}
-            style={{
-              width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              borderRadius: 8, color: 'var(--text3)', transition: 'all .15s',
-            }}
-            onMouseEnter={undefined}
+            aria-label={nav.label}
+            aria-current={nav.active ? 'page' : undefined}
+            className="db-nav-icon"
+            data-active={nav.active}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               {nav.icon}
@@ -299,11 +300,9 @@ export default async function DashboardPage() {
           <button
             type="submit"
             title="Sair"
-            style={{
-              width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              borderRadius: 8, color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer',
-              transition: 'all .15s',
-            }}
+            aria-label="Sair"
+            className="db-nav-icon"
+            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>

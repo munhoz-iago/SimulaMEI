@@ -13,6 +13,7 @@ import { FiscalScore } from './FiscalScore'
 import { ExcessoVisual } from './ExcessoVisual'
 import { OportunidadesFiscais } from './OportunidadesFiscais'
 import { TabelaDAS } from './TabelaDAS'
+import { ShareResultButton } from './ShareResultButton'
 
 interface FullResultsProps {
   resultado: ResultadoSimulacao
@@ -141,6 +142,8 @@ export function FullResults({ resultado, email }: FullResultsProps) {
             </Link>
           </div>
         </div>
+
+        <ShareResultButton resultado={resultado} variant="full" />
 
         <div className="fade-up-2">
           <OportunidadesFiscais oportunidades={oportunidades} />

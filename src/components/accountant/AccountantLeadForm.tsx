@@ -1,10 +1,12 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { ACCOUNTANT_CLIENT_RANGES, ACCOUNTANT_TOOL_OPTIONS } from '@/lib/accountant/leads'
 import { captureProductEvent } from '@/lib/analytics/events'
 
 type FormState = 'idle' | 'submitting' | 'sent'
+
+const ALLOWED_RANGES = new Set(ACCOUNTANT_CLIENT_RANGES)
 
 const fieldStyle: React.CSSProperties = {
   width: '100%',
@@ -40,6 +42,7 @@ function Label({ htmlFor, children }: { htmlFor: string; children: React.ReactNo
 export function AccountantLeadForm({ source = 'para-contadores' }: { source?: string }) {
   const [state, setState] = useState<FormState>('idle')
   const [error, setError] = useState('')
+  const [preselectedPlan, setPreselectedPlan] = useState<string | null>(null)
   const [form, setForm] = useState({
     nomeEscritorio: '',
     email: '',
@@ -48,6 +51,25 @@ export function AccountantLeadForm({ source = 'para-contadores' }: { source?: st
     ferramentaAtual: 'Planilha',
     consentimentoLgpd: false,
   })
+
+  // Pré-seleção via clique nos planos da ContadoresSection.
+  // sessionStorage só existe no client, então usamos useEffect ao montar.
+  // A regra react-hooks/set-state-in-effect é suprimida porque a leitura
+  // depende de API do browser indisponível durante SSR — usar lazy init do
+  // useState criaria mismatch de hidratação entre server e client.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('accountantPreselect')
+      if (!raw) return
+      const parsed = JSON.parse(raw) as { plan?: string; carteiraRange?: string }
+      if (parsed.carteiraRange && ALLOWED_RANGES.has(parsed.carteiraRange as typeof ACCOUNTANT_CLIENT_RANGES[number])) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setForm(current => ({ ...current, carteiraRange: parsed.carteiraRange! }))
+      }
+      if (parsed.plan) setPreselectedPlan(parsed.plan)
+      sessionStorage.removeItem('accountantPreselect')
+    } catch {}
+  }, [])
 
   function setValue(name: keyof typeof form, value: string | boolean) {
     setForm(current => ({ ...current, [name]: value }))
@@ -76,6 +98,7 @@ export function AccountantLeadForm({ source = 'para-contadores' }: { source?: st
       source,
       carteira_range: form.carteiraRange,
       ferramenta_atual: form.ferramentaAtual,
+      plano_interesse: preselectedPlan ?? null,
     })
     setState('sent')
   }
@@ -101,6 +124,22 @@ export function AccountantLeadForm({ source = 'para-contadores' }: { source?: st
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 14 }}>
+      {preselectedPlan && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 12px',
+          background: 'rgba(255,140,0,0.08)',
+          border: '1px solid rgba(255,140,0,0.2)',
+          borderRadius: 'var(--radius)',
+          fontSize: 12, color: 'var(--orange)',
+        }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <span>Plano selecionado: <strong>{preselectedPlan}</strong></span>
+        </div>
+      )}
+
       <div>
         <Label htmlFor="accountant-office-name">Nome do escritório</Label>
         <input

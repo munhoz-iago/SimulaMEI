@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { StaticPageLayout } from '@/components/layout/StaticPageLayout'
 import { ArticleJsonLd } from '@/components/seo/ArticleJsonLd'
+import { ArticleMeta, Callout, H2, P, SimulatorCTA, Strong } from '@/components/article/Body'
 
 const ARTICLE_PATH = '/aprenda/fator-r'
 const ARTICLE_TITLE = 'Fator R 2026: como calcular e pagar menos impostos'
@@ -18,40 +19,13 @@ export const metadata: Metadata = {
   },
 }
 
-const H2 = ({ children }: { children: React.ReactNode }) => (
-  <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text1)', marginTop: 40, marginBottom: 12, lineHeight: 1.2 }}>
-    {children}
-  </h2>
-)
-const P = ({ children }: { children: React.ReactNode }) => (
-  <p style={{ marginBottom: 16 }}>{children}</p>
-)
-const Strong = ({ children }: { children: React.ReactNode }) => (
-  <strong style={{ color: 'var(--text1)', fontWeight: 700 }}>{children}</strong>
-)
-const Callout = ({ children, color = 'var(--lime)' }: { children: React.ReactNode; color?: string }) => (
-  <div style={{
-    background: color === 'var(--lime)' ? 'rgba(200,241,53,0.06)' : 'rgba(255,140,0,0.06)',
-    border: `1px solid ${color === 'var(--lime)' ? 'rgba(200,241,53,0.2)' : 'rgba(255,140,0,0.2)'}`,
-    borderRadius: 8, padding: '16px 20px', marginBottom: 20, fontSize: 14,
-  }}>
-    {children}
-  </div>
-)
-
 export default function FatorRPage() {
   return (
     <StaticPageLayout
       title="O que é o Fator R e como calcular"
       subtitle="O Fator R é o indicador que define se você paga menos (Anexo III) ou mais (Anexo V) imposto no Simples Nacional. A diferença pode chegar a R$ 20.000/ano."
     >
-      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 32, display: 'flex', gap: 12 }}>
-        <span>Fator R · Simples Nacional</span>
-        <span>·</span>
-        <span>Atualizado para 2026</span>
-        <span>·</span>
-        <span>4 min de leitura</span>
-      </div>
+      <ArticleMeta tag="Fator R · Simples Nacional" readingTime="4 min" />
 
       <H2>O que é o Fator R?</H2>
       <P>
@@ -85,20 +59,13 @@ export default function FatorRPage() {
       </Link>
 
       <H2>A diferença de imposto entre Anexo III e V</H2>
-      <P>
-        Para um faturamento de R$ 180.000/ano:
-      </P>
-      <div style={{
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20,
-      }}>
+      <P>Para um faturamento de R$ 180.000/ano:</P>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
         {[
           { label: 'Anexo III (Fator R ≥ 28%)', aliq: '6,0%', imposto: 'R$ 10.800/ano', color: 'var(--lime)' },
           { label: 'Anexo V (Fator R < 28%)', aliq: '15,5%', imposto: 'R$ 27.900/ano', color: 'var(--orange)' },
         ].map(r => (
-          <div key={r.label} style={{
-            background: 'var(--bg1)', border: '1px solid var(--border)',
-            borderRadius: 8, padding: '16px 18px',
-          }}>
+          <div key={r.label} style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderRadius: 8, padding: '16px 18px' }}>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>{r.label}</div>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 900, color: r.color }}>{r.aliq}</div>
             <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4 }}>{r.imposto}</div>
@@ -124,7 +91,7 @@ export default function FatorRPage() {
           Se você já tem funcionários, lembre-se de incluí-los.
         </li>
       </ul>
-      <Callout color="var(--orange)">
+      <Callout color="orange">
         <strong>Atenção:</strong> aumentar o pró-labore reduz o imposto pelo Simples, mas aumenta o INSS do sócio.
         Calcule o saldo líquido antes de tomar a decisão. O SimulaMEI mostra a economia real considerando o INSS.
       </Callout>
@@ -140,33 +107,12 @@ export default function FatorRPage() {
         consultoria, medicina, odontologia, advocacia, arquitetura e design.
       </P>
 
-      <div style={{
-        background: 'var(--bg1)', border: '1px solid var(--border)',
-        borderRadius: 10, padding: '24px 28px', marginTop: 40,
-      }}>
-        <p style={{ fontWeight: 700, color: 'var(--text1)', marginBottom: 8 }}>
-          Calcule seu Fator R agora, gratuitamente
-        </p>
-        <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>
-          O SimulaMEI calcula o Fator R, mostra o regime ideal e estima a economia anual
-          em menos de 1 minuto, sem cadastro.
-        </p>
-        <Link
-          href="/#simulador"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '10px 20px', background: 'var(--lime)', color: 'var(--ink-on-accent)',
-            borderRadius: 8, fontWeight: 700, fontSize: 14, textDecoration: 'none',
-          }}
-        >
-          Simular agora →
-        </Link>
-      </div>
-      <ArticleJsonLd
-        path={ARTICLE_PATH}
-        headline={ARTICLE_TITLE}
-        description={ARTICLE_DESCRIPTION}
+      <SimulatorCTA
+        title="Calcule seu Fator R agora, gratuitamente"
+        description="O SimulaMEI calcula o Fator R, mostra o regime ideal e estima a economia anual em menos de 1 minuto, sem cadastro."
       />
+
+      <ArticleJsonLd path={ARTICLE_PATH} headline={ARTICLE_TITLE} description={ARTICLE_DESCRIPTION} />
     </StaticPageLayout>
   )
 }
