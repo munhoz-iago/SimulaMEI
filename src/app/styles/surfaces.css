@@ -354,6 +354,10 @@
   .acc-plans-grid {
     grid-template-columns: 1fr !important;
   }
+  .acc-billing-footer {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
 }
 
 /* details/summary com chevron rotacionando */
