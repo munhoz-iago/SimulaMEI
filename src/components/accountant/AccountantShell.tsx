@@ -1,12 +1,69 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import { getAccountantBillingState } from '@/lib/accountant/billing-state'
 import type { CurrentAccountantOffice } from '@/lib/accountant/server'
 
 interface AccountantShellProps {
   office: CurrentAccountantOffice
   active: 'dashboard' | 'clients' | 'billing'
   children: ReactNode
+}
+
+/** Calcula dias restantes do trial, contado a partir da data atual */
+function daysUntil(iso: string | null): number | null {
+  if (!iso) return null
+  const target = new Date(iso).getTime()
+  const now = Date.now()
+  if (!Number.isFinite(target)) return null
+  return Math.max(0, Math.ceil((target - now) / (1000 * 60 * 60 * 24)))
+}
+
+/** Badge persistente que aparece em todas as abas quando o escritório está em trial.
+ *  Cor escala conforme aproxima do fim: lime (>14d) → yellow (4-14d) → red (≤3d). */
+function TrialBadge({ trialEndsAt }: { trialEndsAt: string | null }) {
+  const days = daysUntil(trialEndsAt)
+  if (days === null) return null
+
+  const color = days <= 3 ? 'var(--red)' : days <= 14 ? 'var(--yellow)' : 'var(--lime)'
+  const bg = days <= 3 ? 'rgba(255,59,59,0.1)' : days <= 14 ? 'rgba(245,197,66,0.1)' : 'rgba(200,241,53,0.1)'
+  const border = days <= 3 ? 'rgba(255,59,59,0.28)' : days <= 14 ? 'rgba(245,197,66,0.28)' : 'rgba(200,241,53,0.28)'
+  const isUrgent = days <= 3
+
+  return (
+    <Link
+      href="/contador/assinatura"
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 10,
+        padding: '8px 14px 8px 12px',
+        borderRadius: 999,
+        background: bg,
+        border: `1px solid ${border}`,
+        color: 'var(--text1)',
+        fontSize: 12, fontWeight: 700,
+        textDecoration: 'none',
+        transition: 'transform 160ms var(--ease-out), border-color 160ms ease',
+        whiteSpace: 'nowrap',
+      }}
+      className="pressable"
+    >
+      <span
+        aria-hidden
+        style={{
+          width: 8, height: 8, borderRadius: 99,
+          background: color,
+          boxShadow: `0 0 8px ${color}`,
+          animation: isUrgent ? 'pulse 1.4s ease-in-out infinite' : undefined,
+          flexShrink: 0,
+        }}
+      />
+      <span style={{ color, fontWeight: 800 }}>
+        {days === 0 ? 'Trial expira hoje' : days === 1 ? '1 dia de trial' : `${days} dias de trial`}
+      </span>
+      <span style={{ color: 'var(--text3)', fontSize: 11 }}>·</span>
+      <span style={{ color: 'var(--text2)', fontSize: 11, fontWeight: 700 }}>Escolher plano →</span>
+    </Link>
+  )
 }
 
 const NAV_ITEMS = [
@@ -85,6 +142,10 @@ function PlanBadge({ plan }: { plan: string }) {
 }
 
 export function AccountantShell({ office, active, children }: AccountantShellProps) {
+  const billingState = getAccountantBillingState(office)
+  const inTrial = billingState.kind === 'trialing'
+  const trialExpired = billingState.kind === 'trial_expired'
+
   return (
     <main style={{
       minHeight: '100vh',
@@ -119,6 +180,7 @@ export function AccountantShell({ office, active, children }: AccountantShellPro
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
+            {inTrial && <TrialBadge trialEndsAt={office.trial_ends_at} />}
             <ThemeToggle size={32} />
             <Link
               href="/dashboard"
@@ -187,6 +249,45 @@ export function AccountantShell({ office, active, children }: AccountantShellPro
             )
           })}
         </nav>
+
+        {trialExpired && active !== 'billing' && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 14,
+            padding: '14px 18px',
+            background: 'linear-gradient(90deg, rgba(255,59,59,0.08), rgba(255,59,59,0.02))',
+            border: '1px solid rgba(255,59,59,0.24)',
+            borderRadius: 'var(--radius-lg)',
+            marginBottom: 18,
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 8,
+              background: 'rgba(255,59,59,0.16)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--red)', marginBottom: 2 }}>
+                Trial encerrado
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5, margin: 0 }}>
+                Escolha um plano para continuar cadastrando clientes e registrando simulações.
+              </p>
+            </div>
+            <Link
+              href="/contador/assinatura"
+              className="dashboard-action dashboard-primary-action"
+              style={{ padding: '8px 14px', fontSize: 12, fontWeight: 800, flexShrink: 0 }}
+            >
+              Escolher plano
+            </Link>
+          </div>
+        )}
 
         {office.admin_access_fallback ? (
           <div
