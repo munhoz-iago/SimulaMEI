@@ -85,30 +85,117 @@
   }
 }
 
-/* ── Dashboard sidebar nav ────────────────────────────────── */
-.db-nav-icon {
-  width: 40px;
-  height: 40px;
+/* ── Dashboard sidebar — expansível no hover (overlay) ────── */
+.db-sidebar {
+  width: 64px;            /* reserva 64px no layout flex */
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 10;
+}
+.db-sidebar-inner {
+  position: absolute;     /* expande sobre o conteúdo, sem shift */
+  top: 0; left: 0; bottom: 0;
+  width: 64px;
+  background: var(--bg1);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 18px 12px 16px;
+  gap: 4px;
+  overflow: hidden;
+  transition: width 220ms var(--ease-out), box-shadow 220ms ease;
+}
+.db-sidebar:hover .db-sidebar-inner,
+.db-sidebar:focus-within .db-sidebar-inner {
+  width: 220px;
+  box-shadow: 8px 0 32px oklch(2% 0.01 255 / 0.4);
+}
+
+.db-sidebar-logo {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 12px;
+  padding: 6px 4px;
+  margin-bottom: 18px;
+  text-decoration: none;
+  color: var(--text1);
+  border-radius: 8px;
+}
+
+.db-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.db-sidebar-bottom {
+  margin-top: auto;
+}
+
+.db-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
   border-radius: 8px;
   color: var(--text3);
   text-decoration: none;
   transition: background-color 160ms ease, color 160ms ease;
+  white-space: nowrap;
 }
-.db-nav-icon[data-active="true"],
-.db-nav-icon[aria-current="page"] {
+.db-nav-item-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.db-nav-item[data-active="true"],
+.db-nav-item[aria-current="page"] {
   background: rgba(200, 241, 53, 0.12);
   color: var(--lime);
 }
-.db-nav-icon:hover {
+.db-nav-item:hover {
   background: var(--bg2);
   color: var(--text1);
 }
-.db-nav-icon:focus-visible {
+.db-nav-item:focus-visible {
   outline: 2px solid var(--lime);
   outline-offset: 2px;
+}
+
+.db-nav-icon-box {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.db-nav-label {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 180ms ease, transform 180ms var(--ease-out);
+  pointer-events: none;
+}
+.db-sidebar:hover .db-nav-label,
+.db-sidebar:focus-within .db-nav-label {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+/* Mobile: oculta sidebar abaixo de 720px (bottom bar é próximo passo). */
+@media (max-width: 720px) {
+  .db-sidebar {
+    display: none;
+  }
 }
 
 /* ── Dashboard responsive grid ────────────────────────────── */

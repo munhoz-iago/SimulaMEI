@@ -82,10 +82,15 @@ export default async function HomePage({
   const siteUrl = getSiteUrl()
   const params = searchParams ? await searchParams : {}
   const initialResultado = getSharedResultado(params)
+  // Bypass do redirect quando usuário logado quer acessar simulador/seções
+  // específicas da home (clicou em "Nova simulação" do dashboard, share link, etc.)
+  const skipAuthRedirect = getSingleParam(params, 'simular') === '1'
+    || getSingleParam(params, 'from') === 'dashboard'
+    || Boolean(initialResultado)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (user) {
+  if (user && !skipAuthRedirect) {
     const access = await getProfileAccess(supabase, user)
     redirect(access.isComplete ? '/dashboard' : '/onboarding')
   }

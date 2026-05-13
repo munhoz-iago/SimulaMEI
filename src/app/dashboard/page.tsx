@@ -249,68 +249,66 @@ export default async function DashboardPage() {
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg0)', color: 'var(--text1)' }}>
 
       {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside aria-label="Navegação do dashboard" className="db-sidebar" style={{
-        width: 64,
-        background: 'var(--bg1)',
-        borderRight: '1px solid var(--border)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: '20px 0 16px',
-        gap: 4,
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        flexShrink: 0,
-        zIndex: 10,
-      }}>
-        {/* Logo mark */}
-        <Link href="/" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 32, height: 32, background: 'var(--lime)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-on-accent)" strokeWidth="2.5">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-            </svg>
-          </div>
-        </Link>
-
-        {/* Nav icons */}
-        {[
-          { href: '/dashboard', label: 'Dashboard', active: true, icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></> },
-          { href: '/#simulador', label: 'Simulador', active: false, icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></> },
-          { href: '/relatorio', label: 'Relatório', active: false, icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></> },
-          { href: '/aprenda', label: 'Aprenda', active: false, icon: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></> },
-        ].map(nav => (
-          <Link
-            key={nav.href}
-            href={nav.href}
-            title={nav.label}
-            aria-label={nav.label}
-            aria-current={nav.active ? 'page' : undefined}
-            className="db-nav-icon"
-            data-active={nav.active}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              {nav.icon}
-            </svg>
+      {/* Outer reserva 64px no layout; inner expande para 220px no hover
+          como overlay (sem empurrar o conteúdo principal). */}
+      <aside aria-label="Navegação do dashboard" className="db-sidebar">
+        <div className="db-sidebar-inner">
+          {/* Logo mark */}
+          <Link href="/?from=dashboard" className="db-sidebar-logo" aria-label="Início">
+            <div style={{ width: 32, height: 32, background: 'var(--lime)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-on-accent)" strokeWidth="2.5">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <span className="db-nav-label" style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.02em' }}>
+              Simula<span style={{ color: 'var(--lime)' }}>MEI</span>
+            </span>
           </Link>
-        ))}
 
-        {/* Bottom: logout */}
-        <form action={logoutAction} style={{ marginTop: 'auto' }}>
-          <button
-            type="submit"
-            title="Sair"
-            aria-label="Sair"
-            className="db-nav-icon"
-            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-          </button>
-        </form>
+          {/* Nav items */}
+          <nav className="db-sidebar-nav">
+            {[
+              { href: '/dashboard', label: 'Dashboard', active: true, icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></> },
+              { href: '/?simular=1#simulador', label: 'Simulador', active: false, icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></> },
+              { href: '/relatorio', label: 'Relatório', active: false, icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></> },
+              { href: '/aprenda', label: 'Aprenda', active: false, icon: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></> },
+            ].map(nav => (
+              <Link
+                key={nav.href}
+                href={nav.href}
+                aria-label={nav.label}
+                aria-current={nav.active ? 'page' : undefined}
+                className="db-nav-item"
+                data-active={nav.active}
+              >
+                <span className="db-nav-icon-box">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    {nav.icon}
+                  </svg>
+                </span>
+                <span className="db-nav-label">{nav.label}</span>
+              </Link>
+            ))}
+          </nav>
+
+          {/* Bottom: logout */}
+          <form action={logoutAction} className="db-sidebar-bottom">
+            <button
+              type="submit"
+              aria-label="Sair"
+              className="db-nav-item db-nav-item-button"
+            >
+              <span className="db-nav-icon-box">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+              </span>
+              <span className="db-nav-label">Sair</span>
+            </button>
+          </form>
+        </div>
       </aside>
 
       {/* ── Main content ─────────────────────────────────────────── */}
@@ -367,7 +365,7 @@ export default async function DashboardPage() {
               {/* Botões de ação */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
                 <Link
-                  href={freeSimulationLimitReached ? '/upgrade' : '/#simulador'}
+                  href={freeSimulationLimitReached ? '/upgrade' : '/?simular=1#simulador'}
                   className="dashboard-action dashboard-primary-action"
                   style={{ padding: '9px 16px', fontSize: 13, flex: 1, justifyContent: 'center' }}
                 >
@@ -518,7 +516,7 @@ export default async function DashboardPage() {
                   <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Simulações recentes</h2>
                 </div>
                 <Link
-                  href={freeSimulationLimitReached ? '/upgrade' : '/#simulador'}
+                  href={freeSimulationLimitReached ? '/upgrade' : '/?simular=1#simulador'}
                   className="dashboard-action dashboard-primary-action"
                   style={{ padding: '8px 14px', fontSize: 12 }}
                 >
@@ -580,7 +578,7 @@ export default async function DashboardPage() {
                   <p style={{ color: 'var(--text3)', fontSize: 13, lineHeight: 1.7, margin: '0 0 14px' }}>
                     Nenhuma simulação salva ainda. Faça uma simulação logado para ativar o histórico.
                   </p>
-                  <Link href="/#simulador" className="dashboard-action dashboard-primary-action" style={{ padding: '9px 16px', fontSize: 13 }}>
+                  <Link href="/?simular=1#simulador" className="dashboard-action dashboard-primary-action" style={{ padding: '9px 16px', fontSize: 13 }}>
                     Ir para o simulador
                   </Link>
                 </div>
@@ -678,7 +676,7 @@ export default async function DashboardPage() {
                     <p style={{ color: 'var(--text3)', fontSize: 13, lineHeight: 1.7, margin: '0 0 12px' }}>
                       Rode uma simulação com CNAE e folha para o motor identificar oportunidades de economia.
                     </p>
-                    <Link href="/#simulador" className="dashboard-action dashboard-primary-action" style={{ padding: '8px 14px', fontSize: 12 }}>
+                    <Link href="/?simular=1#simulador" className="dashboard-action dashboard-primary-action" style={{ padding: '8px 14px', fontSize: 12 }}>
                       Simular agora
                     </Link>
                   </div>
