@@ -10,9 +10,31 @@ const FEATURES = [
 ]
 
 const PLANS_PREVIEW = [
-  { name: 'Starter', price: 'R$ 97/mês', limit: 'Até 30 clientes', cta: 'Quero o Starter', carteiraHint: '21-50' },
-  { name: 'Pro', price: 'R$ 247/mês', limit: 'Até 150 clientes', highlight: true, cta: 'Quero o Pro', carteiraHint: '51-150' },
-  { name: 'Enterprise', price: 'Sob consulta', limit: 'Sem limite', cta: 'Falar com equipe', carteiraHint: '150+' },
+  {
+    name: 'Starter',
+    price: 'R$ 97/mês',
+    limit: 'Até 30 clientes',
+    cta: 'Quero o Starter',
+    carteiraHint: '21-50',
+    href: '/upgrade/contador?focus=starter',
+  },
+  {
+    name: 'Pro',
+    price: 'R$ 247/mês',
+    limit: 'Até 150 clientes',
+    highlight: true,
+    cta: 'Quero o Pro',
+    carteiraHint: '51-150',
+    href: '/upgrade/contador?focus=pro',
+  },
+  {
+    name: 'Enterprise',
+    price: 'Sob consulta',
+    limit: 'Sem limite',
+    cta: 'Falar com equipe',
+    carteiraHint: '150+',
+    href: '/para-contadores',
+  },
 ]
 
 export function ContadoresSection() {
@@ -85,13 +107,9 @@ export function ContadoresSection() {
                     {plan.price}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>{plan.limit}</div>
-                  <a
-                    href="#contadores-form"
+                  <Link
+                    href={plan.href}
                     className="pressable"
-                    onClick={() => {
-                      const el = document.getElementById('contadores-form')
-                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                    }}
                     style={{
                       fontSize: 11, fontWeight: 700,
                       color: plan.highlight ? 'var(--ink-on-warm)' : 'var(--text2)',
@@ -103,7 +121,7 @@ export function ContadoresSection() {
                     }}
                   >
                     {plan.cta} →
-                  </a>
+                  </Link>
                 </div>
               ))}
             </div>
