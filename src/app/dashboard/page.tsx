@@ -16,6 +16,7 @@ import { Panel } from '@/components/dashboard/Panel'
 import { Pill } from '@/components/dashboard/Pill'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
 import { getDashboardContext } from '@/lib/dashboard/context'
+import { getDashboardKPIs } from '@/lib/dashboard/kpis'
 import { fmt, fmtPct } from '@/lib/format'
 import type { ResultadoSimulacao } from '@/types/tributario'
 
@@ -162,12 +163,6 @@ export default async function DashboardPage() {
   const latest = latestSimulation?.resultado
   const oportunidades = await getCachedOportunidades(latestSimulation)
   const impactoTotal = oportunidades.reduce((sum, item) => sum + item.impactoEstimadoAnual, 0)
-  const usoTeto = latest?.alertaTeto.percentualUtilizado ?? 0
-  const tetoTone = !latest ? 'neutral' : latest.alertaTeto.cenario === 'excesso_grave'
-    ? 'danger'
-    : latest.alertaTeto.cenario === 'excesso_leve' || usoTeto >= 0.85
-      ? 'warn'
-      : 'ok'
 
   const monitoredCnaes = new Set(simulations.map(item => item.entrada?.cnae).filter(Boolean)).size
   const currentMonth = new Date().getMonth() + 1
@@ -204,6 +199,23 @@ export default async function DashboardPage() {
   const faturamentoMedio = monitorRows.length > 0
     ? monitorRows.reduce((sum, r) => sum + r.faturamentoMes, 0) / monitorRows.length
     : (profile?.faturamento_mensal_estimado ?? 0)
+
+  // KPIs unificados: prefere dados do Monitor mensal sobre simulação avulsa
+  const kpis = getDashboardKPIs({
+    latestSimulation: latest ?? null,
+    monitorSummary,
+    monthlyInputsCount: monitorRows.length,
+    latestMonth: monitorRows.at(-1)?.mes ?? null,
+    latestYear: monitorRows.at(-1)?.ano ?? null,
+    cnae: profile?.cnae_principal,
+    tipoMei: profile?.tipo_mei,
+    plan: currentPlan,
+    freeLimitReached: freeSimulationLimitReached,
+  })
+  // Aliases pra manter o resto do JSX legível e mudar o mínimo
+  const usoTeto = kpis.usoTeto
+  const tetoTone = kpis.tone
+
   const calendarItems = getFiscalCalendarItems({
     nome: profile?.nome ?? user.email?.split('@')[0] ?? 'Sua conta',
     tipoMei: profile?.tipo_mei ?? 'geral',
@@ -248,30 +260,39 @@ export default async function DashboardPage() {
                 <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>
                   Uso do Teto MEI
                 </span>
-                <Pill color={tetoColor}>{tetoTone === 'ok' ? 'Saudável' : tetoTone === 'warn' ? 'Atenção' : tetoTone === 'danger' ? 'Crítico' : 'Neutro'}</Pill>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {kpis.source !== 'empty' && (
+                    <Pill color={kpis.source === 'monitor' ? 'var(--lime)' : 'var(--blue)'} style={{ fontSize: 9 }}>
+                      {kpis.source === 'monitor' ? 'Monitor' : 'Simulação'}
+                    </Pill>
+                  )}
+                  <Pill color={tetoColor}>{tetoTone === 'ok' ? 'Saudável' : tetoTone === 'warn' ? 'Atenção' : tetoTone === 'danger' ? 'Crítico' : 'Neutro'}</Pill>
+                </div>
               </div>
 
               <div style={{ fontFamily: 'var(--mono)', fontSize: 48, fontWeight: 900, color: tetoColor, lineHeight: 1, marginBottom: 6 }}>
-                {latest ? fmtPct(usoTeto) : '—'}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 24 }}>
-                <span style={{ fontSize: 12, color: tetoColor }}>
-                  {latest
-                    ? latest.alertaTeto.cenario === 'dentro_limite' ? '↑ dentro do limite' : '⚠ fora do limite'
-                    : 'sem simulação'}
-                </span>
-                <span style={{ fontSize: 12, color: 'var(--text3)' }}>em relação ao teto anual</span>
+                {kpis.source !== 'empty' ? fmtPct(usoTeto) : '—'}
               </div>
 
-              {/* Botões de ação */}
+              {/* Mensagem contextual dinâmica — substituiu "↑ dentro do limite" */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text1)', marginBottom: 4 }}>
+                  {kpis.contextMessage}
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5, margin: 0 }}>
+                  {kpis.contextSubMessage}
+                </p>
+              </div>
+
+              {/* CTA dinâmico baseado no estado */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
                 <Link
-                  href={freeSimulationLimitReached ? '/upgrade' : '/dashboard/simular'}
+                  href={kpis.primaryCta.href}
                   className="dashboard-action dashboard-primary-action"
                   style={{ padding: '9px 16px', fontSize: 13, flex: 1, justifyContent: 'center' }}
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                  {freeSimulationLimitReached ? 'Upgrade' : 'Simular'}
+                  {kpis.primaryCta.label}
                 </Link>
                 <Link
                   href="/dashboard/relatorio"
@@ -288,30 +309,45 @@ export default async function DashboardPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                   <span style={{ fontSize: 11, color: 'var(--text3)' }}>Teto MEI {new Date().getFullYear()}</span>
                   <span style={{ fontSize: 11, fontFamily: 'var(--mono)', color: tetoColor }}>
-                    {latest ? fmt(latest.alertaTeto.faturamentoAcumulado) : 'R$ 0'} de {latest ? fmt(latest.alertaTeto.tetoAnual) : 'R$ 130.000'}
+                    {fmt(kpis.faturamentoAcumulado)} de {fmt(kpis.tetoAnual)}
                   </span>
                 </div>
                 <div role="progressbar" aria-label="Uso do teto MEI" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(Math.min(100, usoTeto * 100))} style={{ height: 8, background: 'var(--bg3)', borderRadius: 999, overflow: 'hidden' }}>
-                  <div style={{ width: `${Math.min(100, Math.max(0, usoTeto * 100))}%`, height: '100%', background: tetoColor, borderRadius: 999 }} />
+                  <div style={{ width: `${Math.min(100, Math.max(0, usoTeto * 100))}%`, height: '100%', background: tetoColor, borderRadius: 999, transition: 'width .4s ease' }} />
                 </div>
               </div>
 
-              {/* 3 métricas */}
+              {/* 3 métricas — agora sempre populadas dos KPIs unificados */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                 {[
-                  { label: 'Projeção 12m', value: latest ? fmt(latest.alertaTeto.projecaoAnual) : '—' },
-                  { label: 'Melhor regime', value: latest ? REGIME_LABELS[latest.comparativo.melhorRegime] : '—' },
-                  { label: 'Economia est.', value: impactoTotal > 0 ? fmt(impactoTotal) : latest ? '—' : '—' },
+                  {
+                    label: 'Projeção 12m',
+                    value: kpis.source !== 'empty' ? fmt(kpis.projecaoAnual) : '—',
+                    sub: kpis.source === 'monitor' && kpis.monthsOfHistory < 3
+                      ? `extrapolada de ${kpis.monthsOfHistory} mês${kpis.monthsOfHistory > 1 ? 'es' : ''}`
+                      : kpis.source !== 'empty' ? 'baseada no histórico' : 'lance dados',
+                  },
+                  {
+                    label: 'Anexo atual',
+                    value: kpis.source !== 'empty' ? `Anexo ${kpis.anexoAtual}` : '—',
+                    sub: kpis.fatorRAtual > 0 ? `Fator R ${fmtPct(kpis.fatorRAtual)}` : 'Fator R pendente',
+                  },
+                  {
+                    label: 'DAS estimado',
+                    value: kpis.dasMensalEstimado > 0 ? `${fmt(kpis.dasMensalEstimado)}` : '—',
+                    sub: kpis.dasMensalEstimado > 0 ? '/mês' : 'sem dados',
+                  },
                 ].map(m => (
                   <div key={m.label} style={{ background: 'var(--bg2)', borderRadius: 'var(--radius)', padding: '10px 12px' }}>
                     <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{m.label}</div>
                     <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.value}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2, lineHeight: 1.2 }}>{m.sub}</div>
                   </div>
                 ))}
               </div>
             </Panel>
 
-            {/* Card 2: 2×2 métricas rápidas */}
+            {/* Card 2: 2×2 métricas rápidas — agora alimentado pelos KPIs unificados */}
             <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 16 }}>
               {/* Linha superior */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -319,29 +355,39 @@ export default async function DashboardPage() {
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'var(--lime)', borderRadius: '8px 8px 0 0' }} />
                   <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>Projeção</span>
                   <span style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 900, color: 'var(--lime)', lineHeight: 1 }}>
-                    {latest ? fmt(latest.alertaTeto.projecaoAnual) : '—'}
+                    {kpis.projecaoAnual > 0 ? fmt(kpis.projecaoAnual) : '—'}
                   </span>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>anual estimado</span>
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    {kpis.projecaoAnual > 0
+                      ? kpis.monthsOfHistory >= 3 ? 'anual estimado' : `de ${kpis.monthsOfHistory} mês${kpis.monthsOfHistory > 1 ? 'es' : ''}`
+                      : 'lance dados'}
+                  </span>
                 </Panel>
                 <Panel style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: fatorRValue != null ? (fatorRValue >= 0.28 ? 'var(--lime)' : 'var(--orange)') : 'var(--border)', borderRadius: '8px 8px 0 0' }} />
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: kpis.fatorRAtual > 0 ? (kpis.fatorRAtual >= 0.28 ? 'var(--lime)' : 'var(--orange)') : 'var(--border)', borderRadius: '8px 8px 0 0' }} />
                   <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>Fator R</span>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 900, color: fatorRValue != null ? (fatorRValue >= 0.28 ? 'var(--lime)' : 'var(--orange)') : 'var(--text3)', lineHeight: 1 }}>
-                    {fatorRValue != null ? fmtPct(fatorRValue) : '—'}
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 900, color: kpis.fatorRAtual > 0 ? (kpis.fatorRAtual >= 0.28 ? 'var(--lime)' : 'var(--orange)') : 'var(--text3)', lineHeight: 1 }}>
+                    {kpis.fatorRAtual > 0 ? fmtPct(kpis.fatorRAtual) : '—'}
                   </span>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>{fatorRValue != null ? (fatorRValue >= 0.28 ? 'elegível Anexo III' : 'abaixo de 28%') : 'não calculado'}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    {kpis.fatorRAtual > 0
+                      ? (kpis.fatorRAtual >= 0.28 ? 'Anexo III ✓' : 'abaixo de 28%')
+                      : 'sem folha lançada'}
+                  </span>
                 </Panel>
               </div>
               {/* Linha inferior */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Panel style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'var(--blue)', borderRadius: '8px 8px 0 0' }} />
-                  <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>Simulações</span>
+                  <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>Meses no histórico</span>
                   <span style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 900, color: 'var(--blue)', lineHeight: 1 }}>
-                    {simulationsUsed}
+                    {kpis.monthsOfHistory || simulationsUsed}
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                    {currentPlan === 'free' ? `de ${FREE_SIMULATION_LIMIT} no free` : 'ilimitadas'}
+                    {kpis.monthsOfHistory > 0
+                      ? kpis.hasCurrentMonthEntry ? 'mês atual lançado' : 'lance o mês corrente'
+                      : currentPlan === 'free' ? `${simulationsUsed}/${FREE_SIMULATION_LIMIT} simulações` : `${simulationsUsed} simulações`}
                   </span>
                 </Panel>
                 <Panel style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', overflow: 'hidden' }}>
@@ -351,7 +397,7 @@ export default async function DashboardPage() {
                     {oportunidades.length}
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                    {impactoTotal > 0 ? `${fmt(impactoTotal)}/ano` : 'identificadas'}
+                    {impactoTotal > 0 ? `${fmt(impactoTotal)}/ano` : oportunidades.length > 0 ? 'identificadas' : 'rode simulação'}
                   </span>
                 </Panel>
               </div>
@@ -406,7 +452,7 @@ export default async function DashboardPage() {
 
           {/* ── Row 2: Monitor mensal (full width, peça principal de ação) ── */}
           {profile?.cnae_principal && profile?.tipo_mei && (
-            <section style={{ marginBottom: 16 }}>
+            <section id="monitor" style={{ marginBottom: 16, scrollMarginTop: 24 }}>
               <Panel style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{
                   padding: '18px 24px',
