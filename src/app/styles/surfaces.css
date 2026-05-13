@@ -107,8 +107,11 @@
   overflow: hidden;
   transition: width 220ms var(--ease-out), box-shadow 220ms ease;
 }
-.db-sidebar:hover .db-sidebar-inner,
-.db-sidebar:focus-within .db-sidebar-inner {
+/* Hover/focus aplicado ao INNER (não ao outer 64px), senão quando o inner
+   expande para 220px o cursor sai do outer e a sidebar collapsa antes do
+   clique registrar — o famoso "hover trap" de menu expansível. */
+.db-sidebar-inner:hover,
+.db-sidebar-inner:focus-within {
   width: 220px;
   box-shadow: 8px 0 32px oklch(2% 0.01 255 / 0.4);
 }
@@ -184,8 +187,8 @@
   transition: opacity 180ms ease, transform 180ms var(--ease-out);
   pointer-events: none;
 }
-.db-sidebar:hover .db-nav-label,
-.db-sidebar:focus-within .db-nav-label {
+.db-sidebar-inner:hover .db-nav-label,
+.db-sidebar-inner:focus-within .db-nav-label {
   opacity: 1;
   transform: translateX(0);
   pointer-events: auto;

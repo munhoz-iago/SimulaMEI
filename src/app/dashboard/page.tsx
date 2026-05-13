@@ -269,8 +269,9 @@ export default async function DashboardPage() {
           {/* Nav items */}
           <nav className="db-sidebar-nav">
             {[
+              { href: '/?from=dashboard', label: 'Página inicial', active: false, icon: <><path d="M3 12l9-9 9 9"/><path d="M5 10v10a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1V10"/></> },
               { href: '/dashboard', label: 'Dashboard', active: true, icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></> },
-              { href: '/?simular=1#simulador', label: 'Simulador', active: false, icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></> },
+              { href: '/?simular=1#simulador', label: 'Nova simulação', active: false, icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></> },
               { href: '/relatorio', label: 'Relatório', active: false, icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></> },
               { href: '/aprenda', label: 'Aprenda', active: false, icon: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></> },
             ].map(nav => (
@@ -334,8 +335,19 @@ export default async function DashboardPage() {
                 {PLAN_LABELS[currentPlan]}
               </Pill>
               <ThemeToggle size={32} />
-              <Link href="/?from=dashboard" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>
-                ← Simulador
+              <Link
+                href="/?from=dashboard"
+                className="dashboard-action dashboard-secondary-action"
+                style={{
+                  padding: '7px 12px', fontSize: 12, fontWeight: 700,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M3 12l9-9 9 9"/>
+                  <path d="M5 10v10a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1V10"/>
+                </svg>
+                Página inicial
               </Link>
             </div>
           </header>
