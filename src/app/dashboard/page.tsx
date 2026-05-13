@@ -396,8 +396,70 @@ export default async function DashboardPage() {
             </Panel>
           </section>
 
-          {/* ── Row 2: Atividades recentes + Monitor ─────────────── */}
-          <section style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 16, marginBottom: 16 }} className="db-row2">
+          {/* ── Row 2: Monitor mensal (full width, peça principal de ação) ── */}
+          {profile?.cnae_principal && profile?.tipo_mei && (
+            <section style={{ marginBottom: 16 }}>
+              <Panel style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{
+                  padding: '18px 24px',
+                  borderBottom: '1px solid var(--border)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 12,
+                  background: 'linear-gradient(90deg, var(--bg1) 0%, rgba(200,241,53,0.025) 100%)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 8,
+                      background: 'rgba(200,241,53,0.1)', border: '1px solid rgba(200,241,53,0.2)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', display: 'block', marginBottom: 2 }}>
+                        Recorrência mensal
+                      </span>
+                      <h2 style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>Monitor — lance o mês corrente</h2>
+                    </div>
+                  </div>
+                  <span className="db-monitor-hint" style={{ fontSize: 12, color: 'var(--text3)', fontStyle: 'italic' }}>
+                    Atualizar todo início de mês mantém DAS, Fator R e alertas em dia
+                  </span>
+                </div>
+                <div style={{ padding: '24px 28px' }}>
+                  <MonthlyMonitorSection
+                    cnae={profile.cnae_principal}
+                    tipoMei={profile.tipo_mei}
+                    defaultMonth={profile.mes_atual ?? currentMonth}
+                    defaultYear={currentYear}
+                    defaultRevenue={profile.faturamento_mensal_estimado ?? 0}
+                    defaultPayroll={profile.folha_mensal ?? 0}
+                    initialSummary={monitorSummary}
+                    initialTransition={monitorTransition}
+                    recentRows={monthlyInputs.map(item => ({
+                      ano: item.ano,
+                      mes: item.mes,
+                      faturamentoMes: Number(item.faturamento_mes),
+                      folhaMes: Number(item.folha_mes),
+                      anexoCalculado: item.anexo_calculado,
+                      fatorR: item.fator_r,
+                    }))}
+                    monthlyInputsError={monthlyInputsError}
+                  />
+                </div>
+              </Panel>
+            </section>
+          )}
+
+          {/* ── Row 2 (legado): Atividades recentes + Monitor (compacto fallback) ─ */}
+          <section style={{ display: 'grid', gridTemplateColumns: profile?.cnae_principal ? '1fr' : '1fr 380px', gap: 16, marginBottom: 16 }} className="db-row2">
 
             {/* Tabela de simulações */}
             <Panel style={{ padding: 0, overflow: 'hidden' }}>
@@ -494,45 +556,25 @@ export default async function DashboardPage() {
               )}
             </Panel>
 
-            {/* Monitor mensal */}
-            <Panel style={{ padding: 0, overflow: 'hidden' }}>
-              <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
-                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', display: 'block', marginBottom: 2 }}>
-                  Recorrência
-                </span>
-                <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Monitor mensal</h2>
-              </div>
-              <div style={{ padding: '20px 24px' }}>
-                {profile?.cnae_principal && profile?.tipo_mei ? (
-                  <MonthlyMonitorSection
-                    cnae={profile.cnae_principal}
-                    tipoMei={profile.tipo_mei}
-                    defaultMonth={profile.mes_atual ?? currentMonth}
-                    defaultYear={currentYear}
-                    defaultRevenue={profile.faturamento_mensal_estimado ?? 0}
-                    defaultPayroll={profile.folha_mensal ?? 0}
-                    initialSummary={monitorSummary}
-                    initialTransition={monitorTransition}
-                    recentRows={monthlyInputs.map(item => ({
-                      ano: item.ano,
-                      mes: item.mes,
-                      faturamentoMes: Number(item.faturamento_mes),
-                      folhaMes: Number(item.folha_mes),
-                      anexoCalculado: item.anexo_calculado,
-                      fatorR: item.fator_r,
-                    }))}
-                    monthlyInputsError={monthlyInputsError}
-                  />
-                ) : (
-                  <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                    <div style={{ fontSize: 32, marginBottom: 12 }}>📅</div>
-                    <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7, margin: '0 0 14px' }}>
-                      Complete o onboarding para ativar o monitor mensal com histórico e alerta de anexo.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </Panel>
+            {/* Monitor mensal compacto — só mostra quando onboarding não foi
+                completado (cnae_principal ausente). Caso contrário, o
+                widget full-width acima já preenche esse papel. */}
+            {!profile?.cnae_principal && (
+              <Panel style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', display: 'block', marginBottom: 2 }}>
+                    Recorrência
+                  </span>
+                  <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Monitor mensal</h2>
+                </div>
+                <div style={{ padding: '20px 24px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 32, marginBottom: 12 }}>📅</div>
+                  <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7, margin: '0 0 14px' }}>
+                    Complete o onboarding para ativar o monitor mensal com histórico e alerta de anexo.
+                  </p>
+                </div>
+              </Panel>
+            )}
           </section>
 
           {/* ── Row 3: Oportunidades + Calendário ────────────────── */}
