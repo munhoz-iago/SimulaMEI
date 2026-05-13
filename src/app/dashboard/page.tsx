@@ -1,7 +1,5 @@
 import Link from 'next/link'
 import { unstable_cache } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { logoutAction } from '@/app/auth/logout/action'
 import { createClient } from '@/lib/supabase/server'
 import {
   CNAE_OFICIAL_TOTAL,
@@ -16,10 +14,9 @@ import { DeleteAccountSection } from '@/components/dashboard/DeleteAccountSectio
 import { MonthlyMonitorSection } from '@/components/dashboard/MonthlyMonitorSection'
 import { Panel } from '@/components/dashboard/Panel'
 import { Pill } from '@/components/dashboard/Pill'
-import { ThemeToggle } from '@/components/theme/ThemeToggle'
-import { isAdminEmail } from '@/lib/auth/admin-access'
+import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
+import { getDashboardContext } from '@/lib/dashboard/context'
 import { fmt, fmtPct } from '@/lib/format'
-import { isOnboardingComplete, type UserProfileOnboarding } from '@/lib/onboarding'
 import type { ResultadoSimulacao } from '@/types/tributario'
 
 export const metadata = {
@@ -144,39 +141,21 @@ async function getCachedOportunidades(simulation: SimulationRow | undefined) {
 }
 
 export default async function DashboardPage() {
+  // Contexto compartilhado (auth + onboarding + greeting) deduplicado via cache
+  const ctx = await getDashboardContext()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = { id: ctx.user.id, email: ctx.user.email ?? '' }
+  const profile = ctx.profile
+  const hasFullAdminAccess = ctx.hasFullAdminAccess
 
-  if (!user) {
-    redirect('/auth/login?next=/dashboard')
-  }
-
-  const [profileResult, simulationsResult, usageResult] = await Promise.all([
-    supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle(),
+  const [simulationsResult, usageResult] = await Promise.all([
     getRecentSimulations(supabase, user.id),
     getSimulationUsageCount(supabase, user.id),
   ])
 
-  if (profileResult.error) {
-    throw new Error(`Dashboard profile query failed: ${profileResult.error.message}`)
-  }
-
-  const profileData = profileResult.data
-
-  const hasFullAdminAccess = isAdminEmail(user.email)
-
-  if (!hasFullAdminAccess && !isOnboardingComplete(profileData as UserProfileOnboarding | null)) {
-    redirect('/onboarding')
-  }
-
   const { rows: simulations, error: simulationsError } = simulationsResult
   const { rows: monthlyInputs, error: monthlyInputsError } = await getMonthlyInputs(supabase, user.id)
-  const profile = profileData as UserProfileOnboarding | null
-  const currentPlan = profile?.plano ?? 'free'
+  const currentPlan = ctx.plan
   const simulationsUsed = usageResult.error ? simulations.length : usageResult.count
   const freeSimulationLimitReached = currentPlan === 'free' && simulationsUsed >= FREE_SIMULATION_LIMIT
   const latestSimulation = simulations[0]
@@ -236,123 +215,23 @@ export default async function DashboardPage() {
     !simulationsError,
   ].filter(Boolean).length
 
-  const userName = profile?.nome ?? user.email?.split('@')[0] ?? 'você'
-  // Horário do Brasil (não do servidor Vercel que roda UTC)
-  const brHour = Number(
-    new Intl.DateTimeFormat('pt-BR', { hour: 'numeric', hour12: false, timeZone: 'America/Sao_Paulo' })
-      .format(new Date()),
-  )
-  const greeting = brHour < 12 ? 'Bom dia' : brHour < 18 ? 'Boa tarde' : 'Boa noite'
+  const { userName, greeting } = ctx
   const fatorRValue = latest?.fatorR?.fatorR
   const tetoColor = metricTone(tetoTone)
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg0)', color: 'var(--text1)' }}>
+    <>
+      {/* Header da página (sidebar vive no layout) */}
+      <DashboardPageHeader
+        greeting={`${greeting}, ${userName}`}
+        subtitle="Acompanhe seu teto MEI, regime fiscal e oportunidades em tempo real."
+        plan={currentPlan}
+      />
 
-      {/* ── Sidebar ─────────────────────────────────────────────── */}
-      {/* Outer reserva 64px no layout; inner expande para 220px no hover
-          como overlay (sem empurrar o conteúdo principal). */}
-      <aside aria-label="Navegação do dashboard" className="db-sidebar">
-        <div className="db-sidebar-inner">
-          {/* Logo mark */}
-          <Link href="/?from=dashboard" className="db-sidebar-logo" aria-label="Início">
-            <div style={{ width: 32, height: 32, background: 'var(--lime)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-on-accent)" strokeWidth="2.5">
-                <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-              </svg>
-            </div>
-            <span className="db-nav-label" style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.02em' }}>
-              Simula<span style={{ color: 'var(--lime)' }}>MEI</span>
-            </span>
-          </Link>
+      {/* Sidebar + greeting header agora vivem em /dashboard/layout.tsx
+          e em <DashboardPageHeader/> acima. Conteúdo flui direto. */}
 
-          {/* Nav items */}
-          <nav className="db-sidebar-nav">
-            {[
-              { href: '/?from=dashboard', label: 'Página inicial', active: false, icon: <><path d="M3 12l9-9 9 9"/><path d="M5 10v10a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1V10"/></> },
-              { href: '/dashboard', label: 'Dashboard', active: true, icon: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></> },
-              { href: '/?simular=1#simulador', label: 'Nova simulação', active: false, icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></> },
-              { href: '/relatorio', label: 'Relatório', active: false, icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></> },
-              { href: '/aprenda', label: 'Aprenda', active: false, icon: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></> },
-            ].map(nav => (
-              <Link
-                key={nav.href}
-                href={nav.href}
-                aria-label={nav.label}
-                aria-current={nav.active ? 'page' : undefined}
-                className="db-nav-item"
-                data-active={nav.active}
-              >
-                <span className="db-nav-icon-box">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    {nav.icon}
-                  </svg>
-                </span>
-                <span className="db-nav-label">{nav.label}</span>
-              </Link>
-            ))}
-          </nav>
-
-          {/* Bottom: logout */}
-          <form action={logoutAction} className="db-sidebar-bottom">
-            <button
-              type="submit"
-              aria-label="Sair"
-              className="db-nav-item db-nav-item-button"
-            >
-              <span className="db-nav-icon-box">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                  <polyline points="16 17 21 12 16 7"/>
-                  <line x1="21" y1="12" x2="9" y2="12"/>
-                </svg>
-              </span>
-              <span className="db-nav-label">Sair</span>
-            </button>
-          </form>
-        </div>
-      </aside>
-
-      {/* ── Main content ─────────────────────────────────────────── */}
-      <main style={{ flex: 1, minWidth: 0, padding: '32px 32px 56px', overflowX: 'hidden' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-
-          {/* ── Top header ──────────────────────────────────────── */}
-          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, gap: 20 }}>
-            <div>
-              <h1 style={{ fontSize: 'clamp(22px, 3vw, 28px)', fontWeight: 800, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-                {greeting}, {userName}
-              </h1>
-              <p style={{ color: 'var(--text3)', fontSize: 13, margin: 0 }}>
-                Acompanhe seu teto MEI, regime fiscal e oportunidades em tempo real.
-              </p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-              <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
-                Motor {TAX_RULE_VERSION}
-              </span>
-              <Pill color={PLAN_ACCENT_COLORS[currentPlan]}>
-                {PLAN_LABELS[currentPlan]}
-              </Pill>
-              <ThemeToggle size={32} />
-              <Link
-                href="/?from=dashboard"
-                className="dashboard-action dashboard-secondary-action"
-                style={{
-                  padding: '7px 12px', fontSize: 12, fontWeight: 700,
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M3 12l9-9 9 9"/>
-                  <path d="M5 10v10a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1V10"/>
-                </svg>
-                Página inicial
-              </Link>
-            </div>
-          </header>
-
-          {/* ── Row 1: 3 colunas principais ─────────────────────── */}
+      {/* ── Row 1: 3 colunas principais ─────────────────────── */}
           <section style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr 0.9fr', gap: 16, marginBottom: 16 }} className="db-row1">
 
             {/* Card 1: Teto MEI (= Total Balance) */}
@@ -379,7 +258,7 @@ export default async function DashboardPage() {
               {/* Botões de ação */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
                 <Link
-                  href={freeSimulationLimitReached ? '/upgrade' : '/?simular=1#simulador'}
+                  href={freeSimulationLimitReached ? '/upgrade' : '/dashboard/simular'}
                   className="dashboard-action dashboard-primary-action"
                   style={{ padding: '9px 16px', fontSize: 13, flex: 1, justifyContent: 'center' }}
                 >
@@ -387,7 +266,7 @@ export default async function DashboardPage() {
                   {freeSimulationLimitReached ? 'Upgrade' : 'Simular'}
                 </Link>
                 <Link
-                  href="/relatorio"
+                  href="/dashboard/relatorio"
                   className="dashboard-action dashboard-secondary-action"
                   style={{ padding: '9px 16px', fontSize: 13 }}
                 >
@@ -530,7 +409,7 @@ export default async function DashboardPage() {
                   <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Simulações recentes</h2>
                 </div>
                 <Link
-                  href={freeSimulationLimitReached ? '/upgrade' : '/?simular=1#simulador'}
+                  href={freeSimulationLimitReached ? '/upgrade' : '/dashboard/simular'}
                   className="dashboard-action dashboard-primary-action"
                   style={{ padding: '8px 14px', fontSize: 12 }}
                 >
@@ -592,7 +471,7 @@ export default async function DashboardPage() {
                   <p style={{ color: 'var(--text3)', fontSize: 13, lineHeight: 1.7, margin: '0 0 14px' }}>
                     Nenhuma simulação salva ainda. Faça uma simulação logado para ativar o histórico.
                   </p>
-                  <Link href="/?simular=1#simulador" className="dashboard-action dashboard-primary-action" style={{ padding: '9px 16px', fontSize: 13 }}>
+                  <Link href="/dashboard/simular" className="dashboard-action dashboard-primary-action" style={{ padding: '9px 16px', fontSize: 13 }}>
                     Ir para o simulador
                   </Link>
                 </div>
@@ -690,7 +569,7 @@ export default async function DashboardPage() {
                     <p style={{ color: 'var(--text3)', fontSize: 13, lineHeight: 1.7, margin: '0 0 12px' }}>
                       Rode uma simulação com CNAE e folha para o motor identificar oportunidades de economia.
                     </p>
-                    <Link href="/?simular=1#simulador" className="dashboard-action dashboard-primary-action" style={{ padding: '8px 14px', fontSize: 12 }}>
+                    <Link href="/dashboard/simular" className="dashboard-action dashboard-primary-action" style={{ padding: '8px 14px', fontSize: 12 }}>
                       Simular agora
                     </Link>
                   </div>
@@ -764,7 +643,7 @@ export default async function DashboardPage() {
                 </div>
               </div>
               <Link
-                href="/relatorio"
+                href="/dashboard/relatorio"
                 className="dashboard-action dashboard-primary-action"
                 style={{ padding: '12px 22px', fontSize: 14, fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}
               >
@@ -813,9 +692,6 @@ export default async function DashboardPage() {
               <DeleteAccountSection />
             </Panel>
           </section>
-
-        </div>
-      </main>
-    </div>
+    </>
   )
 }
