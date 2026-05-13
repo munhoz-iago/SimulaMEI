@@ -18,6 +18,23 @@ export function FatorRInterativo({ projecao, fatorRInicial }: FatorRInterativoPr
     Math.max((projecao * fatorRInicial) / 12, 0)
   )
 
+  // Defesa: sem projeção válida, o componente fica inerte e enganador.
+  // Mostra um placeholder pedindo simulação real ao invés de R$ 0 em tudo.
+  if (!Number.isFinite(projecao) || projecao <= 0) {
+    return (
+      <div style={{
+        background: 'var(--bg1)', border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-lg)', padding: '20px 24px',
+      }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Simulador Fator R</h3>
+        <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, margin: 0 }}>
+          Faça uma nova simulação com faturamento e folha atualizados para usar o simulador interativo
+          de pró-labore.
+        </p>
+      </div>
+    )
+  }
+
   const sliderMax = projecao * 0.5 / 12
   const resultado = calcularFatorR(folhaMensal * 12, projecao)
   const fr = resultado.fatorR
