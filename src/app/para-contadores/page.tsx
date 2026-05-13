@@ -1,6 +1,5 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { AccountantLeadForm } from '@/components/accountant/AccountantLeadForm'
 import { TAX_RULE_VERSION } from '@/lib/tributario'
 import { getSiteUrl } from '@/constants/site'
 
@@ -250,39 +249,86 @@ export default function ParaContadoresPage() {
 
           <aside className="instrument-panel" style={{ padding: 24, display: 'grid', gap: 20, alignContent: 'start', minWidth: 0 }}>
             <div style={{ color: 'var(--lime)', fontSize: 12, fontWeight: 900, textTransform: 'uppercase', marginBottom: 8 }}>
-              Acesso antecipado
+              Trial Starter · 14 dias grátis
             </div>
-            <h2 style={{ fontSize: 24, lineHeight: 1.1, marginBottom: 10 }}>
-              Entre na lista do painel contador
+            <h2 style={{ fontSize: 24, lineHeight: 1.15, marginBottom: 10 }}>
+              Comece hoje, decida em 14 dias
             </h2>
-            <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.6, marginBottom: 20 }}>
-              Use a faixa da carteira para receber uma abordagem compatível com o tamanho do escritório. Carteiras 150+ entram como prioridade comercial.
+            <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.6, marginBottom: 4 }}>
+              Crie o escritório, cadastre seus primeiros clientes MEI e teste alertas + relatórios.
+              Só cobramos se você gostar.
             </p>
-            <AccountantLeadForm />
+
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                'Cadastre até 30 clientes ativos',
+                'Sem cartão · cancele quando quiser',
+                'Relatórios PDF com sua marca',
+                'Alertas automáticos de Fator R e teto',
+              ].map((feature, i) => (
+                <li key={i} style={{ display: 'flex', gap: 10, fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>
+                  <span style={{
+                    width: 18, height: 18, borderRadius: 4,
+                    background: 'var(--tint-lime-strong)',
+                    border: '1px solid var(--tint-lime-border)',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, marginTop: 1,
+                  }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="3.5">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </span>
+                  {feature}
+                </li>
+              ))}
+            </ul>
+
+            <Link
+              href="/onboarding/contador"
+              className="pressable accountant-plan-link"
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: 10,
+                padding: '14px 16px',
+                background: 'var(--lime)',
+                color: 'var(--ink-on-accent)',
+                borderRadius: 'var(--radius)',
+                fontWeight: 900,
+                fontSize: 14,
+                textDecoration: 'none',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+              <span>Criar conta e começar grátis</span>
+            </Link>
 
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
               <div style={{ color: 'var(--text3)', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', marginBottom: 12 }}>
-                Já quer assinar?
+                Já quer ver os planos?
               </div>
               <Link
                 href="/upgrade/contador"
-                className="pressable accountant-plan-link"
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  padding: '13px 16px',
-                  background: 'var(--lime)',
-                  color: 'var(--ink-on-accent)',
+                  padding: '11px 14px',
+                  background: 'var(--bg2)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text1)',
                   borderRadius: 'var(--radius)',
-                  fontWeight: 900,
-                  fontSize: 14,
+                  fontWeight: 700,
+                  fontSize: 13,
                   textDecoration: 'none',
                   gap: 10,
                 }}
               >
-                <span>Ver planos e preços</span>
-                <span className="plan-arrow" style={{ fontSize: 18 }}>→</span>
+                <span>Comparativo Starter · Pro · Enterprise</span>
+                <span style={{ fontSize: 16, color: 'var(--text3)' }}>→</span>
               </Link>
               <p style={{ color: 'var(--text3)', fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>
                 Starter R$ 97/mês · Pro R$ 247/mês · Enterprise sob consulta

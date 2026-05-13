@@ -1,6 +1,6 @@
 'use client'
 
-import { AccountantLeadForm } from '@/components/accountant/AccountantLeadForm'
+import Link from 'next/link'
 
 const FEATURES = [
   'Relatório exportável em PDF com seus dados',
@@ -89,12 +89,6 @@ export function ContadoresSection() {
                     href="#contadores-form"
                     className="pressable"
                     onClick={() => {
-                      try {
-                        sessionStorage.setItem('accountantPreselect', JSON.stringify({
-                          plan: plan.name,
-                          carteiraRange: plan.carteiraHint,
-                        }))
-                      } catch {}
                       const el = document.getElementById('contadores-form')
                       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
                     }}
@@ -126,7 +120,7 @@ export function ContadoresSection() {
             </div>{/* /padding wrapper */}
           </div>
 
-          {/* Right: formulário unificado */}
+          {/* Right: CTA de trial direto (substituiu o lead form — onboarding já funciona) */}
           <div
             id="contadores-form"
             className="instrument-panel"
@@ -134,13 +128,100 @@ export function ContadoresSection() {
             style={{ '--reveal-delay': '220' } as React.CSSProperties}
           >
             <div className="instrument-panel-header">
-              <span className="instrument-label">Acesso para escritórios</span>
+              <span className="instrument-label">Trial Starter · 14 dias</span>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '3px 8px', borderRadius: 999,
+                background: 'var(--tint-lime-strong)',
+                border: '1px solid var(--tint-lime-border)',
+                color: 'var(--lime)',
+                fontSize: 10, fontWeight: 900,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                Sem cartão
+              </span>
             </div>
-            <div style={{ padding: '24px 28px' }}>
-            <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 24 }}>
-              Plano contador com clientes ilimitados e relatórios com sua marca.
-            </p>
-            <AccountantLeadForm source="home" />
+            <div style={{ padding: '28px 32px' }}>
+              <h3 style={{
+                fontSize: 22, fontWeight: 800, margin: '0 0 10px',
+                letterSpacing: '-0.01em', lineHeight: 1.2,
+              }}>
+                Comece hoje<br />
+                <span style={{ color: 'var(--lime)' }}>14 dias grátis</span>, sem cartão.
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, margin: '0 0 22px' }}>
+                Crie a conta do escritório, cadastre seus primeiros clientes MEI e teste
+                relatórios com sua marca. Decide assinar só se gostar.
+              </p>
+
+              {/* Lista do que o user pode fazer hoje */}
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  'Cadastre até 30 clientes ativos',
+                  'Carteira com alertas automáticos',
+                  'Relatório PDF com sua marca',
+                  'Cancele a qualquer momento',
+                ].map((feature, i) => (
+                  <li key={i} style={{ display: 'flex', gap: 10, fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>
+                    <span style={{
+                      width: 20, height: 20, borderRadius: 5,
+                      background: 'var(--tint-lime-strong)',
+                      border: '1px solid var(--tint-lime-border)',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="3">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              {/* CTA primário */}
+              <Link
+                href="/onboarding/contador"
+                className="pressable"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  width: '100%',
+                  minHeight: 48,
+                  borderRadius: 'var(--radius)',
+                  background: 'var(--lime)',
+                  color: 'var(--ink-on-accent)',
+                  fontSize: 14, fontWeight: 900,
+                  textDecoration: 'none',
+                  marginBottom: 10,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+                Criar conta e começar o trial
+              </Link>
+
+              {/* CTA secundário (demo / comercial pra carteiras grandes) */}
+              <Link
+                href="/para-contadores"
+                style={{
+                  display: 'block',
+                  textAlign: 'center',
+                  fontSize: 12,
+                  color: 'var(--text3)',
+                  textDecoration: 'none',
+                  padding: '8px 0',
+                }}
+              >
+                Carteira com mais de 150 clientes? <strong style={{ color: 'var(--text2)' }}>Falar com vendas →</strong>
+              </Link>
+
+              <p style={{
+                fontSize: 11, color: 'var(--text3)', textAlign: 'center',
+                margin: '12px 0 0', lineHeight: 1.5,
+              }}>
+                Sem cartão de crédito · Sem fidelidade · 7 dias de garantia (CDC art. 49)
+              </p>
             </div>{/* /padding wrapper */}
           </div>
         </div>
