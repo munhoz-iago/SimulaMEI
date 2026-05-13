@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { CheckoutButton } from '@/components/billing/CheckoutButton'
+import { ScrollToFocusedPlan } from '@/components/billing/ScrollToFocusedPlan'
 import { StaticPageLayout } from '@/components/layout/StaticPageLayout'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentAccountantOffice } from '@/lib/accountant/server'
@@ -95,6 +96,7 @@ interface SearchParams {
   checkout?: string
   plan?: string
   session_id?: string
+  focus?: string
 }
 
 export default async function AccountantUpgradePage({
@@ -105,6 +107,10 @@ export default async function AccountantUpgradePage({
   const params = searchParams ? await searchParams : {}
   const checkoutStatus = params.checkout
   const cancelledPlan = params.plan
+  // Plano que o usuário clicou na home (?focus=starter|pro) — destaca o card
+  // e dispara auto-scroll para reduzir cliques até o checkout do Stripe.
+  const focusedPlan: 'starter' | 'pro' | null =
+    params.focus === 'starter' || params.focus === 'pro' ? params.focus : null
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -121,6 +127,8 @@ export default async function AccountantUpgradePage({
       title="Planos para contadores"
       subtitle="Assinatura recorrente no Stripe com sincronização automática de limites. Cancele a qualquer momento pelo Customer Portal."
     >
+      {focusedPlan && <ScrollToFocusedPlan planKey={focusedPlan} />}
+
       {/* Banner: checkout cancelado */}
       {checkoutStatus === 'cancel' && (
         <div className="acc-fade-in" style={{
@@ -243,37 +251,89 @@ export default async function AccountantUpgradePage({
         </div>
       )}
 
+      {/* Banner: usuário chegou clicando "Quero o X" na home */}
+      {focusedPlan && checkoutStatus !== 'success' && (
+        <div className="acc-fade-in" style={{
+          background: 'var(--tint-lime)',
+          border: '1px solid var(--tint-lime-border)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '14px 18px',
+          display: 'flex',
+          gap: 12,
+          alignItems: 'center',
+          marginBottom: 20,
+        }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: 'var(--radius)',
+            background: 'var(--tint-lime-strong)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2.5">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--lime)', marginBottom: 2 }}>
+              Você escolheu o plano {focusedPlan === 'starter' ? 'Starter' : 'Pro'}
+            </div>
+            <p style={{ color: 'var(--text2)', fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+              {hasOffice === false
+                ? 'Crie o escritório e em seguida assine — leva ~2 minutos.'
+                : 'Confirme o plano abaixo para abrir o checkout seguro do Stripe.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Grid 3 colunas: Starter + Pro + Enterprise */}
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }} className="acc-plans-grid">
         {PLANS.map((plan, i) => {
           const isCurrent = currentPlan === plan.planKey
           const disabled = hasOffice === false
+          const isFocused = focusedPlan === plan.planKey
           return (
             <article
               key={plan.name}
+              id={`plan-${plan.planKey}`}
               className="acc-card acc-fade-in"
               style={{
-                padding: plan.recommended ? '20px 24px 24px' : 24,
-                borderColor: plan.recommended ? 'var(--lime)' : 'var(--border)',
-                borderWidth: plan.recommended ? 2 : 1,
+                padding: plan.recommended || isFocused ? '20px 24px 24px' : 24,
+                borderColor: isFocused ? plan.accent : plan.recommended ? 'var(--lime)' : 'var(--border)',
+                borderWidth: isFocused || plan.recommended ? 2 : 1,
                 background: plan.recommended
                   ? 'linear-gradient(135deg, var(--bg1) 0%, var(--tint-lime) 100%)'
                   : 'var(--bg1)',
                 opacity: disabled ? 0.55 : 1,
                 animationDelay: `${i * 80}ms`,
+                boxShadow: isFocused ? `0 0 0 4px ${plan.accent}22, 0 12px 32px -10px ${plan.accent}44` : undefined,
+                scrollMarginTop: 96,
               }}
             >
-              {plan.recommended && (
-                <div style={{ marginBottom: 12 }}>
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                    padding: '4px 10px', borderRadius: 999,
-                    background: 'var(--lime)', color: 'var(--ink-on-accent)',
-                    fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em',
-                    whiteSpace: 'nowrap',
-                  }}>
-                    ⭐ Mais escolhido
-                  </span>
+              {(plan.recommended || isFocused) && (
+                <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {isFocused && (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      padding: '4px 10px', borderRadius: 999,
+                      background: plan.accent, color: 'var(--ink-on-accent)',
+                      fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      ✓ Sua escolha
+                    </span>
+                  )}
+                  {plan.recommended && !isFocused && (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      padding: '4px 10px', borderRadius: 999,
+                      background: 'var(--lime)', color: 'var(--ink-on-accent)',
+                      fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      ⭐ Mais escolhido
+                    </span>
+                  )}
                 </div>
               )}
 
