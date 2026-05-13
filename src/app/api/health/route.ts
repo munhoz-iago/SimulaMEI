@@ -25,6 +25,13 @@ const OPTIONAL_VARS = [
   'ADMIN_EMAIL',
   'RESEND_API_KEY',
   'NEXT_PUBLIC_POSTHOG_KEY',
+  // Stripe — sem essas, checkouts retornam 503 (degraded but operational)
+  'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+  'STRIPE_PRICE_REPORT_ID',
+  'STRIPE_PRICE_MONITOR_ID',
+  'STRIPE_PRICE_ACCOUNTANT_STARTER_ID',
+  'STRIPE_PRICE_ACCOUNTANT_PRO_ID',
 ] as const
 
 export async function GET() {
