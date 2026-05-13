@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { fmt, fmtPct } from '@/lib/format'
 import type { MonthlyMonitorSummary } from '@/lib/monitor'
+import { isEditable, EDIT_WINDOW_DAY } from '@/lib/monitor/edit-window'
 
 interface RecentMonthlyRow {
   ano: number
@@ -74,6 +75,7 @@ export function MonthlyMonitorSection({
   monthlyInputsError,
 }: MonthlyMonitorSectionProps) {
   const router = useRouter()
+  const formRef = useRef<HTMLFormElement | null>(null)
   const [month, setMonth] = useState(String(defaultMonth))
   const [year, setYear] = useState(String(defaultYear))
   const [revenue, setRevenue] = useState(defaultRevenue ? String(Math.round(defaultRevenue)) : '')
@@ -82,6 +84,32 @@ export function MonthlyMonitorSection({
   const [error, setError] = useState('')
   const [summary, setSummary] = useState<MonthlyMonitorSummary | null>(initialSummary)
   const [transition, setTransition] = useState<TransitionPreview | null>(initialTransition)
+  /** Quando preenchemos o form com um registro existente, ativa o modo de edição
+   *  só pra rotular UX ('Atualizar' em vez de 'Salvar') — o backend já usa
+   *  upsert, então funcionalmente é o mesmo. */
+  const [editingKey, setEditingKey] = useState<string | null>(null)
+
+  function startEditing(row: RecentMonthlyRow) {
+    setMonth(String(row.mes))
+    setYear(String(row.ano))
+    setRevenue(String(Math.round(row.faturamentoMes)))
+    setPayroll(String(Math.round(row.folhaMes)))
+    setEditingKey(`${row.ano}-${row.mes}`)
+    setError('')
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      formRef.current?.querySelector<HTMLInputElement>('#monitor-revenue')?.focus()
+    }, 80)
+  }
+
+  function cancelEditing() {
+    setEditingKey(null)
+    setRevenue(defaultRevenue ? String(Math.round(defaultRevenue)) : '')
+    setPayroll(String(Math.round(defaultPayroll)))
+    setMonth(String(defaultMonth))
+    setYear(String(defaultYear))
+    setError('')
+  }
 
   const hasMetrics = Boolean(summary)
   const fatorR = summary?.fatorRAtual ?? 0
@@ -118,6 +146,7 @@ export function MonthlyMonitorSection({
     setSummary(payload?.summary ?? null)
     setTransition(payload?.transition ?? null)
     setSaving(false)
+    setEditingKey(null)
     router.refresh()
   }
 
@@ -147,7 +176,37 @@ export function MonthlyMonitorSection({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {editingKey && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 14px',
+            borderRadius: 'var(--radius)',
+            border: '1px solid rgba(96,165,250,0.24)',
+            background: 'rgba(96,165,250,0.06)',
+            color: 'var(--blue)', fontSize: 12, fontWeight: 600,
+          }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+              Editando lançamento existente. Salvar sobrescreve os valores anteriores.
+            </span>
+            <button
+              type="button"
+              onClick={cancelEditing}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--text3)', fontSize: 11, fontWeight: 700,
+                textDecoration: 'underline', padding: 0,
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
+
+        <form ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Linha 1: Mês + Ano (compactos lado a lado) */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr 2fr', gap: 12 }}>
             <div>
@@ -227,7 +286,7 @@ export function MonthlyMonitorSection({
               }}
             >
               {saving ? (
-                <>Atualizando…</>
+                <>{editingKey ? 'Atualizando…' : 'Salvando…'}</>
               ) : (
                 <>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -235,7 +294,7 @@ export function MonthlyMonitorSection({
                     <polyline points="17 21 17 13 7 13 7 21"/>
                     <polyline points="7 3 7 8 15 8"/>
                   </svg>
-                  Salvar mês
+                  {editingKey ? 'Atualizar mês' : 'Salvar mês'}
                 </>
               )}
             </button>
@@ -268,7 +327,7 @@ export function MonthlyMonitorSection({
 
         {/* Histórico (timeline compacta) */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
             <span style={LABEL_STYLE}>Últimos lançamentos</span>
             {recentRows.length > 0 && (
               <span style={{ fontSize: 11, color: 'var(--text3)' }}>
@@ -276,48 +335,106 @@ export function MonthlyMonitorSection({
               </span>
             )}
           </div>
+          {recentRows.length > 0 && (
+            <p style={{ fontSize: 11, color: 'var(--text3)', margin: '0 0 12px', lineHeight: 1.5 }}>
+              Lançamentos podem ser corrigidos até o dia {EDIT_WINDOW_DAY} do mês seguinte.
+              Após isso, ficam trancados pra preservar o histórico — entre em contato com suporte se precisar reverter.
+            </p>
+          )}
           {recentRows.length > 0 ? (
             <div style={{ display: 'grid', gap: 0 }}>
-              {recentRows.slice(0, 4).map((row, i, arr) => (
-                <div
-                  key={`${row.ano}-${row.mes}`}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'auto 1fr auto',
-                    gap: 14,
-                    alignItems: 'center',
-                    padding: '10px 0',
-                    borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
-                  }}
-                >
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 8,
-                    background: 'var(--bg2)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 10, fontWeight: 700, color: 'var(--text2)', lineHeight: 1,
-                  }}>
-                    <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--text1)' }}>{monthLabel(row.mes)}</div>
-                    <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 2 }}>{row.ano}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text1)' }}>
-                      {fmt(row.faturamentoMes)}
+              {recentRows.slice(0, 4).map((row, i, arr) => {
+                const editability = isEditable(row.ano, row.mes)
+                const isCurrentlyEditing = editingKey === `${row.ano}-${row.mes}`
+                return (
+                  <div
+                    key={`${row.ano}-${row.mes}`}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'auto 1fr auto auto',
+                      gap: 14,
+                      alignItems: 'center',
+                      padding: '10px 0',
+                      borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                      background: isCurrentlyEditing ? 'rgba(96,165,250,0.04)' : undefined,
+                      borderRadius: isCurrentlyEditing ? 6 : undefined,
+                      marginLeft: isCurrentlyEditing ? -8 : undefined,
+                      marginRight: isCurrentlyEditing ? -8 : undefined,
+                      paddingLeft: isCurrentlyEditing ? 8 : undefined,
+                      paddingRight: isCurrentlyEditing ? 8 : undefined,
+                    }}
+                  >
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 8,
+                      background: 'var(--bg2)',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      lineHeight: 1,
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--text1)' }}>{monthLabel(row.mes)}</div>
+                      <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 2 }}>{row.ano}</div>
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-                      folha {fmt(row.folhaMes)}
-                      {row.fatorR != null && ` · Fator R ${fmtPct(row.fatorR)}`}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text1)' }}>
+                        {fmt(row.faturamentoMes)}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                        folha {fmt(row.folhaMes)}
+                        {row.fatorR != null && ` · Fator R ${fmtPct(row.fatorR)}`}
+                      </div>
                     </div>
+                    <div style={{
+                      fontSize: 11, fontWeight: 800,
+                      color: row.anexoCalculado === 'III' ? 'var(--lime)' : row.anexoCalculado === 'V' ? 'var(--orange)' : 'var(--text3)',
+                      padding: '3px 8px', borderRadius: 4,
+                      background: row.anexoCalculado === 'III' ? 'rgba(200,241,53,0.1)' : row.anexoCalculado === 'V' ? 'rgba(255,140,0,0.1)' : 'var(--bg2)',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {row.anexoCalculado ? `Anexo ${row.anexoCalculado}` : '—'}
+                    </div>
+                    {editability.editable ? (
+                      <button
+                        type="button"
+                        onClick={() => startEditing(row)}
+                        title="Editar este lançamento"
+                        aria-label={`Editar lançamento de ${monthLabel(row.mes)} de ${row.ano}`}
+                        className="pressable"
+                        style={{
+                          width: 30, height: 30, borderRadius: 6,
+                          background: isCurrentlyEditing ? 'rgba(96,165,250,0.16)' : 'transparent',
+                          border: '1px solid var(--border)',
+                          color: isCurrentlyEditing ? 'var(--blue)' : 'var(--text3)',
+                          cursor: 'pointer',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 160ms ease',
+                        }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 20h9"/>
+                          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                        </svg>
+                      </button>
+                    ) : (
+                      <span
+                        title={editability.reason ?? 'Lançamento trancado'}
+                        aria-label="Lançamento trancado (fora da janela de edição)"
+                        style={{
+                          width: 30, height: 30, borderRadius: 6,
+                          background: 'var(--bg2)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text3)',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          opacity: 0.6,
+                        }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                      </span>
+                    )}
                   </div>
-                  <div style={{
-                    fontSize: 11, fontWeight: 800,
-                    color: row.anexoCalculado === 'III' ? 'var(--lime)' : row.anexoCalculado === 'V' ? 'var(--orange)' : 'var(--text3)',
-                    padding: '3px 8px', borderRadius: 4,
-                    background: row.anexoCalculado === 'III' ? 'rgba(200,241,53,0.1)' : row.anexoCalculado === 'V' ? 'rgba(255,140,0,0.1)' : 'var(--bg2)',
-                  }}>
-                    {row.anexoCalculado ? `Anexo ${row.anexoCalculado}` : '—'}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div style={{
