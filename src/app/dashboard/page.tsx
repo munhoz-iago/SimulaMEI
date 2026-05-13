@@ -726,11 +726,8 @@ export default async function DashboardPage() {
                   </div>
                 ))}
 
-                {latest?.fatorR && (
+                {latest?.fatorR && latest.alertaTeto.projecaoAnual > 0 && (
                   <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 10 }}>
-                      Pró-labore interativo
-                    </div>
                     <FatorRInterativo
                       projecao={latest.alertaTeto.projecaoAnual}
                       fatorRInicial={latest.fatorR.fatorR}
