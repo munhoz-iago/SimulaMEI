@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import type { ResultadoSimulacao } from '@/types/tributario'
 import { calcularSimples, gerarOportunidadesFiscais, LIMITES_MEI } from '@/lib/tributario'
@@ -31,6 +32,10 @@ interface RegimeItem {
 
 export function FullResults({ resultado, email }: FullResultsProps) {
   const [activeRegime, setActiveRegime] = useState<string | null>(null)
+  const pathname = usePathname()
+  const inDashboard = pathname?.startsWith('/dashboard') ?? false
+  // Rotas contextuais: dentro do /dashboard preserva o shell; fora aponta pras públicas
+  const reportHref = inDashboard ? '/dashboard/relatorio' : '/relatorio'
   const { fatorR, anexoAtual, comparativo, alertaTeto } = resultado
   const projecao = alertaTeto.projecaoAnual
   const excesso = projecao / alertaTeto.tetoAnual
@@ -111,7 +116,7 @@ export function FullResults({ resultado, email }: FullResultsProps) {
           </div>
           <div className="full-results-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 10 }}>
             <Link
-              href="/relatorio"
+              href={reportHref}
               className="dashboard-action dashboard-secondary-action"
               onClick={() => captureProductEvent('pdf_cta_clicked', { source: 'full-results' })}
               style={{

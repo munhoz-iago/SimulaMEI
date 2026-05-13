@@ -17,21 +17,40 @@ interface SimulatorSectionProps {
    *  Em contextos sem essa seção (ex: /dashboard/simular), passe null pra esconder
    *  ou outro caminho (ex: '/?from=dashboard#como-calcula'). */
   calcLinkHref?: string | null
+  /** Valores iniciais opcionais — quando o usuário chega via prefill (ex: do Monitor mensal),
+   *  evita recapturar dados que já estão no histórico. */
+  initialValues?: {
+    fat?: number
+    mes?: number
+    cnae?: CnaeInfo | null
+    prolabore?: number
+    temProlabore?: boolean
+  }
+  /** Aviso visual mostrando que dados foram pre-populados (origem) */
+  prefillSource?: 'monitor' | null
+  /** Foco automático na seção de pró-labore após carregar */
+  autoFocusProlabore?: boolean
 }
 
 const FAT_SLIDER_MAX = 180000
 const PROLABORE_SLIDER_MAX = 15000
 const FOLHA_COMPLEMENTAR_SLIDER_MAX = 30000
 
-export function SimulatorSection({ onResults, calcLinkHref = '#como-calcula' }: SimulatorSectionProps) {
-  const [fat, setFat] = useState(54000)
-  const [mes, setMes] = useState(new Date().getMonth() + 1)
-  const [cnae, setCnae] = useState<CnaeInfo | null>(null)
-  const [prolabore, setProlabore] = useState(0)
+export function SimulatorSection({
+  onResults,
+  calcLinkHref = '#como-calcula',
+  initialValues,
+  prefillSource,
+  autoFocusProlabore,
+}: SimulatorSectionProps) {
+  const [fat, setFat] = useState(initialValues?.fat ?? 54000)
+  const [mes, setMes] = useState(initialValues?.mes ?? new Date().getMonth() + 1)
+  const [cnae, setCnae] = useState<CnaeInfo | null>(initialValues?.cnae ?? null)
+  const [prolabore, setProlabore] = useState(initialValues?.prolabore ?? 0)
   const [salariosClt, setSalariosClt] = useState(0)
   const [rpa, setRpa] = useState(0)
   const [beneficios, setBeneficios] = useState(0)
-  const [temProlabore, setTemProlabore] = useState(false)
+  const [temProlabore, setTemProlabore] = useState(initialValues?.temProlabore ?? false)
   const [usarFolhaDetalhada, setUsarFolhaDetalhada] = useState(false)
   const [loading, setLoading] = useState(false)
   const [requestError, setRequestError] = useState('')
@@ -162,6 +181,29 @@ export function SimulatorSection({ onResults, calcLinkHref = '#como-calcula' }: 
         >
           {/* ── Left: form ───────────────────────────────────── */}
           <div className="instrument-panel" data-reveal style={{ '--reveal-delay': '140', padding: 28 } as React.CSSProperties}>
+            {prefillSource === 'monitor' && (
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                padding: '12px 14px',
+                marginBottom: 16,
+                borderRadius: 'var(--radius)',
+                background: 'var(--tint-lime)',
+                border: '1px solid var(--tint-lime-border)',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2.5" style={{ flexShrink: 0, marginTop: 2 }}>
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--lime)', marginBottom: 2 }}>
+                    Dados carregados do Monitor mensal
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5, margin: 0 }}>
+                    Pre-populamos com base na média do seu histórico
+                    {autoFocusProlabore ? ' — ajuste o pró-labore abaixo pra ver o impacto no Fator R' : ' — ajuste se quiser refinar o cenário'}.
+                  </p>
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               <div style={{ width: 28, height: 2, background: 'var(--lime)' }} />
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--lime)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>

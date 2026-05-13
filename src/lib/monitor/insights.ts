@@ -205,14 +205,14 @@ function buildRecommendations(input: RecommendationInput): Recommendation[] {
       tone: 'critical',
       title: `Vai estourar o teto em ${monthLabel(input.monthOfTetoBreach.mes)}/${input.monthOfTetoBreach.ano}`,
       body: `Projeção indica ultrapassar o teto MEI em ~${input.projectedOverflow > 0 ? Math.round(input.projectedOverflow).toLocaleString('pt-BR') : 0} reais. Migre para ME no Simples Nacional antes da virada do ano fiscal pra evitar tributação retroativa.`,
-      cta: { label: 'Simular Simples Nacional', href: '/dashboard/simular' },
+      cta: { label: 'Comparar Simples × Lucro Presumido', href: '/dashboard/simular?prefill=monitor' },
     })
   } else if (input.scenario === 'critical') {
     recs.push({
       tone: 'critical',
       title: 'Projeção acima do teto MEI',
       body: `No ritmo atual (média de R$ ${Math.round(input.averageMonthly).toLocaleString('pt-BR')}/mês), você passa do limite anual. Avalie migração para ME ou redução de ritmo.`,
-      cta: { label: 'Ver comparativo de regimes', href: '/dashboard/simular' },
+      cta: { label: 'Rodar simulação com seus dados', href: '/dashboard/simular?prefill=monitor' },
     })
   }
 
@@ -233,7 +233,7 @@ function buildRecommendations(input: RecommendationInput): Recommendation[] {
       tone: 'opportunity',
       title: `Fator R em ${(input.lastFatorR * 100).toFixed(1)}% — você está pagando Anexo V`,
       body: `Aumentando a folha mensal em ~R$ ${Math.max(0, Math.round(aumentoFolha)).toLocaleString('pt-BR')} você cruza os 28% e migra para o Anexo III (menor alíquota). Economia anual pode chegar a milhares.`,
-      cta: { label: 'Simular ajuste de pró-labore', href: '/dashboard/simular' },
+      cta: { label: 'Simular novo pró-labore', href: '/dashboard/simular?prefill=monitor&focus=fatorR' },
     })
   }
 
