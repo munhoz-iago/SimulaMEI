@@ -201,6 +201,16 @@
   }
 }
 
+/* Monitor mensal — grid interna colapsa em coluna única em telas estreitas */
+@media (max-width: 880px) {
+  .monitor-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .db-monitor-hint {
+    display: none;
+  }
+}
+
 /* ── Dashboard responsive grid ────────────────────────────── */
 @media (max-width: 1100px) {
   .db-row1 {
