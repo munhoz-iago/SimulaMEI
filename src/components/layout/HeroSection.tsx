@@ -76,7 +76,10 @@ function HeroPreviewCard() {
 export function HeroSection() {
   return (
     <section id="inicio" style={{ paddingTop: 118, paddingBottom: 16, overflow: 'hidden', position: 'relative' }}>
-      <div className="section-shell hero-section-inner">
+      {/* Aurora animada de fundo (inspiração aerukart.com) — gradient lime+cyan
+          em loop sem peso de imagem. Respeita prefers-reduced-motion. */}
+      <div className="hero-aurora" aria-hidden="true" />
+      <div className="section-shell hero-section-inner" style={{ position: 'relative', zIndex: 1 }}>
         <div
           style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(340px, 0.9fr)', gap: 60, alignItems: 'center' }}
           className="hero-grid"

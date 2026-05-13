@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
-import { Space_Grotesk, JetBrains_Mono } from 'next/font/google'
+import { Space_Grotesk, JetBrains_Mono, Roboto_Slab } from 'next/font/google'
 import { headers } from 'next/headers'
 import Script from 'next/script'
 import { PostHogProvider } from '@/components/providers/PostHogProvider'
+import { SmoothScroll } from '@/components/effects/SmoothScroll'
+import { CustomCursor } from '@/components/effects/CustomCursor'
 import {
   SITE_DESCRIPTION,
   SITE_KEYWORDS,
@@ -23,6 +25,15 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-mono-var',
+  display: 'swap',
+})
+
+// Serif acentuado pra editorial moments (citações, números grandes) —
+// inspirado no mix Roc Grotesk + Roboto Slab do aerukart.com
+const robotoSlab = Roboto_Slab({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-roboto-slab',
   display: 'swap',
 })
 
@@ -86,7 +97,7 @@ export default async function RootLayout({
     <html
       lang="pt-BR"
       data-theme="dark"
-      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${robotoSlab.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -102,6 +113,8 @@ export default async function RootLayout({
         </Script>
       </head>
       <body className="min-h-screen flex flex-col antialiased" suppressHydrationWarning>
+        <SmoothScroll />
+        <CustomCursor />
         <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>

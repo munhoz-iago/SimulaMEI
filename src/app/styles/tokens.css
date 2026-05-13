@@ -26,6 +26,9 @@
   --red: oklch(66% 0.21 28);
   --red-dim: oklch(42% 0.13 28);
   --orange: oklch(73% 0.18 52);
+  /* Cyan secundário (inspiração aeruk #00DEFF) — usado em momentos premium */
+  --cyan: oklch(82% 0.15 215);
+  --cyan-dim: oklch(55% 0.1 215);
 
   /* Shape */
   --radius: 7px;
@@ -34,6 +37,10 @@
   /* Typography */
   --mono: var(--font-mono-var, 'JetBrains Mono'), monospace;
   --sans: var(--font-space, 'Space Grotesk'), sans-serif;
+  /* Serif acentuado (inspirado em Roboto Slab do aerukart.com) — usado em
+     citações, números grandes e momentos editoriais. Cai pra system fallback
+     limpo enquanto a font não carrega. */
+  --serif: var(--font-roboto-slab, 'Roboto Slab'), 'Source Serif Pro', Georgia, serif;
 
   /* Elevation */
   --lime-glow: 0 18px 54px oklch(88% 0.19 126 / 0.12);
@@ -68,4 +75,6 @@
   --red: oklch(52% 0.19 28);
   --red-dim: oklch(88% 0.07 28);
   --orange: oklch(47% 0.16 52);
+  --cyan: oklch(55% 0.13 215);
+  --cyan-dim: oklch(85% 0.07 215);
 }
