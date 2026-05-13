@@ -13,13 +13,17 @@ import type { ValidationMsg } from './FormPrimitives'
 
 interface SimulatorSectionProps {
   onResults: (resultado: ResultadoSimulacao) => void
+  /** Destino do link "Como calcula". Default aponta pra #como-calcula (home).
+   *  Em contextos sem essa seção (ex: /dashboard/simular), passe null pra esconder
+   *  ou outro caminho (ex: '/?from=dashboard#como-calcula'). */
+  calcLinkHref?: string | null
 }
 
 const FAT_SLIDER_MAX = 180000
 const PROLABORE_SLIDER_MAX = 15000
 const FOLHA_COMPLEMENTAR_SLIDER_MAX = 30000
 
-export function SimulatorSection({ onResults }: SimulatorSectionProps) {
+export function SimulatorSection({ onResults, calcLinkHref = '#como-calcula' }: SimulatorSectionProps) {
   const [fat, setFat] = useState(54000)
   const [mes, setMes] = useState(new Date().getMonth() + 1)
   const [cnae, setCnae] = useState<CnaeInfo | null>(null)
@@ -380,12 +384,14 @@ export function SimulatorSection({ onResults }: SimulatorSectionProps) {
                   </>
                 )}
               </button>
-              <a
-                href="#como-calcula"
-                className="pressable sim-cta-secondary"
-              >
-                Como calcula
-              </a>
+              {calcLinkHref && (
+                <a
+                  href={calcLinkHref}
+                  className="pressable sim-cta-secondary"
+                >
+                  Como calcula
+                </a>
+              )}
             </div>
             {requestError && (
               <div style={{ color: 'var(--red)', fontSize: 13, marginTop: 12 }}>

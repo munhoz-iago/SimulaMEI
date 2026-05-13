@@ -372,23 +372,24 @@ export default async function AccountantBillingPage() {
                   key={option.plan}
                   className="acc-card acc-fade-in"
                   style={{
-                    padding: 24,
-                    position: 'relative',
+                    padding: option.recommended ? '20px 24px 24px' : 24,
                     borderColor: option.recommended ? 'var(--lime)' : 'var(--border)',
                     borderWidth: option.recommended ? 2 : 1,
                     background: option.recommended ? 'linear-gradient(135deg, var(--bg1) 0%, rgba(200,241,53,0.04) 100%)' : 'var(--bg1)',
                   }}
                 >
                   {option.recommended && (
-                    <span style={{
-                      position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)',
-                      padding: '4px 12px', borderRadius: 999,
-                      background: 'var(--lime)', color: 'var(--ink-on-accent)',
-                      fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em',
-                      whiteSpace: 'nowrap',
-                    }}>
-                      ⭐ Mais escolhido
-                    </span>
+                    <div style={{ marginBottom: 12 }}>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        padding: '4px 10px', borderRadius: 999,
+                        background: 'var(--lime)', color: 'var(--ink-on-accent)',
+                        fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        ⭐ Mais escolhido
+                      </span>
+                    </div>
                   )}
 
                   <div style={{ marginBottom: 16 }}>

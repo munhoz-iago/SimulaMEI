@@ -326,6 +326,18 @@
   }
 }
 
+/* Insights grid responsivo (Monitor preditivo) */
+@media (max-width: 880px) {
+  .insights-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+@media (max-width: 480px) {
+  .insights-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Pulse animation pro dot de "alertas abertos" e trial urgente */
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }

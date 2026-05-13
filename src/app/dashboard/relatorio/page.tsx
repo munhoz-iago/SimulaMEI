@@ -188,30 +188,27 @@ export default async function DashboardRelatorioPage() {
 
           {/* Pro plan - destacado */}
           <Panel style={{
-            padding: 26,
+            padding: '20px 26px 26px',
             display: 'flex',
             flexDirection: 'column',
-            position: 'relative',
             background: 'linear-gradient(135deg, var(--bg1) 0%, rgba(200,241,53,0.06) 100%)',
             borderColor: 'rgba(200,241,53,0.3)',
             borderWidth: 2,
           }}>
-            {/* Recommended badge */}
-            <span style={{
-              position: 'absolute', top: -11, left: 22,
-              padding: '4px 12px',
-              borderRadius: 999,
-              background: 'var(--lime)',
-              color: 'var(--ink-on-accent)',
-              fontSize: 10, fontWeight: 900,
-              textTransform: 'uppercase', letterSpacing: '0.06em',
-              whiteSpace: 'nowrap',
-            }}>
-              ⭐ Mais vale a pena
-            </span>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Pill color="var(--lime)">Plano Pro</Pill>
+            {/* Header com pill recomendação inline (não mais absolute pra evitar sobreposição) */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '4px 10px',
+                borderRadius: 999,
+                background: 'var(--lime)',
+                color: 'var(--ink-on-accent)',
+                fontSize: 10, fontWeight: 900,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+                whiteSpace: 'nowrap',
+              }}>
+                ⭐ Recomendado
+              </span>
               <span style={{
                 fontSize: 10, fontWeight: 800,
                 padding: '3px 9px',
@@ -220,27 +217,27 @@ export default async function DashboardRelatorioPage() {
                 color: 'var(--lime)',
                 border: '1px solid rgba(200,241,53,0.24)',
               }}>
-                {Math.round(((REPORT_PRICE - PRO_PRICE) / REPORT_PRICE) * 100)}% mais barato
+                Ilimitado · {Math.round(((REPORT_PRICE - PRO_PRICE) / REPORT_PRICE) * 100)}% mais barato/mês
               </span>
             </div>
+
+            <Pill color="var(--lime)">Plano Pro</Pill>
+
             <div style={{ margin: '14px 0' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                 <span style={{ fontFamily: 'var(--mono)', fontSize: 36, fontWeight: 900, color: 'var(--lime)', lineHeight: 1 }}>
                   R$ {PRO_PRICE}
                 </span>
                 <span style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>/mês</span>
-                <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 6, textDecoration: 'line-through' }}>
-                  R$ {REPORT_PRICE} avulso
-                </span>
               </div>
               <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.55, margin: '8px 0 0' }}>
-                <strong style={{ color: 'var(--lime)' }}>1 relatório/mês já paga o plano.</strong>{' '}
-                E você ganha monitor mensal, alertas, API e histórico ilimitado.
+                <strong style={{ color: 'var(--lime)' }}>Pague menos por mês, receba muito mais.</strong>{' '}
+                Relatórios ilimitados + monitor mensal + alertas + API.
               </p>
             </div>
 
-            {/* Break-even calculator */}
-            <BreakEvenCard reportPrice={REPORT_PRICE} proPrice={PRO_PRICE} />
+            {/* Comparativo direto features (sem "X relatórios = Y meses" que confunde) */}
+            <ValueComparisonCard reportPrice={REPORT_PRICE} proPrice={PRO_PRICE} />
 
             <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0 20px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
               {PRO_FEATURES.map((feat, i) => (
@@ -275,8 +272,9 @@ export default async function DashboardRelatorioPage() {
   )
 }
 
-/** Cálculo break-even visual: quantos relatórios = quanto tempo de Pro */
-function BreakEvenCard({ reportPrice, proPrice }: { reportPrice: number; proPrice: number }) {
+/** Comparativo de VALOR (não de break-even confuso).
+ *  Mostra que avulso = 1 PDF / Pro = ilimitado, com preços alinhados. */
+function ValueComparisonCard({ reportPrice, proPrice }: { reportPrice: number; proPrice: number }) {
   return (
     <div style={{
       padding: '12px 14px',
@@ -285,23 +283,42 @@ function BreakEvenCard({ reportPrice, proPrice }: { reportPrice: number; proPric
       border: '1px solid rgba(200,241,53,0.16)',
       marginTop: 4,
     }}>
-      <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--lime)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-        Vale a pena?
+      <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--lime)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+        Comparativo direto
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, alignItems: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 18, fontWeight: 900, color: 'var(--text1)' }}>2x</div>
-          <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>relatórios avulsos</div>
-          <div style={{ fontSize: 10, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>R$ {reportPrice * 2}</div>
-        </div>
-        <div style={{ color: 'var(--text3)', fontSize: 14, fontWeight: 700 }}>=</div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 18, fontWeight: 900, color: 'var(--lime)' }}>
-            {Math.floor((reportPrice * 2) / proPrice)} meses
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {/* Avulso */}
+        <div style={{ textAlign: 'left' }}>
+          <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>Avulso</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 16, fontWeight: 900, color: 'var(--text2)' }}>
+            1<span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', marginLeft: 4 }}>PDF</span>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>de Pro</div>
-          <div style={{ fontSize: 10, color: 'var(--lime)', fontFamily: 'var(--mono)' }}>R$ {proPrice * Math.floor((reportPrice * 2) / proPrice)}</div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+            R$ {reportPrice}
+          </div>
         </div>
+        {/* Pro */}
+        <div style={{
+          textAlign: 'left',
+          padding: '0 0 0 12px',
+          borderLeft: '1px solid rgba(200,241,53,0.16)',
+        }}>
+          <div style={{ fontSize: 10, color: 'var(--lime)', marginBottom: 4, fontWeight: 700 }}>Pro</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 16, fontWeight: 900, color: 'var(--lime)' }}>
+            ∞<span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginLeft: 4 }}>PDFs</span>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+            R$ {proPrice}<span style={{ color: 'var(--text3)' }}>/mês</span>
+          </div>
+        </div>
+      </div>
+      <div style={{
+        marginTop: 10, paddingTop: 10,
+        borderTop: '1px dashed rgba(200,241,53,0.16)',
+        fontSize: 11, color: 'var(--text2)', lineHeight: 1.45,
+      }}>
+        Pague <strong style={{ color: 'var(--lime)' }}>R$ {reportPrice - proPrice} a menos</strong> por mês e
+        gere quantos relatórios precisar. Sem limite, sem novo checkout a cada simulação.
       </div>
     </div>
   )

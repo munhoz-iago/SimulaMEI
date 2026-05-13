@@ -34,7 +34,12 @@ export function DashboardSimulator({ userEmail }: DashboardSimulatorProps) {
 
   return (
     <>
-      <SimulatorSection onResults={handleResults} />
+      <SimulatorSection
+        onResults={handleResults}
+        // No dashboard a seção 'Como calcula' não está disponível inline.
+        // Aponta pra home com bypass do redirect pra preservar a explicação.
+        calcLinkHref="/?from=dashboard#como-calcula"
+      />
 
       {resultado && (
         <div ref={resultadoRef} style={{ scrollMarginTop: 16 }}>

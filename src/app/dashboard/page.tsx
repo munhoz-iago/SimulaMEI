@@ -12,6 +12,7 @@ import { REGIME_LABELS } from '@/constants/tributario'
 import { FREE_SIMULATION_LIMIT, PLAN_ACCENT_COLORS, PLAN_DESCRIPTIONS, PLAN_LABELS } from '@/constants/plans'
 import { DeleteAccountSection } from '@/components/dashboard/DeleteAccountSection'
 import { MonthlyMonitorSection } from '@/components/dashboard/MonthlyMonitorSection'
+import { MonitorInsights } from '@/components/dashboard/MonitorInsights'
 import { Panel } from '@/components/dashboard/Panel'
 import { Pill } from '@/components/dashboard/Pill'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
@@ -510,6 +511,21 @@ export default async function DashboardPage() {
                 </div>
               </Panel>
             </section>
+          )}
+
+          {/* ── Insights preditivos baseados no histórico do Monitor ─ */}
+          {profile?.cnae_principal && profile?.tipo_mei && monitorRows.length > 0 && (
+            <MonitorInsights
+              history={monitorRows.map(r => ({
+                ano: r.ano,
+                mes: r.mes,
+                faturamentoMes: r.faturamentoMes,
+                folhaMes: r.folhaMes,
+                anexoCalculado: r.anexoCalculado,
+                fatorR: r.fatorR,
+              }))}
+              tipoMei={profile.tipo_mei}
+            />
           )}
 
           {/* ── Row 2 (legado): Atividades recentes + Monitor (compacto fallback) ─ */}
