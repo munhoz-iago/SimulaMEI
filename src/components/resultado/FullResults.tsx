@@ -15,6 +15,8 @@ import { ExcessoVisual } from './ExcessoVisual'
 import { OportunidadesFiscais } from './OportunidadesFiscais'
 import { TabelaDAS } from './TabelaDAS'
 import { ShareResultButton } from './ShareResultButton'
+import { TaxSourceNote } from './TaxSourceNote'
+import { FONTES_FISCAIS } from '@/lib/tributario/oportunidades/fontes'
 
 interface FullResultsProps {
   resultado: ResultadoSimulacao
@@ -273,6 +275,14 @@ export function FullResults({ resultado, email }: FullResultsProps) {
           excesso={excesso}
           teto={alertaTeto.tetoAnual}
           projecao={projecao}
+        />
+
+        {/* Fonte normativa + versão do motor (auditabilidade) */}
+        <TaxSourceNote
+          className="fade-up-3"
+          taxRuleVersion={resultado.taxRuleVersion}
+          fontes={[FONTES_FISCAIS.resolucaoCgsn140, FONTES_FISCAIS.simplesNacionalLegislacao]}
+          style={{ marginTop: 24 }}
         />
       </div>
 

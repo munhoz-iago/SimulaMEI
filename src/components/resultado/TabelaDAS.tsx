@@ -1,8 +1,10 @@
 'use client'
 
 import type { CnaeCategoriaFiscal, TipoMei } from '@/types/tributario'
-import { calcularPresumido, calcularSimples, LIMITES_MEI } from '@/lib/tributario'
+import { calcularPresumido, calcularSimples, LIMITES_MEI, TAX_RULE_VERSION } from '@/lib/tributario'
 import { MESES_COMPLETOS, fmt } from '@/lib/format'
+import { TaxSourceNote } from './TaxSourceNote'
+import { FONTES_FISCAIS } from '@/lib/tributario/oportunidades/fontes'
 
 interface TabelaDASProps {
   projecao: number
@@ -110,6 +112,11 @@ export function TabelaDAS({ projecao, folhaMensal, tipoMei, categoria }: TabelaD
         Economia acumulada Simples III vs V: <b style={{ color: 'var(--lime)', fontFamily: 'var(--mono)' }}>{fmt(Math.max(0, total.simplesV - total.simplesIII))}</b>.
         {exibirLucroPresumido && ' LP usa estimativa simplificada com presunção por categoria e encargos de folha.'}
       </div>
+      <TaxSourceNote
+        taxRuleVersion={TAX_RULE_VERSION}
+        fontes={[FONTES_FISCAIS.resolucaoCgsn140, FONTES_FISCAIS.simplesNacionalLegislacao]}
+        style={{ marginTop: 10 }}
+      />
     </div>
   )
 }
