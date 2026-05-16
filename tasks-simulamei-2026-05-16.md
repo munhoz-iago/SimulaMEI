@@ -1,68 +1,86 @@
 # tasks-simulamei-2026-05-16
 
+## STATUS DE EXECUÇÃO (2026-05-16)
+
+Branch `claude/critical-tasks-conversion-trust` (a partir de `c6fb0d4`).
+WIP da auditoria codex preservado em `git stash` (não commitado).
+Test runner: vitest. Suíte: 175 pass / 1 fail **pré-existente e de infra**
+(`/api/simular` 500 — precisa Supabase/rate-limit; provado em baseline,
+não relacionado a estas mudanças).
+
+| Task | Estado | Commits |
+|---|---|---|
+| TASK-3 | ✅ feito (corrigido — ver nota) | `1f864f7`, `ec98631` |
+| TASK-2 | ✅ feito | `f202979`, `ec98631` |
+| TASK-1 | ✅ feito (3 superfícies) | `012f2f1`, `d8dafe0` |
+| TASK-4 | ⏳ reanalisado — frontend-only (ver bloco) | — |
+
+Cada item feito via TDD (RED→GREEN), typecheck limpo nos arquivos tocados.
+
+> **Reanálise de coerência/dedup (pedida explicitamente):** TASK-3 e TASK-4
+> estavam majoritariamente erradas contra o código. Corrigidas antes de
+> executar. Detalhe em cada bloco.
+
+---
+
 ```
 ## CONTEXT
 STACK: Next.js App Router + Vercel + PostHog + Supabase Auth + Stripe
 AUTH: login em src/app/auth/login; registro em src/app/auth/registro
-INFRA: deploy Vercel; motor fiscal versionado (ex. BR-MEI-SN-2026-04-28); test runner vitest
-NOTE: simulador É a home (/, âncora #simulador); resultado ungated; gate de e-mail libera "análise completa"
-JÁ FEITO (não recriar): JSON-LD base em src/app/page.tsx:98 · PostHog opt-out default em src/components/providers/PostHogProvider.tsx:34 · skip link em src/components/home/HomeClient.tsx:37
-ORDEM: executar P0 → P1 → P2. Não tratar como checklist plano.
+INFRA: deploy Vercel; motor versionado (TAX_RULE_VERSION=BR-MEI-SN-2026-04-28); vitest
+JÁ FEITO (não recriar): JSON-LD base src/app/page.tsx · PostHog opt-out default PostHogProvider.tsx:34 · skip link HomeClient.tsx:37 · FONTES_FISCAIS em lib/tributario/oportunidades/fontes.ts · classificacaoTributaria 'curada'|'pendente' já em CnaeInfo · getCnae() já retorna pendente c/ fallback Anexo III
+AÇÃO DO DONO: setar em prod NEXT_PUBLIC_LEGAL_ENTITY_NAME / _TAX_ID / _CONTACT_EMAIL (senão TASK-2 cai no fallback "Operado por SimulaMEI")
 ```
 
 ## P0 — Receita, Confiança e Medição
 
 ```
-## TASK-1 · 🔴 · Trust
-FILE: src/lib/tributario/fontes.ts (novo) + src/components/resultado/TaxSourceNote.tsx (novo)
-PROBLEM: Números do resultado sem base legal nem fonte inline.
-ACTION:
-- Criar fontes.ts com fonte por regra: teto MEI, tolerância 20%, Fator R 28%, Anexo III/V, Lucro Presumido, INSS pró-labore
-- Criar TaxSourceNote.tsx (renderiza "Fonte: <norma> · Motor <versão>")
-- Inserir nota em PartialResults, FullResults, TabelaDAS e no disclaimer
-SUCCESS: cada card de valor renderiza fonte+versão do motor no DOM
-DEP: nenhuma
+## TASK-1 · 🔴 · Trust · ✅ FEITO
+FILE: src/components/resultado/TaxSourceNote.tsx (novo, +teste) + PartialResults.tsx + FullResults.tsx + TabelaDAS.tsx
+FEITO: formatTaxSourceLine (puro, testado) + TaxSourceNote; inserido nas 3 superfícies de resultado.
+DEDUP: NÃO criado src/lib/tributario/fontes.ts — reusado FONTES_FISCAIS existente.
 ```
 
 ```
-## TASK-2 · 🔴 · Trust
-FILE: src/constants/site.ts + src/components/layout/Footer.tsx:104 + src/components/resultado/EmailGate.tsx:108
-PROBLEM: Nenhuma identidade empresarial (CNPJ/razão social) no site.
-ACTION:
-- Adicionar LEGAL_ENTITY_NAME, LEGAL_TAX_ID, LEGAL_EMAIL, LEGAL_CITY em site.ts
-- Renderizar no footer e na tela de gate de e-mail
-- Sem placeholder: se não houver CNPJ, usar "Operado por <nome>"
-SUCCESS: identidade legal real presente no DOM do footer e do gate
-DEP: nenhuma
+## TASK-2 · 🔴 · Trust · ✅ FEITO
+FILE: src/constants/site.ts (+teste) + Footer.tsx + EmailGate.tsx
+FEITO: resolveLegalIdentity/getLegalIdentity env-driven (puro, testado); render footer + gate.
+REGRA: nunca fabrica CNPJ; fallback honesto "Operado por <nome>". Fonte única (site.ts).
 ```
 
 ```
-## TASK-3 · 🔴 · Analytics
-FILE: src/lib/analytics/events.ts:5
-PROBLEM: Eventos de funil não canônicos nem verificados no PostHog.
-ACTION:
-- Normalizar nomes: view_home, start_simulation, complete_simulation, view_result, submit_lead, unlock_full_result, checkout_start
-- Emitir view_home no mount da home; view_result quando resultado aparece
-- Emitir submit_lead só após resposta de /api/leads, com prop leadSaveStatus
-- Emitir unlock_full_result ao abrir resultado completo
-- Emitir checkout_start no CheckoutButton com plan, price, source
-SUCCESS: os 7 eventos aparecem no PostHog em teste manual do fluxo completo
-DEP: nenhuma
+## TASK-3 · 🔴 · Analytics · ✅ FEITO (CORRIGIDO)
+FILE: src/lib/analytics/events.ts (+teste) + EmailGate.tsx
+SPEC ERRADA: renomear 7 eventos + criar view_home/view_result/unlock_full_result.
+REALIDADE: $pageview já capturado (dup); taxonomia coerente usada em 6 arquivos;
+  rename quebraria histórico PostHog.
+FEITO (aditivo): buildEmailCapturedProps + LeadSaveStatus; email_captured agora
+  carrega leadSaveStatus real do /api/leads (antes o sucesso era descartado).
 ```
 
 ## P1 — Produto / Simulador
 
 ```
-## TASK-4 · 🔴 · Frontend
-FILE: src/types/tributario.ts + /api/simular + src/components/resultado/PartialCnaeResults.tsx (novo) + src/components/simulador/SimulatorSection.tsx:412
-PROBLEM: CNAE oficial sem curadoria vira beco sem saída (bloqueio em SimulatorSection.tsx:128 e :412).
-ACTION:
-- Criar tipo ResultadoSimulacaoParcial em tributario.ts
-- /api/simular: CNAE oficial sem curadoria retorna teto/projeção/risco + status 'partial_cnae_pending'
-- Criar PartialCnaeResults.tsx
-- Botão vira "Ver teto parcial" quando cnaePendente
-- CTA "Avisar quando este CNAE estiver completo"
-SUCCESS: CNAE sem curadoria exibe resultado parcial de teto, sem bloqueio
+## TASK-4 · 🔴 · Frontend · ⏳ REANALISADO (frontend-only)
+FILE: src/components/simulador/SimulatorSection.tsx + src/components/resultado/CnaePendenteNotice.tsx (novo)
+SPEC ERRADA (over-engineered): criar ResultadoSimulacaoParcial + branch /api/simular
+  + PartialCnaeResults + mudar motor. TUDO desnecessário:
+  - getCnae() (cnae.ts:80) já retorna CnaeInfo classificacaoTributaria:'pendente'
+    com fallback conservador Anexo III
+  - /api/simular:125 NÃO dá 400 p/ pendente (getCnae truthy) — API já responde
+  - motor já retorna ResultadoSimulacao completo (Anexo/FatorR conservadores;
+    teto/projeção/risco EXATOS)
+  - beco sem saída é 100% frontend: SimulatorSection.tsx:60 cnaePendente,
+    bloqueio em :128 (handleSimular) e :412 (botão disabled)
+PROBLEM: SimulatorSection recusa enviar CNAE pendente (beco frontend).
+ACTION (mínima, dedup-safe):
+- Extrair gate puro testável: pendente NÃO bloqueia; gate = apenas !cnae
+- Remover cnaePendente das condições em handleSimular:128 e botão :412
+- Criar CnaePendenteNotice (banner: teto/projeção exatos; Anexo/FatorR
+  estimativa conservadora; CTA "avisar quando curado") — render JUNTO ao
+  resultado normal quando classificacaoTributaria==='pendente'
+- NÃO criar PartialResults paralelo; NÃO tocar tipo/API/motor
+SUCCESS: CNAE pendente → simula e mostra resultado + notice; teste do gate verde
 DEP: nenhuma
 ```
 
@@ -70,23 +88,17 @@ DEP: nenhuma
 ## TASK-5 · 🟡 · Frontend
 FILE: src/components/simulador/CnaeAutocomplete.tsx:210
 PROBLEM: Busca CNAE sem match não explica restrição de ocupação MEI.
-ACTION:
-- Empty-state: "Nem toda atividade é permitida ao MEI; busque por código ou descrição oficial"
-- Adicionar links /cnae e /aprenda/quando-sair-do-mei
-- Adicionar CTA "Sugerir CNAE"
-SUCCESS: busca sem resultado exibe mensagem + links, não vazio mudo
+ACTION: empty-state explicando ocupações MEI; links /cnae e /aprenda/quando-sair-do-mei; CTA "Sugerir CNAE"
+SUCCESS: busca sem resultado exibe mensagem + links
 DEP: nenhuma
 ```
 
 ```
 ## TASK-6 · 🟡 · Frontend
-FILE: src/components/resultado/EmailGate.tsx:14
+FILE: src/components/resultado/EmailGate.tsx
 PROBLEM: Lista textual do gate parece igual ao resultado grátis.
-ACTION:
-- Substituir lista por preview visual: mini barras dos regimes via resultado.comparativo
-- Aplicar blur/lock nos cards "Comparativo completo", "Fator R interativo", "Relatório"
-- Promessa do gate visualmente distinta do resultado grátis
-SUCCESS: tela do gate renderiza preview visual com cards bloqueados
+ACTION: preview visual (mini barras via resultado.comparativo) + blur/lock nos cards
+SUCCESS: gate exibe preview visual com cards bloqueados
 DEP: nenhuma
 ```
 
@@ -94,11 +106,8 @@ DEP: nenhuma
 ## TASK-7 · 🟡 · Frontend
 FILE: src/components/simulador/* + src/components/resultado/*
 PROBLEM: Layout mobile do simulador não validado.
-ACTION:
-- Validar 390px: busca CNAE, sliders, botões de mês, gate, resultado
-- Corrigir touch targets < 44px
-- overflow-x:hidden só se não mascarar layout quebrado
-SUCCESS: fluxo completável em 390px sem overflow; Lighthouse mobile rodado
+ACTION: validar 390px (slider/CNAE/mês/gate/resultado); touch targets <44px
+SUCCESS: fluxo completável em 390px sem overflow
 DEP: nenhuma
 ```
 
@@ -106,65 +115,49 @@ DEP: nenhuma
 
 ```
 ## TASK-8 · 🟡 · SEO
-FILE: src/app/page.tsx:98
-PROBLEM: JSON-LD existe mas sem dados legais/SoftwareApplication; artigos sem ArticleJsonLd.
-ACTION:
-- Validar schema atual no Rich Results
-- Adicionar sameAs, dados legais reais e SoftwareApplication
-- Garantir ArticleJsonLd nas páginas de artigo
-SUCCESS: Rich Results Test valida sem erro, com SoftwareApplication e dados legais
+FILE: src/app/page.tsx
+PROBLEM: JSON-LD existe mas sem dados legais/SoftwareApplication.
+ACTION: validar Rich Results; +sameAs, dados legais, SoftwareApplication; ArticleJsonLd nos artigos
+SUCCESS: Rich Results sem erro
 DEP: TASK-2
 ```
 
 ```
 ## TASK-9 · 🟡 · SEO
-FILE: metadata de src/app/api-docs, src/app/privacidade, src/app/termos
+FILE: metadata de src/app/api-docs, privacidade, termos
 PROBLEM: Descriptions curtas em páginas indexadas.
-ACTION:
-- Reescrever descriptions de api-docs, privacidade, termos
-- privacidade e termos: robots { index: false }
-- api-docs: indexar só se API pública for estratégia
-SUCCESS: cada página tem description 150–160 chars OU noindex aplicado
+ACTION: reescrever; privacidade+termos robots index:false
+SUCCESS: description 150–160 ou noindex
 DEP: nenhuma
 ```
 
 ```
 ## TASK-10 · 🟢 · Conteúdo
-FILE: src/app/aprenda/limite-mei-2026/page.tsx (novo) + src/app/aprenda/mei-estourou-o-teto/page.tsx (novo) + src/app/aprenda/page.tsx:25 + src/app/sitemap.ts:17
+FILE: src/app/aprenda/limite-mei-2026 + mei-estourou-o-teto (novos) + aprenda/page.tsx:25 + sitemap.ts:17
 PROBLEM: Faltam 2 das 5 páginas do cluster (3 já existem).
-ACTION:
-- Criar /aprenda/limite-mei-2026 e /aprenda/mei-estourou-o-teto
-- Atualizar ARTIGOS em aprenda/page.tsx:25
-- Atualizar LEARNING_PAGES em sitemap.ts:17
-SUCCESS: 2 rotas novas retornam 200 (>300 palavras) e estão no sitemap
+ACTION: criar 2 rotas; atualizar ARTIGOS e LEARNING_PAGES
+SUCCESS: rotas 200 (>300 palavras) no sitemap
 DEP: nenhuma
 ```
 
 ```
 ## TASK-11 · 🟢 · Conteúdo
 FILE: src/app/metodologia/page.tsx (novo)
-PROBLEM: Sem página de metodologia com fontes e versão do motor.
-ACTION:
-- Criar /metodologia: versão do motor, fontes oficiais, limites conhecidos, escopo de estimativa
-- Linkar do resultado, footer e disclaimer
-SUCCESS: /metodologia retorna 200 e é linkada do resultado e footer
+PROBLEM: Sem página de metodologia.
+ACTION: criar /metodologia (versão motor, fontes, limites); linkar do resultado/footer
+SUCCESS: /metodologia 200 e linkada
 DEP: TASK-1
 ```
 
 ```
 ## TASK-12 · 🟢 · Segurança
 FILE: src/lib/security/csp.ts:5
-PROBLEM: CSP permite style-src 'unsafe-inline'; projeto usa muito style inline.
-ACTION:
-- Migrar estilos inline críticos para classes/CSS primeiro
-- Só depois remover 'unsafe-inline' de style-src em csp.ts
-SUCCESS: CSP sem 'unsafe-inline' e site renderiza sem violação no console
-DEP: TASK-1, TASK-4, TASK-6 (executar por último)
+PROBLEM: CSP permite style-src 'unsafe-inline'; muito style inline no projeto.
+ACTION: migrar estilos inline críticos p/ classes; depois remover 'unsafe-inline'
+SUCCESS: CSP sem 'unsafe-inline' e sem violação
+DEP: TASK-1, TASK-4, TASK-6 (por último)
 ```
 
 ```
-TOTAL: 12 tasks · 4🔴 críticas · 5🟡 importantes · 3🟢 melhorias · estimativa: G
+TOTAL: 12 tasks · 3🔴 feitas (1,2,3) · 1🔴 pendente reanalisada (4) · 5🟡 · 3🟢 · estimativa restante: M
 ```
-
----
-STATUS EXECUÇÃO (2026-05-16): WIP codex stashado em stash@{0}. Branch claude/critical-tasks-conversion-trust. Implementando 🔴 via TDD (vitest).
