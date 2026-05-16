@@ -281,7 +281,10 @@ export function FullResults({ resultado, email }: FullResultsProps) {
         <TaxSourceNote
           className="fade-up-3"
           taxRuleVersion={resultado.taxRuleVersion}
-          fontes={[FONTES_FISCAIS.resolucaoCgsn140, FONTES_FISCAIS.simplesNacionalLegislacao]}
+          mapeamento={[
+            { valores: 'Anexo, alíquotas e DAS', fonte: FONTES_FISCAIS.resolucaoCgsn140 },
+            { valores: 'Teto MEI', fonte: FONTES_FISCAIS.simplesNacionalLegislacao },
+          ]}
           style={{ marginTop: 24 }}
         />
       </div>

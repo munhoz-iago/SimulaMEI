@@ -114,7 +114,10 @@ export function TabelaDAS({ projecao, folhaMensal, tipoMei, categoria }: TabelaD
       </div>
       <TaxSourceNote
         taxRuleVersion={TAX_RULE_VERSION}
-        fontes={[FONTES_FISCAIS.resolucaoCgsn140, FONTES_FISCAIS.simplesNacionalLegislacao]}
+        mapeamento={[
+          { valores: 'DAS Simples', fonte: FONTES_FISCAIS.resolucaoCgsn140 },
+          { valores: 'Teto MEI', fonte: FONTES_FISCAIS.simplesNacionalLegislacao },
+        ]}
         style={{ marginTop: 10 }}
       />
     </div>

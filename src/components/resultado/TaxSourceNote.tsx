@@ -5,6 +5,12 @@ export interface TaxSource {
   url?: string
 }
 
+/** Maps a value-group (e.g. "Anexo, alíquota e DAS") to the norm that backs it. */
+export interface TaxSourceMapEntry {
+  valores: string
+  fonte: TaxSource
+}
+
 /**
  * Builds the auditability line shown next to result numbers.
  *
@@ -22,22 +28,44 @@ export function formatTaxSourceLine(
 }
 
 /**
+ * Builds a per-value attribution line: each value-group points at the
+ * specific norm that backs it (instead of one aggregated source list),
+ * always followed by the engine version.
+ */
+export function formatTaxSourceMap(
+  entries: ReadonlyArray<{ valores: string; fonte: { titulo: string } }>,
+  taxRuleVersion: string,
+): string {
+  const motor = `Motor ${taxRuleVersion.replace('BR-MEI-SN-', 'v')}`
+  if (entries.length === 0) return motor
+  return `${entries.map(e => `${e.valores}: ${e.fonte.titulo}`).join(' · ')} · ${motor}`
+}
+
+/**
  * Inline source + engine-version note for result surfaces
  * (PartialResults / FullResults / TabelaDAS / disclaimer).
+ *
+ * Prefer `mapeamento` (per-value attribution). `fontes` is the legacy
+ * aggregated form, kept for callers that don't need value mapping.
  */
 export function TaxSourceNote({
   taxRuleVersion,
   fontes = [],
+  mapeamento,
   style,
   className,
 }: {
   taxRuleVersion: string
   fontes?: ReadonlyArray<TaxSource>
+  mapeamento?: ReadonlyArray<TaxSourceMapEntry>
   style?: CSSProperties
   className?: string
 }) {
-  const line = formatTaxSourceLine(fontes, taxRuleVersion)
-  const links = fontes.filter((f): f is Required<TaxSource> => Boolean(f.url))
+  const line = mapeamento
+    ? formatTaxSourceMap(mapeamento, taxRuleVersion)
+    : formatTaxSourceLine(fontes, taxRuleVersion)
+  const sources = mapeamento ? mapeamento.map(e => e.fonte) : fontes
+  const links = sources.filter((f): f is Required<TaxSource> => Boolean(f.url))
 
   return (
     <div
