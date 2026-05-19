@@ -48,6 +48,7 @@ const styles = StyleSheet.create({
   barTrack: { flexGrow: 1, height: 10, backgroundColor: '#F1F3F0', borderRadius: 3 },
   barFill: { height: 10, borderRadius: 3, backgroundColor: '#9CB4C0' },
   barBest: { backgroundColor: LIME },
+  barValue: { width: 82, fontSize: 9, fontWeight: 700, textAlign: 'right', marginLeft: 8, color: INK },
   oppTitle: { fontWeight: 700, marginBottom: 2 },
   opp: { marginBottom: 8 },
   footer: { position: 'absolute', bottom: 20, left: 28, right: 28, fontSize: 8, color: MUTED, display: 'flex', flexDirection: 'row', justifyContent: 'space-between' },
@@ -106,6 +107,7 @@ export function SimulationReportDocument({
                   <View style={styles.barTrack}>
                     <View style={[styles.barFill, b.melhor ? styles.barBest : {}, { width: `${Math.max(b.pct, 4)}%` }]} />
                   </View>
+                  <Text style={styles.barValue}>R$ {b.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                 </View>
               ))}
               <Text style={{ fontSize: 8, color: MUTED, marginTop: 4 }}>Barra menor = menor custo. Verde = regime mais barato.</Text>

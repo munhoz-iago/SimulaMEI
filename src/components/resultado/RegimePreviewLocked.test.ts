@@ -19,6 +19,14 @@ describe('buildRegimePreview', () => {
     expect(r.find(x => x.melhor)!.label).toBe('Simples')
   })
 
+  it('expõe o custo R$ de cada regime (relatório PDF pago mostra valores, não só barras)', () => {
+    const r = buildRegimePreview(base)
+
+    expect(r.find(x => x.label === 'Simples')!.custo).toBe(8000)
+    expect(r.find(x => x.label === 'Presumido')!.custo).toBe(12000)
+    expect(r.find(x => x.label === 'Real')!.custo).toBe(16000)
+  })
+
   it('includes Simples ótimo (other anexo) when present and can be the best', () => {
     const r = buildRegimePreview({
       ...base,

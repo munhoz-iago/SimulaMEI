@@ -4,6 +4,9 @@ export interface RegimePreviewItem {
   label: string
   pct: number
   melhor: boolean
+  /** Custo anual R$ do regime (motor). Exibido só no PDF pago — o teaser
+   *  web continua borrado/sem revelar o valor. */
+  custo: number
 }
 
 /**
@@ -31,6 +34,7 @@ export function buildRegimePreview(c: ComparativoRegimes): RegimePreviewItem[] {
     label: r.label,
     pct: Math.round((r.custo / max) * 100),
     melhor: r.id === c.melhorRegime,
+    custo: r.custo,
   }))
 }
 
