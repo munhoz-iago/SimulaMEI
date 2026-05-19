@@ -52,3 +52,6 @@ dev-server.*.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# sample PDFs (gerados localmente para validação visual, não versionados)
+sample-*.pdf
