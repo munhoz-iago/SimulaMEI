@@ -70,6 +70,10 @@ function metricTone(value: 'ok' | 'warn' | 'danger' | 'neutral') {
   }[value]
 }
 
+function formatMonthCount(count: number) {
+  return `${count} ${count === 1 ? 'mês' : 'meses'}`
+}
+
 async function getRecentSimulations(supabase: SupabaseServerClient, userId: string) {
   const { data, error } = await supabase
     .from('simulations')
@@ -325,7 +329,7 @@ export default async function DashboardPage() {
                     label: 'Projeção 12m',
                     value: kpis.source !== 'empty' ? fmt(kpis.projecaoAnual) : '—',
                     sub: kpis.source === 'monitor' && kpis.monthsOfHistory < 3
-                      ? `extrapolada de ${kpis.monthsOfHistory} mês${kpis.monthsOfHistory > 1 ? 'es' : ''}`
+                      ? `extrapolada de ${formatMonthCount(kpis.monthsOfHistory)}`
                       : kpis.source !== 'empty' ? 'baseada no histórico' : 'lance dados',
                   },
                   {
@@ -360,7 +364,7 @@ export default async function DashboardPage() {
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--text3)' }}>
                     {kpis.projecaoAnual > 0
-                      ? kpis.monthsOfHistory >= 3 ? 'anual estimado' : `de ${kpis.monthsOfHistory} mês${kpis.monthsOfHistory > 1 ? 'es' : ''}`
+                      ? kpis.monthsOfHistory >= 3 ? 'anual estimado' : `de ${formatMonthCount(kpis.monthsOfHistory)}`
                       : 'lance dados'}
                   </span>
                 </Panel>

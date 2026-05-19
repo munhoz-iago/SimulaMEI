@@ -11,6 +11,7 @@ const {
   hashIpAddressMock,
   getClientIpMock,
   getUserAgentMock,
+  revalidatePathMock,
 } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
   simularMock: vi.fn(),
@@ -20,10 +21,15 @@ const {
   hashIpAddressMock: vi.fn(),
   getClientIpMock: vi.fn(),
   getUserAgentMock: vi.fn(),
+  revalidatePathMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: createClientMock,
+}))
+
+vi.mock('next/cache', () => ({
+  revalidatePath: revalidatePathMock,
 }))
 
 vi.mock('@/lib/tributario', () => ({
@@ -71,9 +77,25 @@ function makeRateLimitResult(overrides: Partial<Awaited<ReturnType<typeof consum
 
 function makeSupabaseMock() {
   const insertMock = vi.fn().mockResolvedValue({ error: null })
-  const fromMock = vi.fn(() => ({
-    insert: insertMock,
-  }))
+  const profileMaybeSingleMock = vi.fn().mockResolvedValue({ data: { plano: 'free' }, error: null })
+  const profileEqMock = vi.fn(() => ({ maybeSingle: profileMaybeSingleMock }))
+  const profileSelectMock = vi.fn(() => ({ eq: profileEqMock }))
+  const simulationCountEqMock = vi.fn().mockResolvedValue({ count: 0, error: null })
+  const simulationSelectMock = vi.fn(() => ({ eq: simulationCountEqMock }))
+  const fromMock = vi.fn((table: string) => {
+    if (table === 'user_profiles') {
+      return { select: profileSelectMock }
+    }
+
+    if (table === 'simulations') {
+      return {
+        insert: insertMock,
+        select: simulationSelectMock,
+      }
+    }
+
+    return { insert: insertMock }
+  })
 
   return {
     client: {
@@ -84,6 +106,8 @@ function makeSupabaseMock() {
     },
     insertMock,
     fromMock,
+    profileSelectMock,
+    simulationSelectMock,
   }
 }
 
@@ -207,6 +231,8 @@ describe('/api/simular POST', () => {
       tipoMei: 'geral',
     })
     expect(supabase.fromMock).toHaveBeenCalledWith('simulations')
+    expect(supabase.profileSelectMock).toHaveBeenCalledWith('plano')
+    expect(supabase.simulationSelectMock).toHaveBeenCalledWith('id', { count: 'exact', head: true })
     expect(supabase.insertMock).toHaveBeenCalledWith({
       user_id: 'user-1',
       entrada: {
@@ -220,6 +246,7 @@ describe('/api/simular POST', () => {
       ip_hash: 'hashed-ip',
       user_agent: 'Vitest',
     })
+    expect(revalidatePathMock).toHaveBeenCalledWith('/dashboard')
     expect(response.headers.get('X-RateLimit-Limit')).toBe('60')
     expect(response.headers.get('X-RateLimit-Remaining')).toBe('59')
   })

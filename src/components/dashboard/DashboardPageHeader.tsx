@@ -36,9 +36,26 @@ export function DashboardPageHeader({ greeting, subtitle, plan, actions }: Dashb
         <span style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--mono)' }}>
           Motor {TAX_RULE_VERSION}
         </span>
-        <Pill color={PLAN_ACCENT_COLORS[plan]}>
-          {PLAN_LABELS[plan]}
-        </Pill>
+        <Link
+          href="/upgrade"
+          aria-label={plan === 'free' ? 'Escolher plano' : 'Ver plano atual'}
+          title={plan === 'free' ? 'Escolher plano' : 'Ver plano atual'}
+          style={{
+            display: 'inline-flex',
+            textDecoration: 'none',
+            borderRadius: 'var(--radius)',
+          }}
+        >
+          <Pill
+            color={PLAN_ACCENT_COLORS[plan]}
+            style={{
+              cursor: 'pointer',
+              boxShadow: plan === 'free' ? '0 0 0 1px color-mix(in oklch, var(--blue) 35%, transparent)' : undefined,
+            }}
+          >
+            {PLAN_LABELS[plan]}
+          </Pill>
+        </Link>
         <ThemeToggle size={32} />
         <Link
           href="/?from=dashboard"

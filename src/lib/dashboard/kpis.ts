@@ -15,7 +15,7 @@
  *  - **Nada**: retorna estado "vazio" com flag pra UI mostrar CTAs apropriados
  */
 
-import { LIMITES_MEI, calcularSimples, getCnae } from '@/lib/tributario'
+import { LIMITES_MEI, TOLERANCIA_EXCESSO, calcularSimples, getCnae } from '@/lib/tributario'
 import type { ResultadoSimulacao, TipoMei, Anexo } from '@/types/tributario'
 import type { MonthlyMonitorSummary } from '@/lib/monitor'
 
@@ -102,9 +102,13 @@ const EMPTY_KPIS = (input: Pick<DashboardKPIsInput, 'plan' | 'freeLimitReached' 
   }
 }
 
-function toneFromUsoTeto(usoTeto: number): DashboardKPIs['tone'] {
-  if (usoTeto > 1) return 'danger'
-  if (usoTeto > 0.85) return 'warn'
+function formatMonthCount(count: number): string {
+  return `${count} ${count === 1 ? 'mês' : 'meses'}`
+}
+
+function toneFromTetoRisk(usoTeto: number, projecaoUso = usoTeto): DashboardKPIs['tone'] {
+  if (usoTeto > 1 || projecaoUso > 1 + TOLERANCIA_EXCESSO) return 'danger'
+  if (usoTeto > 0.85 || projecaoUso > 0.85) return 'warn'
   return 'ok'
 }
 
@@ -115,8 +119,10 @@ function buildContextFromMonitor(
   hasCurrentMonth: boolean,
 ): { message: string; sub: string } {
   const usoTeto = summary.faturamentoAcumulado / tetoAnual
+  const projecaoUso = summary.projecaoAnual / tetoAnual
   const pct = Math.round(usoTeto * 100)
   const projecaoPct = Math.round((summary.projecaoAnual / tetoAnual) * 100)
+  const monthCount = formatMonthCount(monthsOfHistory)
 
   if (usoTeto > 1) {
     return {
@@ -124,16 +130,31 @@ function buildContextFromMonitor(
       sub: 'Projeção ultrapassa o limite. Considere migração para ME antes do fim do ano fiscal.',
     }
   }
-  if (usoTeto > 0.85) {
+
+  if (projecaoUso > 1 + TOLERANCIA_EXCESSO) {
     return {
-      message: `${pct}% do teto usado em ${monthsOfHistory} mês${monthsOfHistory > 1 ? 'es' : ''}`,
+      message: `Projeção crítica: ${projecaoPct}% do teto`,
+      sub: `Acumulado atual em ${pct}%, mas o ritmo de ${monthCount} projeta excesso acima da tolerância de ${Math.round(TOLERANCIA_EXCESSO * 100)}%. Planeje migração com contador.`,
+    }
+  }
+
+  if (projecaoUso > 1) {
+    return {
+      message: `Projeção acima do teto: ${projecaoPct}%`,
+      sub: `Acumulado atual em ${pct}%, mas o ritmo de ${monthCount} indica estouro até dezembro. Acompanhe a tolerância e planeje a migração.`,
+    }
+  }
+
+  if (usoTeto > 0.85 || projecaoUso > 0.85) {
+    return {
+      message: `${pct}% do teto usado em ${monthCount}`,
       sub: `Projeção indica ${projecaoPct}% até dezembro — pouca margem. Considere reduzir ritmo ou planejar migração.`,
     }
   }
   if (usoTeto > 0.5) {
     return {
       message: `Em ritmo: ${pct}% usado`,
-      sub: `Com base em ${monthsOfHistory} mês${monthsOfHistory > 1 ? 'es' : ''}, a projeção é ${projecaoPct}% do teto. ${hasCurrentMonth ? 'Mês atual já lançado.' : 'Lance o mês corrente para refinar a projeção.'}`,
+      sub: `Com base em ${monthCount}, a projeção é ${projecaoPct}% do teto. ${hasCurrentMonth ? 'Mês atual já lançado.' : 'Lance o mês corrente para refinar a projeção.'}`,
     }
   }
   if (monthsOfHistory === 1) {
@@ -144,7 +165,7 @@ function buildContextFromMonitor(
   }
   return {
     message: `${pct}% do teto — margem confortável`,
-    sub: `${monthsOfHistory} mês${monthsOfHistory > 1 ? 'es' : ''} no histórico. Projeção atual: ${projecaoPct}% até dezembro.`,
+    sub: `${monthCount} no histórico. Projeção atual: ${projecaoPct}% até dezembro.`,
   }
 }
 
@@ -153,16 +174,17 @@ function buildContextFromSimulation(
 ): { message: string; sub: string } {
   const { alertaTeto } = resultado
   const pct = Math.round(alertaTeto.percentualUtilizado * 100)
+  const projecaoPct = Math.round((alertaTeto.projecaoAnual / alertaTeto.tetoAnual) * 100)
   if (alertaTeto.cenario === 'excesso_grave') {
     return {
       message: 'Excesso crítico detectado',
-      sub: `Simulação mostra projeção de ${pct}% do teto. Risco de tributação retroativa — consulte contador.`,
+      sub: `Simulação mostra projeção de ${projecaoPct}% do teto. Risco de tributação retroativa — consulte contador.`,
     }
   }
   if (alertaTeto.cenario === 'excesso_leve') {
     return {
       message: 'Próximo do limite',
-      sub: `Projeção em ${pct}% do teto, dentro da tolerância de 20%, mas sem folga. Acompanhe mensalmente.`,
+      sub: `Projeção em ${projecaoPct}% do teto, dentro da tolerância de ${Math.round(TOLERANCIA_EXCESSO * 100)}%, mas sem folga. Acompanhe mensalmente.`,
     }
   }
   return {
@@ -186,12 +208,13 @@ export function getDashboardKPIs(input: DashboardKPIsInput): DashboardKPIs {
   if (input.monitorSummary && input.monthlyInputsCount > 0) {
     const m = input.monitorSummary
     const usoTeto = m.faturamentoAcumulado / tetoAnual
+    const projecaoUso = m.projecaoAnual / tetoAnual
     const cnaeInfo = input.cnae ? getCnae(input.cnae) : null
     const anexo: Anexo =
       cnaeInfo?.elegivelFatorR && m.fatorRAtual >= 0.28
         ? 'III'
         : (cnaeInfo?.anexoPadrao as Anexo | undefined) ?? 'III'
-    const tone = toneFromUsoTeto(usoTeto)
+    const tone = toneFromTetoRisk(usoTeto, projecaoUso)
     const { message, sub } = buildContextFromMonitor(m, input.monthlyInputsCount, tetoAnual, hasCurrentMonth)
 
     return {
@@ -219,7 +242,10 @@ export function getDashboardKPIs(input: DashboardKPIsInput): DashboardKPIs {
   if (input.latestSimulation) {
     const r = input.latestSimulation
     const proj = r.alertaTeto.projecaoAnual
-    const tone = toneFromUsoTeto(r.alertaTeto.percentualUtilizado)
+    const tone = toneFromTetoRisk(
+      r.alertaTeto.percentualUtilizado,
+      r.alertaTeto.tetoAnual > 0 ? r.alertaTeto.projecaoAnual / r.alertaTeto.tetoAnual : r.alertaTeto.percentualUtilizado,
+    )
     const { message, sub } = buildContextFromSimulation(r)
     const anexo = r.anexoAtual
 
