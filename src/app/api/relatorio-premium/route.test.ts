@@ -177,6 +177,17 @@ describe('/api/relatorio-premium POST', () => {
     const response = await POST(makeRequest())
     expect(response.status).toBe(200)
   })
+
+  it('bloqueia 403 para free user quando o fingerprint atual não foi pago', async () => {
+    createClientMock.mockResolvedValue(makeServerClient({
+      user: { id: 'user-1', email: 'user@example.com' },
+      profile: { plano: 'free' },
+      purchases: [{ report_fingerprint: 'fp-de-outra-sim' }],
+      simulations: [{ resultado: makeResultado() }],
+    }))
+    const response = await POST(makeRequest())
+    expect(response.status).toBe(403)
+  })
 })
 
 function makeResultado() {

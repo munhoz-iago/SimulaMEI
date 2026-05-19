@@ -6,6 +6,7 @@ import { CheckoutButton } from '@/components/billing/CheckoutButton'
 import { DownloadReportButton } from '@/components/billing/DownloadReportButton'
 import { StaticPageLayout } from '@/components/layout/StaticPageLayout'
 import { createClient } from '@/lib/supabase/server'
+import type { ResultadoSimulacao } from '@/types/tributario'
 
 export const metadata = {
   title: 'Relatório Fiscal — SimulaMEI',
@@ -36,7 +37,7 @@ export default async function RelatorioPage() {
       .limit(1),
   ])
 
-  const latest = (sims?.[0] as { resultado?: { entrada?: never } } | undefined)?.resultado
+  const latest = (sims?.[0] as { resultado: ResultadoSimulacao } | undefined)?.resultado
   const currentFp = latest ? reportFingerprint(latest.entrada) : null
   const paidFps = (purchases ?? [])
     .map(p => (p as { report_fingerprint: string | null }).report_fingerprint)

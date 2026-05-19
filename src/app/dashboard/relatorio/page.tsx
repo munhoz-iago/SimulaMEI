@@ -8,6 +8,7 @@ import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
 import { Panel } from '@/components/dashboard/Panel'
 import { Pill } from '@/components/dashboard/Pill'
 import { getDashboardContext } from '@/lib/dashboard/context'
+import type { ResultadoSimulacao } from '@/types/tributario'
 
 export const metadata = {
   title: 'Relatório fiscal — SimulaMEI',
@@ -59,7 +60,7 @@ export default async function DashboardRelatorioPage() {
       .limit(1),
   ])
 
-  const latest = (sims?.[0] as { resultado?: { entrada?: never } } | undefined)?.resultado
+  const latest = (sims?.[0] as { resultado: ResultadoSimulacao } | undefined)?.resultado
   const currentFp = latest ? reportFingerprint(latest.entrada) : null
   const paidFps = (purchases ?? [])
     .map(p => (p as { report_fingerprint: string | null }).report_fingerprint)
