@@ -6,6 +6,7 @@ import { captureProductEvent, buildEmailCapturedProps, type LeadSaveStatus } fro
 import { LoadSpinner } from '@/components/ui'
 import { normalizeEmail } from '@/lib/validation'
 import { getLegalIdentity } from '@/constants/site'
+import { RegimePreviewLocked } from './RegimePreviewLocked'
 
 interface EmailGateProps {
   onUnlock: (email: string) => void
@@ -111,9 +112,10 @@ export function EmailGate({ onUnlock, resultado }: EmailGateProps) {
         <p style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6, marginBottom: 20 }}>
           Cenário mais vantajoso destacado, score fiscal e relatório para seu contador — grátis.
         </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <RegimePreviewLocked comparativo={resultado.comparativo} />
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', marginTop: 14 }}>
           {GATE_FEATURES.map((item, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text3)' }}>
               <span style={{ color: 'var(--lime)', display: 'flex', flexShrink: 0 }}><CheckIcon /></span>
               {item}
             </div>
