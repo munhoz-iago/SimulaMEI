@@ -4,16 +4,24 @@
 
 Branch `claude/critical-tasks-conversion-trust` (a partir de `c6fb0d4`).
 WIP da auditoria codex preservado em `git stash` (não commitado).
-Test runner: vitest. Suíte: 175 pass / 1 fail **pré-existente e de infra**
+Test runner: vitest. Suíte: 184 pass / 1 fail **pré-existente e de infra**
 (`/api/simular` 500 — precisa Supabase/rate-limit; provado em baseline,
 não relacionado a estas mudanças).
 
-| Task | Estado | Commits |
-|---|---|---|
-| TASK-3 | ✅ feito (corrigido — ver nota) | `1f864f7`, `ec98631` |
-| TASK-2 | ✅ feito | `f202979`, `ec98631` |
-| TASK-1 | ✅ feito (3 superfícies) | `012f2f1`, `d8dafe0` |
-| TASK-4 | ⏳ reanalisado — frontend-only (ver bloco) | — |
+| Task | Estado |
+|---|---|
+| TASK-1 Trust (fonte) | ✅ feito — 3 superfícies + fonte por valor |
+| TASK-2 Identidade | ✅ feito — env-driven + .env.example |
+| TASK-3 Analytics | ✅ feito (corrigido — aditivo, sem rename) |
+| TASK-4 CNAE pendente | ✅ feito — fronteira fiscal (frontend-only) |
+| TASK-5 Empty-state CNAE | ✅ feito |
+| TASK-6 Gate visual | ✅ feito — preview locked |
+| TASK-8 JSON-LD | ✅ feito — dados legais (WebApplication já cobria) |
+| TASK-9 Meta/noindex | ✅ feito |
+| TASK-10 Conteúdo | ✅ feito — 2 páginas (revisar prosa fiscal) |
+| TASK-11 Metodologia | ✅ feito |
+| TASK-7 Mobile | 📋 review documentado — validação visual pendente (dono) |
+| TASK-12 CSP | ✅ decisão documentada (sem big-bang) |
 
 Cada item feito via TDD (RED→GREEN), typecheck limpo nos arquivos tocados.
 
@@ -168,5 +176,49 @@ DEP: TASK-1, TASK-4, TASK-6 (por último)
 ```
 
 ```
-TOTAL: 12 tasks · 3🔴 feitas (1,2,3) · 1🔴 pendente reanalisada (4) · 5🟡 · 3🟢 · estimativa restante: M
+TOTAL: 12 tasks · todas endereçadas · 1 review documentado (TASK-7) · suíte 184/1-infra
 ```
+
+---
+
+## RODADA 2 — execução de todas as pendentes (2026-05-16)
+
+10 tasks implementadas via TDD/coerência + commits atômicos. 2 tratadas
+com ressalva honesta (anunciadas antes de começar):
+
+### TASK-7 — review responsivo (NÃO há mudança de código)
+
+Limitação real: não consigo validar render em 390px (Chrome não reduz
+viewport abaixo do mínimo; sem device emulation). **Não editei CSS às
+cegas** num `responsive.css` tuned que não consigo ver — seria violar
+verify-before-completion.
+
+Achado: a camada responsiva **existe e é deliberada** (`src/app/styles/
+responsive.css`): `.sim-grid/.gate-grid/.full-grid/.res-grid` colapsam
+p/ 1 coluna ≤900px; `.mes-grid`, `.prolabore-toggle-row`,
+`.full-results-actions` tratados ≤480px. TabelaDAS usa `overflow-x:auto`
+intencional.
+
+**Pendente de validação visual do dono em 390px real:**
+- Touch targets <44px: linhas do dropdown CNAE (`CnaeRow` ~36px), links
+  "ver ficha"/mailto pequenos, thumb do slider.
+- Slider e dropdown CNAE no toque (interação, precisa device).
+- Overflow horizontal a 390px exato (banner de resultado / MonoVal).
+
+### TASK-12 — CSP via segura (decisão documentada, sem big-bang)
+
+`script-src` (vetor real de XSS) **já tem nonce por requisição**. Só
+`style-src` tem `'unsafe-inline'`, e o codebase usa `style={{ }}`
+pervasivo — remover = refactor grande de alto risco visual. Implementado
+como **decisão documentada em `csp.ts`** (comentário; zero mudança de
+comportamento; csp.test.ts segue verde). Endurecer fica para depois da
+migração de estilos inline críticos.
+
+### Ações do dono
+
+1. Setar em prod `NEXT_PUBLIC_LEGAL_ENTITY_NAME` / `_TAX_ID` /
+   `_CONTACT_EMAIL` (senão identidade cai no fallback).
+2. Validação visual mobile 390px (itens TASK-7 acima).
+3. Revisão de contador na prosa fiscal das 2 páginas novas (TASK-10).
+4. Fix do teste pré-existente `/api/simular` (mock `next/cache` +
+   supabase) — independente deste trabalho.
