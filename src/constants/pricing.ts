@@ -4,8 +4,7 @@ export const REPORT_PRICE_LABEL = 'R$ 9,90'
 
 /** Formata centavos como moeda BRL (ex.: 990 -> "R$ 9,90"). */
 export function formatBRL(centavos: number): string {
-  return (centavos / 100)
-    .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-    // Intl usa U+00A0 (NBSP) como separador; normaliza para espaço ASCII.
-    .replace(/ /g, ' ')
+  // Intl usa U+00A0 (NBSP, codepoint 160) como separador; normaliza para espaco ASCII.
+  // String.fromCharCode(160) evita qualquer caractere invisivel no fonte.
+  return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(new RegExp(String.fromCharCode(160), 'g'), ' ')
 }
