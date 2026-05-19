@@ -4,9 +4,9 @@ export const REPORT_PRICE_LABEL = 'R$ 9,90'
 
 /** Formata centavos como moeda BRL (ex.: 990 -> "R$ 9,90"). */
 export function formatBRL(centavos: number): string {
-  // Intl usa U+00A0 (NBSP, codepoint 160) como separador; normaliza para espaco ASCII.
-  // String.fromCharCode(160) evita qualquer caractere invisivel no fonte.
-  return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(new RegExp(String.fromCharCode(160), 'g'), ' ')
+  // Intl usa U+00A0 (NBSP) como separador de moeda; normaliza p/ espaco ASCII.
+  // Regex /\u00A0/g: legivel e sem caractere invisivel no codigo-fonte.
+  return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\u00A0/g, ' ')
 }
 
 /** Resumo do gasto acumulado em relatorios avulsos, base do upsell pro Plano Pro.
