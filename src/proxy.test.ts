@@ -68,6 +68,21 @@ describe('proxy', () => {
     expect(response.headers.get('location')).toBe('http://localhost/auth/login?next=%2Fcontador')
   })
 
+  it('keeps the plan comparison page public for anonymous users', async () => {
+    const nextResponse = NextResponse.next()
+    nextResponse.headers.set('x-test-response', 'ok')
+    updateSessionMock.mockResolvedValue({
+      supabaseResponse: nextResponse,
+      user: null,
+    })
+
+    const request = new NextRequest('http://localhost/upgrade')
+    const response = await proxy(request)
+
+    expect(response).toBe(nextResponse)
+    expect(response.headers.get('x-test-response')).toBe('ok')
+  })
+
   it('redirects authenticated users away from auth pages', async () => {
     updateSessionMock.mockResolvedValue({
       supabaseResponse: NextResponse.next(),

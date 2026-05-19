@@ -3,7 +3,7 @@ import { canAccessAdminLeads, getProfileAccess } from '@/lib/auth/profile-access
 import { buildContentSecurityPolicy } from '@/lib/security/csp'
 import { updateSession } from '@/lib/supabase/middleware'
 
-const PROTECTED_PATHS = ['/dashboard', '/onboarding', '/contador', '/admin', '/relatorio', '/upgrade', '/api/v1']
+const PROTECTED_PATHS = ['/dashboard', '/onboarding', '/contador', '/admin', '/relatorio', '/api/v1']
 const AUTH_PATHS = ['/auth/login', '/auth/registro', '/auth/recuperar']
 
 function matchesPrefix(pathname: string, paths: string[]) {
