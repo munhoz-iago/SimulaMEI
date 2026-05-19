@@ -14,6 +14,8 @@ const {
   officesUpdateMock,
   clientsSelectMock,
   clientsUpdateMock,
+  purchasesUpdateMock,
+  profilesUpdateMock,
 } = vi.hoisted(() => ({
   constructEventMock: vi.fn(),
   createAdminClientMock: vi.fn(),
@@ -27,6 +29,8 @@ const {
   officesUpdateMock: vi.fn(),
   clientsSelectMock: vi.fn(),
   clientsUpdateMock: vi.fn(),
+  purchasesUpdateMock: vi.fn(),
+  profilesUpdateMock: vi.fn(),
 }))
 
 vi.mock('next/headers', () => ({
@@ -123,6 +127,14 @@ function makeAdminClient(options?: {
       return { update: officesUpdateMock }
     }
 
+    if (table === 'purchases') {
+      return { update: purchasesUpdateMock }
+    }
+
+    if (table === 'user_profiles') {
+      return { update: profilesUpdateMock }
+    }
+
     if (table === 'office_clients') {
       return {
         select: clientsSelectMock.mockReturnValue(makeSelectChain(activeClients)),
@@ -147,6 +159,8 @@ describe('/api/stripe/webhook POST', () => {
     subscriptionUpdateMock.mockReturnValue(makePromiseChain())
     officesUpdateMock.mockReturnValue(makePromiseChain())
     clientsUpdateMock.mockReturnValue(makePromiseChain())
+    purchasesUpdateMock.mockReturnValue(makePromiseChain())
+    profilesUpdateMock.mockReturnValue(makePromiseChain())
     createAdminClientMock.mockReturnValue(makeAdminClient())
     subscriptionRetrieveMock.mockResolvedValue({
       id: 'sub_1',
@@ -275,5 +289,35 @@ describe('/api/stripe/webhook POST', () => {
     }))
     const updateChain = clientsUpdateMock.mock.results[0]?.value
     expect(updateChain.in).toHaveBeenCalledWith('id', ['client-31'])
+  })
+
+  it('persists report_fingerprint and simulation_id when a report purchase is paid', async () => {
+    constructEventMock.mockReturnValue({
+      id: 'evt_report',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_report',
+          payment_intent: 'pi_report',
+          customer: 'cus_report',
+          metadata: {
+            user_id: 'u1',
+            produto: 'relatorio',
+            report_fingerprint: 'abc123',
+            simulation_id: 'sim-1',
+          },
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ received: true })
+    expect(purchasesUpdateMock).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'paid',
+      report_fingerprint: 'abc123',
+      simulation_id: 'sim-1',
+    }))
   })
 })

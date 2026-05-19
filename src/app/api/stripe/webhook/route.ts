@@ -41,11 +41,15 @@ async function handleConsumerCheckoutCompleted(
     update(payload: Record<string, unknown>): UpdateQuery
   }
 
+  const fp = session.metadata?.report_fingerprint
+  const simId = session.metadata?.simulation_id
   await purchasesTable
     .update({
       status: 'paid',
       stripe_payment_id: getStripeObjectId(session.payment_intent)
         ?? getStripeObjectId(session.subscription),
+      ...(fp ? { report_fingerprint: fp } : {}),
+      ...(simId ? { simulation_id: simId } : {}),
     })
     .eq('stripe_session_id', session.id)
 
