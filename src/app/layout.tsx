@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Space_Grotesk, JetBrains_Mono, Roboto_Slab } from 'next/font/google'
 import { headers } from 'next/headers'
 import Script from 'next/script'
+import { AutoLogoutProvider } from '@/components/providers/AutoLogoutProvider'
 import { PostHogProvider } from '@/components/providers/PostHogProvider'
 import { SmoothScroll } from '@/components/effects/SmoothScroll'
 import { CustomCursor } from '@/components/effects/CustomCursor'
@@ -115,7 +116,9 @@ export default async function RootLayout({
       <body className="min-h-screen flex flex-col antialiased" suppressHydrationWarning>
         <SmoothScroll />
         <CustomCursor />
-        <PostHogProvider>{children}</PostHogProvider>
+        <PostHogProvider>
+          <AutoLogoutProvider>{children}</AutoLogoutProvider>
+        </PostHogProvider>
       </body>
     </html>
   )

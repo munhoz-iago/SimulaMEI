@@ -12,14 +12,23 @@ const NAV_LINKS = [
   { label: 'Para contadores', href: '/para-contadores', id: '' },
 ]
 
+export interface HeaderUser {
+  email?: string | null
+}
+
+interface HeaderProps {
+  user?: HeaderUser | null
+}
+
 // ThemeToggle agora vive em @/components/theme/ThemeToggle e é compartilhado
 // entre Home e Dashboard, sincronizado via CustomEvent.
 
-export function Header() {
+export function Header({ user = null }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeId, setActiveId] = useState<string>('')
   const observerRef = useRef<IntersectionObserver | null>(null)
+  const isLoggedIn = Boolean(user)
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 30)
@@ -122,25 +131,73 @@ export function Header() {
         <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', alignItems: 'center' }}>
           <ThemeToggle />
 
-          <a
-            href="/auth/login"
-            className="desktop-only pressable"
-            style={{
-              fontSize: 13, fontWeight: 500, color: 'var(--text2)',
-              padding: '8px 14px', borderRadius: 'var(--radius)',
-              border: '1px solid var(--border)',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = 'var(--text2)'
-              e.currentTarget.style.color = 'var(--text1)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'var(--border)'
-              e.currentTarget.style.color = 'var(--text2)'
-            }}
-          >
-            Entrar
-          </a>
+          {isLoggedIn ? (
+            <>
+              <a
+                href="/dashboard"
+                className="desktop-only pressable"
+                style={{
+                  fontSize: 13, fontWeight: 600, color: 'var(--text2)',
+                  padding: '8px 14px', borderRadius: 'var(--radius)',
+                  border: '1px solid var(--border)',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'var(--text2)'
+                  e.currentTarget.style.color = 'var(--text1)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'var(--border)'
+                  e.currentTarget.style.color = 'var(--text2)'
+                }}
+              >
+                Dashboard
+              </a>
+              <form action="/auth/logout" method="post" className="desktop-only" style={{ display: 'contents' }}>
+                <button
+                  type="submit"
+                  className="pressable"
+                  style={{
+                    fontSize: 13, fontWeight: 500, color: 'var(--text2)',
+                    padding: '8px 12px', borderRadius: 'var(--radius)',
+                    border: '1px solid transparent',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.color = 'var(--text1)'
+                    e.currentTarget.style.background = 'var(--bg2)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.color = 'var(--text2)'
+                    e.currentTarget.style.background = 'transparent'
+                  }}
+                >
+                  Sair
+                </button>
+              </form>
+            </>
+          ) : (
+            <a
+              href="/auth/login"
+              className="desktop-only pressable"
+              style={{
+                fontSize: 13, fontWeight: 500, color: 'var(--text2)',
+                padding: '8px 14px', borderRadius: 'var(--radius)',
+                border: '1px solid var(--border)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'var(--text2)'
+                e.currentTarget.style.color = 'var(--text1)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--border)'
+                e.currentTarget.style.color = 'var(--text2)'
+              }}
+            >
+              Entrar
+            </a>
+          )}
 
           <a
             href="#simulador"
@@ -208,16 +265,51 @@ export function Header() {
               {link.label}
             </a>
           ))}
-          <a
-            href="/auth/login"
-            onClick={() => setMenuOpen(false)}
-            style={{
-              fontSize: 15, fontWeight: 600, color: 'var(--lime)',
-              padding: '10px 12px', borderRadius: 'var(--radius)',
-            }}
-          >
-            Entrar
-          </a>
+          {isLoggedIn ? (
+            <>
+              <a
+                href="/dashboard"
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  fontSize: 15, fontWeight: 700, color: 'var(--lime)',
+                  padding: '10px 12px', borderRadius: 'var(--radius)',
+                }}
+              >
+                Dashboard
+              </a>
+              <form action="/auth/logout" method="post">
+                <button
+                  type="submit"
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: 'var(--text2)',
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius)',
+                    border: 0,
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  Sair
+                </button>
+              </form>
+            </>
+          ) : (
+            <a
+              href="/auth/login"
+              onClick={() => setMenuOpen(false)}
+              style={{
+                fontSize: 15, fontWeight: 600, color: 'var(--lime)',
+                padding: '10px 12px', borderRadius: 'var(--radius)',
+              }}
+            >
+              Entrar
+            </a>
+          )}
         </div>
       )}
     </header>

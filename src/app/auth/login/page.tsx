@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   getLoginErrorFeedback,
   getLoginQueryFeedback,
+  getLoginReasonFeedback,
   getOAuthErrorMessage,
 } from '@/lib/auth/messages'
 
@@ -19,6 +20,7 @@ function LoginForm() {
   const nextParam = searchParams.get('next') ?? '/dashboard'
   const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/'
   const queryErrorMessage = getLoginQueryFeedback(searchParams.get('error'))
+  const queryReasonMessage = getLoginReasonFeedback(searchParams.get('reason'))
 
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -175,6 +177,12 @@ function LoginForm() {
                   {isResendingConfirmation ? 'Reenviando...' : 'Reenviar confirmação'}
                 </button>
               )}
+            </AuthAlert>
+          )}
+
+          {!visibleError && queryReasonMessage && (
+            <AuthAlert tone="neutral">
+              {queryReasonMessage}
             </AuthAlert>
           )}
 

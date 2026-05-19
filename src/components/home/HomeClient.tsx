@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useScrollReveal } from '@/lib/useScrollReveal'
 import type { ResultadoSimulacao } from '@/types/tributario'
-import { Header } from '@/components/layout/Header'
+import { Header, type HeaderUser } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { HeroSection } from '@/components/layout/HeroSection'
 import { HowWeCalculate } from '@/components/layout/HowWeCalculate'
@@ -21,9 +21,10 @@ import {
 
 interface HomeClientProps {
   initialResultado?: ResultadoSimulacao | null
+  sessionUser?: HeaderUser | null
 }
 
-export function HomeClient({ initialResultado = null }: HomeClientProps) {
+export function HomeClient({ initialResultado = null, sessionUser = null }: HomeClientProps) {
   useScrollReveal()
   const theme = useSyncExternalStore(subscribeThemeChange, readStoredTheme, getServerThemeSnapshot)
   const [resultado, setResultado] = useState<ResultadoSimulacao | null>(initialResultado)
@@ -74,7 +75,7 @@ export function HomeClient({ initialResultado = null }: HomeClientProps) {
       >
         Pular para o conteúdo
       </a>
-      <Header />
+      <Header user={sessionUser} />
       <SectionNav
         items={[
           { id: 'inicio', label: 'Início' },

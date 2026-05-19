@@ -194,7 +194,10 @@ export default async function HomePage({
         strategy="beforeInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppSchema) }}
       />
-      <HomeClient initialResultado={initialResultado} />
+      <HomeClient
+        initialResultado={initialResultado}
+        sessionUser={user ? { email: user.email } : null}
+      />
     </>
   )
 }

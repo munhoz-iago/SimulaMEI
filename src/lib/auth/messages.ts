@@ -37,6 +37,14 @@ export function getLoginQueryFeedback(errorCode?: string | null): string | null 
   return null
 }
 
+export function getLoginReasonFeedback(reasonCode?: string | null): string | null {
+  if (reasonCode === 'inactive') {
+    return 'Sua sessão expirou por inatividade. Entre novamente para continuar.'
+  }
+
+  return null
+}
+
 export function getSignupSubmissionFeedback(rawMessage?: string | null): SignupSubmissionFeedback {
   if (!rawMessage || rawMessage === 'User already registered') {
     return {
