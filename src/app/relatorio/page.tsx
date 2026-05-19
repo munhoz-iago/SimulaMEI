@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { REPORT_PRICE_LABEL } from '@/constants/pricing'
 import { CheckoutButton } from '@/components/billing/CheckoutButton'
 import { DownloadReportButton } from '@/components/billing/DownloadReportButton'
 import { StaticPageLayout } from '@/components/layout/StaticPageLayout'
@@ -56,7 +57,7 @@ export default async function RelatorioPage() {
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>
             <div style={{ color: 'var(--text2)' }}>
-              Compra avulsa do relatório: <strong style={{ color: 'var(--text1)' }}>R$ 29</strong>
+              Compra avulsa do relatório: <strong style={{ color: 'var(--text1)' }}>{REPORT_PRICE_LABEL}</strong>
             </div>
             <CheckoutButton endpoint="/api/checkout/report" eventName="pdf_cta_clicked">
               Comprar relatório

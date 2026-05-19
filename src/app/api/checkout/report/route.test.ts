@@ -16,7 +16,7 @@ vi.mock('@/lib/stripe', () => ({
     relatorio: {
       product: 'relatorio',
       priceId: 'price_report',
-      valorCentavos: 4900,
+      valorCentavos: 990,
       successPath: '/relatorio?checkout=success',
       cancelPath: '/relatorio?checkout=cancel',
     },

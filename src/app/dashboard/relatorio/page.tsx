@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { REPORT_PRICE_BRL, REPORT_PRICE_LABEL } from '@/constants/pricing'
 import { CheckoutButton } from '@/components/billing/CheckoutButton'
 import { DownloadReportButton } from '@/components/billing/DownloadReportButton'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
@@ -11,7 +12,7 @@ export const metadata = {
   description: 'Memória de cálculo, oportunidades e PDF compartilhável.',
 }
 
-const REPORT_PRICE = 29
+const REPORT_PRICE = REPORT_PRICE_BRL
 const PRO_PRICE = 19
 
 const REPORT_FEATURES = [
@@ -146,7 +147,7 @@ export default async function DashboardRelatorioPage() {
             <div style={{ margin: '14px 0' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                 <span style={{ fontFamily: 'var(--mono)', fontSize: 36, fontWeight: 900, color: 'var(--text1)', lineHeight: 1 }}>
-                  R$ {REPORT_PRICE}
+                  {REPORT_PRICE_LABEL}
                 </span>
                 <span style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 600 }}>uma vez</span>
               </div>
@@ -217,7 +218,7 @@ export default async function DashboardRelatorioPage() {
                 color: 'var(--lime)',
                 border: '1px solid var(--tint-lime-border)',
               }}>
-                Ilimitado · {Math.round(((REPORT_PRICE - PRO_PRICE) / REPORT_PRICE) * 100)}% mais barato/mês
+                Ilimitado no Pro · avulso sai {REPORT_PRICE_LABEL}/relatório
               </span>
             </div>
 
@@ -237,7 +238,7 @@ export default async function DashboardRelatorioPage() {
             </div>
 
             {/* Comparativo direto features (sem "X relatórios = Y meses" que confunde) */}
-            <ValueComparisonCard reportPrice={REPORT_PRICE} proPrice={PRO_PRICE} />
+            <ValueComparisonCard reportPrice={REPORT_PRICE} reportPriceLabel={REPORT_PRICE_LABEL} proPrice={PRO_PRICE} />
 
             <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0 20px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
               {PRO_FEATURES.map((feat, i) => (
@@ -274,7 +275,7 @@ export default async function DashboardRelatorioPage() {
 
 /** Comparativo de VALOR (não de break-even confuso).
  *  Mostra que avulso = 1 PDF / Pro = ilimitado, com preços alinhados. */
-function ValueComparisonCard({ reportPrice, proPrice }: { reportPrice: number; proPrice: number }) {
+function ValueComparisonCard({ reportPrice, reportPriceLabel, proPrice }: { reportPrice: number; reportPriceLabel: string; proPrice: number }) {
   return (
     <div style={{
       padding: '12px 14px',
@@ -294,7 +295,7 @@ function ValueComparisonCard({ reportPrice, proPrice }: { reportPrice: number; p
             1<span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', marginLeft: 4 }}>PDF</span>
           </div>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-            R$ {reportPrice}
+            {reportPriceLabel}
           </div>
         </div>
         {/* Pro */}
@@ -317,8 +318,8 @@ function ValueComparisonCard({ reportPrice, proPrice }: { reportPrice: number; p
         borderTop: '1px dashed var(--tint-lime-strong)',
         fontSize: 11, color: 'var(--text2)', lineHeight: 1.45,
       }}>
-        Pague <strong style={{ color: 'var(--lime)' }}>R$ {reportPrice - proPrice} a menos</strong> por mês e
-        gere quantos relatórios precisar. Sem limite, sem novo checkout a cada simulação.
+        <strong style={{ color: 'var(--lime)' }}>Avulso {reportPriceLabel}/relatório · Pro ilimitado/mês.</strong>{' '}
+        Gere quantos relatórios precisar sem novo checkout a cada simulação.
       </div>
     </div>
   )

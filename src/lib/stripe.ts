@@ -1,5 +1,6 @@
 import Stripe from 'stripe'
 import { getSiteUrl, SITE_NAME } from '@/constants/site'
+import { REPORT_PRICE_CENTAVOS } from '@/constants/pricing'
 
 let stripeClient: Stripe | null = null
 
@@ -7,7 +8,7 @@ export const STRIPE_PRODUCTS = {
   relatorio: {
     product: 'relatorio',
     priceId: process.env.STRIPE_PRICE_REPORT_ID ?? '',
-    valorCentavos: 2900,
+    valorCentavos: REPORT_PRICE_CENTAVOS,
     successPath: '/relatorio?checkout=success',
     cancelPath: '/relatorio?checkout=cancel',
   },
