@@ -12,7 +12,7 @@ interface SimulationRow {
   resultado: ResultadoSimulacao
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -38,8 +38,10 @@ export async function GET() {
   ])
 
   const hasAccess = hasReportAccess(profile?.plano, purchases?.length ?? 0)
-  if (!hasAccess) {
-    return NextResponse.json({ error: 'Compre o relatório ou ative o plano Pro para baixar o PDF.' }, { status: 403 })
+  const isPreview = new URL(req.url).searchParams.get('preview') === '1'
+
+  if (!isPreview && !hasAccess) {
+    return NextResponse.json({ error: 'Compra necessária para o PDF completo.' }, { status: 402 })
   }
 
   const latest = (simulations?.[0] as SimulationRow | undefined)?.resultado
@@ -47,19 +49,24 @@ export async function GET() {
     return NextResponse.json({ error: 'Nenhuma simulação encontrada para gerar o relatório.' }, { status: 404 })
   }
 
+  const variant = isPreview && !hasAccess ? 'preview' : 'full'
   const oportunidades = gerarOportunidadesFiscais(latest)
   const pdfElement = React.createElement(SimulationReportDocument, {
     email: user.email ?? 'cliente@simulamei.com.br',
     resultado: latest,
     oportunidades,
-    variant: 'full',
+    variant,
   }) as unknown as React.ReactElement<DocumentProps>
   const buffer = await renderToBuffer(pdfElement)
+
+  const disposition = variant === 'preview'
+    ? 'inline; filename="simulamei-relatorio-preview.pdf"'
+    : 'attachment; filename="simulamei-relatorio.pdf"'
 
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': 'attachment; filename="simulamei-relatorio.pdf"',
+      'Content-Disposition': disposition,
     },
   })
 }

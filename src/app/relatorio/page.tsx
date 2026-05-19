@@ -56,12 +56,22 @@ export default async function RelatorioPage() {
             <DownloadReportButton />
           </div>
         ) : (
-          <div style={{ display: 'grid', gap: 12 }}>
+          <div style={{ display: 'grid', gap: 16 }}>
+            <iframe
+              src="/api/relatorio/gerar?preview=1"
+              title="Prévia do relatório fiscal"
+              style={{
+                width: '100%',
+                height: 480,
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+              }}
+            />
             <div style={{ color: 'var(--text2)' }}>
               Compra avulsa do relatório: <strong style={{ color: 'var(--text1)' }}>{REPORT_PRICE_LABEL}</strong>
             </div>
             <CheckoutButton endpoint="/api/checkout/report" eventName="pdf_cta_clicked">
-              Comprar relatório
+              Liberar PDF — {REPORT_PRICE_LABEL}
             </CheckoutButton>
           </div>
         )}
