@@ -147,6 +147,20 @@ describe('/api/relatorio-premium POST', () => {
     expect(response.headers.get('Content-Type')).toBe('application/pdf')
     expect(renderToBufferMock).toHaveBeenCalled()
   })
+
+  it('returns 422 (not a zeroed PDF) when the saved simulation is empty', async () => {
+    createClientMock.mockResolvedValue(makeServerClient({
+      user: { id: 'user-1', email: 'user@example.com' },
+      profile: { plano: 'pro' },
+      purchases: [],
+      simulations: [{ resultado: { entrada: { faturamentoAcumulado: 0 }, alertaTeto: { projecaoAnual: 0 } } }],
+    }))
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(422)
+    expect(renderToBufferMock).not.toHaveBeenCalled()
+  })
 })
 
 function makeResultado() {

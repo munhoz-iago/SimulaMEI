@@ -4,6 +4,7 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import type { DocumentProps } from '@react-pdf/renderer'
 import { createClient } from '@/lib/supabase/server'
 import { hasReportAccess } from '@/lib/auth/report-access'
+import { isResultadoVazio, RELATORIO_VAZIO_MSG } from '@/lib/reports/reportEligibility'
 import { gerarOportunidadesFiscais } from '@/lib/tributario'
 import { SimulationReportDocument } from '@/lib/reports/SimulationReportDocument'
 import type { ResultadoSimulacao } from '@/types/tributario'
@@ -54,6 +55,10 @@ export async function POST(request: NextRequest) {
   const latest = (simulations?.[0] as SimulationRow | undefined)?.resultado
   if (!latest) {
     return NextResponse.json({ error: 'Nenhuma simulação encontrada para gerar o relatório.' }, { status: 404 })
+  }
+
+  if (isResultadoVazio(latest)) {
+    return NextResponse.json({ error: RELATORIO_VAZIO_MSG }, { status: 422 })
   }
 
   const oportunidades = gerarOportunidadesFiscais(latest)
