@@ -1,7 +1,7 @@
 import Script from 'next/script'
 import { redirect } from 'next/navigation'
 import { HomeClient } from '@/components/home/HomeClient'
-import { getSiteUrl, SITE_NAME, SITE_DESCRIPTION } from '@/constants/site'
+import { getSiteUrl, SITE_NAME, SITE_DESCRIPTION, getLegalIdentity } from '@/constants/site'
 import { getProfileAccess } from '@/lib/auth/profile-access'
 import { createClient } from '@/lib/supabase/server'
 import { LIMITES_MEI, simular } from '@/lib/tributario'
@@ -95,6 +95,7 @@ export default async function HomePage({
     redirect(access.isComplete ? '/dashboard' : '/onboarding')
   }
 
+  const legal = getLegalIdentity()
   const webAppSchema = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -102,6 +103,9 @@ export default async function HomePage({
         '@type': 'Organization',
         '@id': `${siteUrl}/#organization`,
         name: SITE_NAME,
+        legalName: legal.entityName,
+        ...(legal.taxId ? { taxID: legal.taxId } : {}),
+        ...(legal.contactEmail ? { email: legal.contactEmail } : {}),
         url: siteUrl,
         logo: `${siteUrl}/icons/icon-512.png`,
         description: SITE_DESCRIPTION,
