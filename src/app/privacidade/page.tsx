@@ -3,6 +3,7 @@ import { StaticPageLayout } from '@/components/layout/StaticPageLayout'
 export const metadata = {
   title: 'Política de Privacidade — SimulaMEI',
   description: 'Como o SimulaMEI coleta, usa e protege seus dados.',
+  robots: { index: false, follow: true },
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

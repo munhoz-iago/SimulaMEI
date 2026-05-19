@@ -3,6 +3,7 @@ import { StaticPageLayout } from '@/components/layout/StaticPageLayout'
 export const metadata = {
   title: 'Termos de Uso — SimulaMEI',
   description: 'Termos e condições de uso do SimulaMEI.',
+  robots: { index: false, follow: true },
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

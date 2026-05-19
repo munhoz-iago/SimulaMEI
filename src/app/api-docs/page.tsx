@@ -3,7 +3,8 @@ import { TAX_RULE_VERSION } from '@/lib/tributario'
 
 export const metadata = {
   title: 'API Docs — SimulaMEI',
-  description: 'Documentação da API pública do SimulaMEI.',
+  description:
+    'Documentação da API pública do SimulaMEI: simule teto MEI, Fator R e Anexo do Simples Nacional via REST e integre a apuração tributária ao seu sistema contábil.',
 }
 
 function Code({ children }: { children: React.ReactNode }) {
