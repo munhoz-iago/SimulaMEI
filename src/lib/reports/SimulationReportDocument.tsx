@@ -80,7 +80,7 @@ export function SimulationReportDocument({
         <View style={styles.headerBand}>
           <Text style={styles.brand}>Simula<Text style={styles.brandLime}>MEI</Text> — Relatório fiscal</Text>
           <Text style={styles.headSub}>
-            {email} · Gerado em {new Date(resultado.geradoEm).toLocaleString('pt-BR')} · Motor {TAX_RULE_VERSION.replace('BR-MEI-SN-', 'v')}
+            {email} · Gerado em {new Date(resultado.geradoEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })} · Motor {TAX_RULE_VERSION.replace('BR-MEI-SN-', 'v')}
           </Text>
           <Text style={styles.headSub}>{legal.line}</Text>
         </View>
