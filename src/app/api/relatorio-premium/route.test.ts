@@ -3,28 +3,16 @@ import { NextRequest } from 'next/server'
 
 const {
   createClientMock,
-  anthropicCreateMock,
   gerarOportunidadesFiscaisMock,
   renderToBufferMock,
 } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
-  anthropicCreateMock: vi.fn(),
   gerarOportunidadesFiscaisMock: vi.fn(),
   renderToBufferMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: createClientMock,
-}))
-
-vi.mock('@anthropic-ai/sdk', () => ({
-  default: vi.fn(function AnthropicMock() {
-    return {
-    messages: {
-      create: anthropicCreateMock,
-    },
-    }
-  }),
 }))
 
 vi.mock('@react-pdf/renderer', () => ({
@@ -87,10 +75,6 @@ function makeServerClient(options: {
 describe('/api/relatorio-premium POST', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.ANTHROPIC_API_KEY = ''
-    anthropicCreateMock.mockResolvedValue({
-      content: [{ type: 'text', text: 'Analise fiscal gerada.' }],
-    })
     gerarOportunidadesFiscaisMock.mockReturnValue([])
     renderToBufferMock.mockImplementation(async (element: { type?: unknown; props?: unknown }) => {
       if (typeof element.type === 'function') {
@@ -143,21 +127,7 @@ describe('/api/relatorio-premium POST', () => {
     expect(response.status).toBe(404)
   })
 
-  it('returns 503 when Anthropic is not configured', async () => {
-    createClientMock.mockResolvedValue(makeServerClient({
-      user: { id: 'user-1' },
-      profile: { plano: 'pro' },
-      purchases: [],
-      simulations: [{ resultado: makeResultado() }],
-    }))
-
-    const response = await POST(makeRequest())
-
-    expect(response.status).toBe(503)
-  })
-
   it('returns a PDF for pro users with a saved simulation', async () => {
-    process.env.ANTHROPIC_API_KEY = 'sk-ant-test'
     createClientMock.mockResolvedValue(makeServerClient({
       user: { id: 'user-1', email: 'user@example.com' },
       profile: {
@@ -175,7 +145,6 @@ describe('/api/relatorio-premium POST', () => {
 
     expect(response.status).toBe(200)
     expect(response.headers.get('Content-Type')).toBe('application/pdf')
-    expect(anthropicCreateMock).toHaveBeenCalled()
     expect(renderToBufferMock).toHaveBeenCalled()
   })
 })

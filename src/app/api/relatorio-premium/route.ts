@@ -1,6 +1,5 @@
 import React from 'react'
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 import { renderToBuffer } from '@react-pdf/renderer'
 import type { DocumentProps } from '@react-pdf/renderer'
 import { createClient } from '@/lib/supabase/server'
@@ -20,40 +19,6 @@ interface ProfileRow {
   tipo_mei: string | null
   atividades_realizadas: string | null
   plano: string | null
-}
-
-async function generateAiAnalysis(profile: ProfileRow | null, latest: ResultadoSimulacao) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error('ANTHROPIC_API_KEY ausente.')
-  }
-
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  const message = await anthropic.messages.create({
-    model: process.env.ANTHROPIC_MODEL ?? 'claude-3-5-sonnet-latest',
-    max_tokens: 900,
-    temperature: 0.2,
-    system: 'Você é um analista fiscal brasileiro. Gere orientação clara, cautelosa e acionável. Não substitua contador habilitado.',
-    messages: [
-      {
-        role: 'user',
-        content: JSON.stringify({
-          perfil: profile,
-          simulacao: latest,
-          instrucoes: [
-            'Escreva em português do Brasil.',
-            'Use 5 a 8 parágrafos curtos.',
-            'Priorize risco de teto MEI, Fator R, Anexo provável e próximos passos.',
-            'Não invente dados ausentes.',
-          ],
-        }),
-      },
-    ],
-  })
-
-  return message.content
-    .map(block => block.type === 'text' ? block.text : '')
-    .join('\n')
-    .trim()
 }
 
 export async function POST(request: NextRequest) {
@@ -98,13 +63,6 @@ export async function POST(request: NextRequest) {
   const latest = (simulations?.[0] as SimulationRow | undefined)?.resultado
   if (!latest) {
     return NextResponse.json({ error: 'Nenhuma simulação encontrada para gerar o relatório.' }, { status: 404 })
-  }
-
-  try {
-    await generateAiAnalysis(profile as ProfileRow | null, latest)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Claude API indisponível.'
-    return NextResponse.json({ error: message }, { status: 503 })
   }
 
   const oportunidades = gerarOportunidadesFiscais(latest)
