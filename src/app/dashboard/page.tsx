@@ -394,7 +394,7 @@ export default async function DashboardPage() {
                   <span style={{ fontSize: 11, color: 'var(--text3)' }}>
                     {kpis.monthsOfHistory > 0
                       ? kpis.hasCurrentMonthEntry ? 'mês atual lançado' : 'lance o mês corrente'
-                      : currentPlan === 'free' ? `${simulationsUsed}/${FREE_SIMULATION_LIMIT} simulações` : `${simulationsUsed} simulações`}
+                      : currentPlan === 'free' ? `${Math.min(simulationsUsed, FREE_SIMULATION_LIMIT)}/${FREE_SIMULATION_LIMIT} simulações` : `${simulationsUsed} simulações`}
                   </span>
                 </Panel>
                 <Panel style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', overflow: 'hidden' }}>
@@ -625,7 +625,7 @@ export default async function DashboardPage() {
                   fontSize: 12, color: freeSimulationLimitReached ? 'var(--red)' : 'var(--text3)',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}>
-                  <span>{simulationsUsed} de {FREE_SIMULATION_LIMIT} simulações usadas</span>
+                  <span>{Math.min(simulationsUsed, FREE_SIMULATION_LIMIT)} de {FREE_SIMULATION_LIMIT} simulações usadas</span>
                   {freeSimulationLimitReached && (
                     <Link href="/upgrade" style={{ fontSize: 12, fontWeight: 800, color: 'var(--lime)', textDecoration: 'none' }}>
                       Fazer upgrade →
