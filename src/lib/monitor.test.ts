@@ -142,4 +142,36 @@ describe('getFiscalCalendarItems', () => {
     expect(meio).toBeDefined()
     expect(meio!.body.toLowerCase()).toContain('confortável')
   })
+
+  // §5.3: DASN-SIMEI é declaração do MEI. DEFIS é da ME/EPP no Simples.
+  // Não pode misturar — o usuário olhando o dashboard precisa saber qual
+  // obrigação se aplica ao SEU regime.
+  it('regime "mei" (default): mostra DASN-SIMEI, não DEFIS', () => {
+    const items = getFiscalCalendarItems({
+      refDate: new Date(2026, 3, 10), // abril → dentro da janela da DASN-SIMEI
+      nome: 'Ana',
+      tipoMei: 'geral' satisfies TipoMei,
+      anexoAtual: 'III',
+      elegivelFatorR: false,
+      totalLancamentos: 3,
+    })
+
+    expect(items.some(item => item.title.startsWith('DASN-SIMEI'))).toBe(true)
+    expect(items.some(item => item.title.startsWith('DEFIS'))).toBe(false)
+  })
+
+  it('regime "simples": mostra DEFIS, não DASN-SIMEI', () => {
+    const items = getFiscalCalendarItems({
+      refDate: new Date(2026, 1, 15), // fev → dentro da janela do DEFIS
+      nome: 'Ana',
+      tipoMei: 'geral' satisfies TipoMei,
+      anexoAtual: 'III',
+      elegivelFatorR: false,
+      regime: 'simples',
+      totalLancamentos: 3,
+    })
+
+    expect(items.some(item => item.title.startsWith('DEFIS'))).toBe(true)
+    expect(items.some(item => item.title.startsWith('DASN-SIMEI'))).toBe(false)
+  })
 })

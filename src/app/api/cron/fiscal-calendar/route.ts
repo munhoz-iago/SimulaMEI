@@ -38,8 +38,9 @@ export async function GET(request: Request) {
       tipoMei: profile.tipo_mei ?? 'geral',
       anexoAtual: 'III',
       elegivelFatorR: false,
-      // Cron sem contexto rico do dashboard — usa defaults seguros pra DAS/DEFIS apenas
+      // Cron sem contexto rico do dashboard — usa defaults seguros pra DAS/DASN-SIMEI apenas
       totalLancamentos: 0,
+      regime: 'mei',
     })
 
     const result = await sendFiscalCalendarEmail({

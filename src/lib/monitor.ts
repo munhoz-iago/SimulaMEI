@@ -154,6 +154,9 @@ interface FiscalCalendarInput {
   ultimoLancamentoAno?: number | null;
   /** Quantidade de meses já lançados (pra avaliar maturidade do histórico) */
   totalLancamentos?: number;
+  /** Regime fiscal do usuário; controla quais obrigações anuais entram
+   *  (DASN-SIMEI para MEI vs DEFIS para Simples regular). Default: 'mei'. */
+  regime?: 'mei' | 'simples' | null;
 }
 
 /** Capitaliza a primeira letra do nome do mês */
@@ -169,9 +172,14 @@ function getDasDueDate(refDate: Date): Date {
   return new Date(refDate.getFullYear(), refDate.getMonth(), 20);
 }
 
-/** Data limite do DEFIS-MEI = 31 de maio do ano em curso */
-function getDefisDueDate(refDate: Date): Date {
-  return new Date(refDate.getFullYear(), 4, 31); // mai = índice 4
+/** Data limite da DASN-SIMEI (MEI) = 31 de maio do ano em curso.
+ *  Para Simples Nacional regular (ME/EPP) o equivalente histórico era o
+ *  DEFIS (31/mar), hoje consolidado no PGDAS-D; deixamos como placeholder. */
+function getDeclaracaoAnualDueDate(refDate: Date, regime: 'mei' | 'simples'): Date {
+  if (regime === 'simples') {
+    return new Date(refDate.getFullYear(), 2, 31); // 31 de março
+  }
+  return new Date(refDate.getFullYear(), 4, 31); // MEI: 31 de maio
 }
 
 function daysBetween(a: Date, b: Date): number {
@@ -219,7 +227,9 @@ export function getFiscalCalendarItems(input: FiscalCalendarInput): FiscalCalend
     ultimoLancamentoMes = null,
     ultimoLancamentoAno = null,
     totalLancamentos = 0,
+    regime = 'mei',
   } = input;
+  const regimeAtivo: 'mei' | 'simples' = regime === 'simples' ? 'simples' : 'mei';
 
   const items: FiscalCalendarItem[] = [];
   const today = refDate;
@@ -258,35 +268,41 @@ export function getFiscalCalendarItems(input: FiscalCalendarInput): FiscalCalend
     deadline: dasDue.toISOString(),
   });
 
-  // ─── 2. DEFIS-MEI anual (vence 31 de maio) ──────────────────────────────
-  const defisDue = getDefisDueDate(today);
-  const defisDaysLeft = daysBetween(today, defisDue);
-  if (defisDaysLeft >= -30 && defisDaysLeft <= 180) {
-    // Mostra DEFIS de janeiro até ~30 dias após o vencimento
-    let defisSeverity: FiscalCalendarItem["severity"] = "info";
-    let defisPriority: FiscalCalendarItem["priority"] = "baixa";
-    let defisBody = `Declaração anual do MEI (DEFIS) tem prazo até 31/05. Envie pelo portal do Simples Nacional.`;
+  // ─── 2. Declaração anual (DASN-SIMEI p/ MEI; DEFIS p/ Simples regular) ──
+  const declaracaoLabel = regimeAtivo === 'simples' ? 'DEFIS' : 'DASN-SIMEI';
+  const declaracaoDue = getDeclaracaoAnualDueDate(today, regimeAtivo);
+  const declaracaoDaysLeft = daysBetween(today, declaracaoDue);
+  if (declaracaoDaysLeft >= -30 && declaracaoDaysLeft <= 180) {
+    let declaracaoSeverity: FiscalCalendarItem["severity"] = "info";
+    let declaracaoPriority: FiscalCalendarItem["priority"] = "baixa";
+    const dueStr = declaracaoDue.toLocaleDateString('pt-BR');
+    const prazoCopy = regimeAtivo === 'simples'
+      ? `Declaração anual do Simples Nacional (DEFIS) tem prazo até ${dueStr}.`
+      : `Declaração anual do MEI (DASN-SIMEI) tem prazo até ${dueStr}. Envie pelo portal do Simples Nacional.`;
+    let declaracaoBody = prazoCopy;
 
-    if (defisDaysLeft < 0) {
-      defisSeverity = "critico";
-      defisPriority = "alta";
-      defisBody = `DEFIS venceu há ${Math.abs(defisDaysLeft)} dia(s). O atraso gera multa mínima de R$ 50 e bloqueio do CNPJ.`;
-    } else if (defisDaysLeft <= 15) {
-      defisSeverity = "atencao";
-      defisPriority = "alta";
-      defisBody = `DEFIS vence em ${defisDaysLeft} dia(s). Não esqueça de declarar o faturamento total do ano anterior.`;
-    } else if (defisDaysLeft <= 60) {
-      defisSeverity = "atencao";
-      defisPriority = "media";
+    if (declaracaoDaysLeft < 0) {
+      declaracaoSeverity = "critico";
+      declaracaoPriority = "alta";
+      declaracaoBody = regimeAtivo === 'simples'
+        ? `${declaracaoLabel} venceu há ${Math.abs(declaracaoDaysLeft)} dia(s). Procure o contador para regularizar.`
+        : `${declaracaoLabel} venceu há ${Math.abs(declaracaoDaysLeft)} dia(s). O atraso gera multa mínima de R$ 50 e bloqueio do CNPJ.`;
+    } else if (declaracaoDaysLeft <= 15) {
+      declaracaoSeverity = "atencao";
+      declaracaoPriority = "alta";
+      declaracaoBody = `${declaracaoLabel} vence em ${declaracaoDaysLeft} dia(s). Não esqueça de declarar o faturamento total do ano anterior.`;
+    } else if (declaracaoDaysLeft <= 60) {
+      declaracaoSeverity = "atencao";
+      declaracaoPriority = "media";
     }
 
     items.push({
-      title: `DEFIS ${currentYear}: declaração anual`,
-      body: defisBody,
-      channel: defisSeverity === "critico" ? "alerta" : "dashboard",
-      priority: defisPriority,
-      severity: defisSeverity,
-      deadline: defisDue.toISOString(),
+      title: `${declaracaoLabel} ${currentYear}: declaração anual`,
+      body: declaracaoBody,
+      channel: declaracaoSeverity === "critico" ? "alerta" : "dashboard",
+      priority: declaracaoPriority,
+      severity: declaracaoSeverity,
+      deadline: declaracaoDue.toISOString(),
     });
   }
 
