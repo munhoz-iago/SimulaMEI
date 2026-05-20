@@ -5,7 +5,9 @@ import {
   CNAE_OFICIAL_TOTAL,
   TAX_RULE_VERSION,
   gerarOportunidadesFiscais,
+  getCnae,
 } from '@/lib/tributario'
+import { simulacaoLabel } from '@/lib/dashboard/simulacaoLabel'
 import { FatorRInterativo } from '@/components/resultado/FatorRInterativo'
 import { summarizeMonthlyMonitor, detectAnexoTransition, getFiscalCalendarItems } from '@/lib/monitor'
 import { REGIME_LABELS } from '@/constants/tributario'
@@ -55,16 +57,6 @@ interface MonthlyInputRow {
 }
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
-
-function formatDate(value?: string) {
-  if (!value) return 'Sem data'
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
-}
 
 function metricTone(value: 'ok' | 'warn' | 'danger' | 'neutral') {
   return {
@@ -616,47 +608,64 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
                   </p>
                 </div>
               ) : simulations.length > 0 ? (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: 'var(--bg2)' }}>
-                      {['ID', 'CNAE', 'Projeção (snapshot)', 'Cenário', 'Data'].map(col => (
-                        <th key={col} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text3)', whiteSpace: 'nowrap' }}>
-                          {col}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {simulations.map((item, i) => {
-                      const isOk = item.resultado.alertaTeto.cenario === 'dentro_limite'
-                      const isDanger = item.resultado.alertaTeto.cenario === 'excesso_grave'
-                      const statusColor = isOk ? 'var(--lime)' : isDanger ? 'var(--red)' : 'var(--yellow)'
-                      const statusLabel = isOk ? 'Saudável' : isDanger ? 'Crítico' : 'Atenção'
-                      return (
-                        <tr key={item.id} style={{ borderTop: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.012)' }}>
-                          <td style={{ padding: '13px 16px', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text3)', whiteSpace: 'nowrap' }}>
-                            #{item.id.slice(-6).toUpperCase()}
-                          </td>
-                          <td style={{ padding: '13px 16px', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            <span style={{ fontSize: 13, fontWeight: 600 }}>{item.entrada.cnae.slice(0, 32)}{item.entrada.cnae.length > 32 ? '…' : ''}</span>
-                          </td>
-                          <td style={{ padding: '13px 16px', fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 700, color: 'var(--text1)', whiteSpace: 'nowrap' }}>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {simulations.map((item, i) => {
+                    const isOk = item.resultado.alertaTeto.cenario === 'dentro_limite'
+                    const isDanger = item.resultado.alertaTeto.cenario === 'excesso_grave'
+                    const statusColor = isOk ? 'var(--lime)' : isDanger ? 'var(--red)' : 'var(--yellow)'
+                    const cnaeInfo = getCnae(item.entrada.cnae)
+                    const label = simulacaoLabel({
+                      geradoEm: item.created_at,
+                      cnae: item.entrada.cnae,
+                      cenario: item.resultado.alertaTeto.cenario,
+                      cnaeDescricao: cnaeInfo?.descricao,
+                    })
+                    const hashCurto = `#${item.id.slice(-6).toUpperCase()}`
+                    return (
+                      <li
+                        key={item.id}
+                        style={{
+                          padding: '13px 24px',
+                          borderTop: i === 0 ? 'none' : '1px solid var(--border)',
+                          background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.012)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: 16,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+                          <span
+                            aria-label="cenário"
+                            title={item.resultado.alertaTeto.cenario}
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              background: statusColor,
+                              boxShadow: `0 0 6px ${statusColor}`,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {label}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+                          <span style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, color: 'var(--text2)', whiteSpace: 'nowrap' }}>
                             {fmt(item.resultado.alertaTeto.projecaoAnual)}
-                          </td>
-                          <td style={{ padding: '13px 16px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
-                              <span style={{ width: 7, height: 7, borderRadius: '50%', background: statusColor, flexShrink: 0, boxShadow: `0 0 5px ${statusColor}` }} />
-                              <span style={{ color: statusColor, fontWeight: 700 }}>{statusLabel}</span>
-                            </span>
-                          </td>
-                          <td style={{ padding: '13px 16px', color: 'var(--text3)', fontSize: 12, whiteSpace: 'nowrap' }}>
-                            {formatDate(item.created_at)}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                          </span>
+                          <span
+                            title={item.id}
+                            style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text3)', whiteSpace: 'nowrap' }}
+                          >
+                            {hashCurto}
+                          </span>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
               ) : (
                 <div style={{ padding: '32px 24px', textAlign: 'center' }}>
                   <p style={{ color: 'var(--text3)', fontSize: 13, lineHeight: 1.7, margin: '0 0 14px' }}>
