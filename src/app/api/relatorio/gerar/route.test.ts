@@ -149,6 +149,10 @@ describe('/api/relatorio/gerar GET', () => {
       expect(response.status).toBe(402)
     })
 
+    // Nota: nos testes do caminho PINNED (simulation_id resolvido), 'fp-x' é
+    // só sentinela — a resolução nem chega a comparar hash. Já no FALLBACK
+    // (sim pinada some), o fp tem que ser REAL porque o route compara igualdade
+    // entre reportFingerprint(sim.entrada) e o fp pago.
     it('returns a PDF when purchase is paid + owned + pinned sim resolves', async () => {
       createClientMock.mockResolvedValue(makeServerClient({
         user: { id: 'user-1', email: 'user@example.com' },
@@ -200,6 +204,31 @@ describe('/api/relatorio/gerar GET', () => {
 
       expect(response.status).toBe(200)
       expect(renderToBufferMock).toHaveBeenCalled()
+    })
+
+    it('retorna 422 mesmo com 20 sims candidatas — todas com hash diferente do fp pago', async () => {
+      // Garante que o fallback é bounded: 20 sims, nenhuma casa o fp pago → 422.
+      // Documenta o contrato: "se nenhuma das candidatas casa, é 422".
+      createClientMock.mockResolvedValue(makeServerClient({
+        user: { id: 'user-1', email: 'user@example.com' },
+        purchaseById: {
+          'p1': {
+            user_id: 'user-1',
+            status: 'paid',
+            produto: 'relatorio',
+            report_fingerprint: 'fp-pago-de-outro-conteudo',
+            simulation_id: null,
+          },
+        },
+        simulations: Array.from({ length: 20 }, (_, i) => ({
+          resultado: { ...makeResultado(), entrada: { ...makeResultado().entrada, faturamentoAcumulado: 10000 + i } },
+        })),
+      }))
+
+      const response = await GET(makeRequest('purchase=p1'))
+
+      expect(response.status).toBe(422)
+      expect(renderToBufferMock).not.toHaveBeenCalled()
     })
 
     it('returns 422 when no sim can be resolved (pinned missing + no fingerprint match)', async () => {

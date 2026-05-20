@@ -39,16 +39,10 @@ export default async function DashboardRelatorioPage() {
   const ctx = await getDashboardContext()
   const supabase = await createClient()
 
-  const [{ data: purchases }, { count: reportPurchasesCount }, { data: sims }] = await Promise.all([
+  const [{ data: purchases }, { data: sims }] = await Promise.all([
     supabase
       .from('purchases')
       .select('id, report_fingerprint, simulation_id, created_at')
-      .eq('user_id', ctx.user.id)
-      .eq('produto', 'relatorio')
-      .eq('status', 'paid'),
-    supabase
-      .from('purchases')
-      .select('id', { count: 'exact', head: true })
       .eq('user_id', ctx.user.id)
       .eq('produto', 'relatorio')
       .eq('status', 'paid'),
@@ -70,7 +64,7 @@ export default async function DashboardRelatorioPage() {
     paidFingerprints: paidFps,
     currentFingerprint: currentFp,
   })
-  const totalReportsPaid = reportPurchasesCount ?? 0
+  const totalReportsPaid = purchases?.length ?? 0
   // Quanto o user já gastou em relatórios avulsos — usado pra reforçar a recomendação
   const { moneySpentLabel, monthsOfProEquivalent } = reportSpendSummary(totalReportsPaid, PRO_PRICE)
 
