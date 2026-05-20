@@ -329,7 +329,7 @@ export function getFiscalCalendarItems(input: FiscalCalendarInput): FiscalCalend
       const folhaMinimaSugerida =
         faturamentoMedio > 0 ? Math.ceil((0.28 - fatorRAtual) * faturamentoMedio * 12) : 0;
       items.push({
-        title: `Fator R abaixo de 28% — Anexo ${anexoAtual} aplicado`,
+        title: `Fator R abaixo de 28% — Anexo V aplicado`,
         body: folhaMinimaSugerida > 0
           ? `Fator R em ${(fatorRAtual * 100).toFixed(1)}%. Aumentar a folha anual em ~${fmtBRL(folhaMinimaSugerida)} (≈ ${fmtBRL(folhaMinimaSugerida / 12)}/mês) levaria você ao Anexo III, com economia de imposto.`
           : `Fator R em ${(fatorRAtual * 100).toFixed(1)}%. Considere aumentar pró-labore ou folha para migrar do Anexo V para o III e pagar menos imposto.`,

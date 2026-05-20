@@ -82,4 +82,24 @@ describe('getFiscalCalendarItems', () => {
 
     expect(items.some(item => item.title.includes('Comece pelo primeiro lançamento'))).toBe(true)
   })
+
+  // Res. CGSN 140/2018 art. 25-A: CNAE elegível Fator R + FR<28% → Anexo V (não III).
+  // Mesmo que o upstream passe anexoAtual='III' (anexoPadrão do CNAE), o título
+  // deve refletir o anexo EFETIVO no branch FR<28%, que por lei é V.
+  it('FR<28% em CNAE elegível → título indica Anexo V (não o anexoAtual recebido)', () => {
+    const items = getFiscalCalendarItems({
+      refDate: new Date(2026, 6, 10),
+      nome: 'Ana',
+      tipoMei: 'geral' satisfies TipoMei,
+      anexoAtual: 'III', // simula upstream passando anexoPadrão (pré-Fator R)
+      elegivelFatorR: true,
+      fatorRAtual: 0.15, // < 28% → efetivamente Anexo V
+      faturamentoMedio: 10_000,
+      totalLancamentos: 6,
+    })
+
+    const frItem = items.find(item => item.title.startsWith('Fator R abaixo de 28%'))
+    expect(frItem).toBeDefined()
+    expect(frItem!.title).toBe('Fator R abaixo de 28% — Anexo V aplicado')
+  })
 })
