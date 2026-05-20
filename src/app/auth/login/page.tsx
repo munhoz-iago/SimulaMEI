@@ -115,6 +115,31 @@ function LoginForm() {
           Acesse seu histórico de simulações e relatórios.
         </p>
 
+        {(next.startsWith('/dashboard/simular') || next.startsWith('/dashboard/relatorio') || next === '/relatorio') && (
+          <div style={{
+            background: 'rgba(200,241,53,0.06)',
+            border: '1px solid rgba(200,241,53,0.18)',
+            borderRadius: 'var(--radius)',
+            padding: '14px 16px',
+            marginBottom: 20,
+            fontSize: 13,
+            color: 'var(--text2)',
+            lineHeight: 1.55,
+          }}>
+            {next.startsWith('/dashboard/relatorio') || next === '/relatorio' ? (
+              <>
+                <strong style={{ color: 'var(--text1)', display: 'block', marginBottom: 6 }}>
+                  Seu relatório fica pronto após o login
+                </strong>
+                Comparativo dos 4 regimes tributários &middot; score fiscal &middot; PDF para o contador &middot; histórico salvo.
+                Sem custo, sem cartão.
+              </>
+            ) : (
+              <>Ao entrar você libera: histórico de simulações, relatório completo dos 4 regimes e alertas mensais. Sem custo, sem cartão.</>
+            )}
+          </div>
+        )}
+
         <button
           type="button"
           onClick={handleGoogleLogin}
@@ -149,7 +174,7 @@ function LoginForm() {
               <label htmlFor="login-password" className="auth-label">
                 Senha
               </label>
-              <Link href="/auth/recuperar" className="auth-link">
+              <Link href={next === '/dashboard' ? '/auth/recuperar' : `/auth/recuperar?next=${encodeURIComponent(next)}`} className="auth-link">
                 Esqueci a senha
               </Link>
             </div>
