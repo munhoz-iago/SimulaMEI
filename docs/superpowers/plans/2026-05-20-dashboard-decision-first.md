@@ -10,6 +10,53 @@
 
 ---
 
+## STATUS — checkpoint 2026-05-20 (após P0)
+
+**Progresso:** P0 (Tasks 1-4) ✅ **TUDO EM PRODUÇÃO.** Restam P1/P2/P3 (Tasks 5-12).
+
+| Task | Status | Commit | Achado / nota |
+|---|---|---|---|
+| **T1** FR<28% → Anexo V | ✅ deployed | `6531851` | Fix intrínseco: hardcode 'V' no branch gated por FR<28%/elegível (Res. CGSN 140/2018 art. 25-A). |
+| **T2** margem confortável gated | ✅ deployed | `bf8b16f` | `kpis.ts` JÁ estava corrigido pelo audit anterior (consolidação T5 do billing). Bug real estava só em `monitor.ts:309`; corrigido + guard defensivo em kpis.ts. Adiciona `projecaoUso` no `getFiscalCalendarItems`. |
+| **T3** label Anexo por regime | ✅ deployed | `0df26b9` | `ctx.regime` não existe — produto é **MEI-only** por construção (`isOnboardingComplete` exige `tipo_mei`). Hardcoded `'mei'` no call site; helper `labelAnexoPorRegime` futureproof (suporta `'simples'`). |
+| **T4** procedência da projeção | ✅ deployed | `32ad81c` | "Dupla projeção 115k×163k" JÁ não existia no código atual (consolidação T5/T7 do billing unificou via `getDashboardKPIs`). Rótulo "snapshot" aplicado no histórico de simulações defensivamente. |
+
+**Métricas:** suíte 229 → 236 (+7 testes novos), tsc limpo, deploys `success` em ~80–400s.
+
+**Ambiente de execução:**
+- Branch base: `claude/relatorio-pdf-redesign` (==`main` == produção).
+- Worktree: `C:/Users/iagom/Downloads/📁 Organizado/Projetos e Código/SimulaMEI/simulamei/.claude/worktrees/relatorio-pdf-redesign`.
+- Cada commit nessa branch → push fast-forward `HEAD:main` → deploy Vercel automático.
+- Spec + plano agora estão em main (cherry-picked: `367fe0b` spec, `2e6ed76` plano).
+
+**Próxima task a executar:** **T5** (P1 contador de simulações — clamp + plano-aware) em `src/app/dashboard/page.tsx` (~linha 623, conferir — billing mexeu no arquivo).
+
+**Pendente em ordem:**
+- T5 — contador clamp + plano-aware (P1, pequeno, 1 arquivo)
+- T6 — confidence helper + badge de projeção (P1, novo arquivo puro)
+- T7 — calendário fiscal filtrado por regime (P1)
+- T8 — `recomendarAcao` regra ranqueada (P2, novo arquivo puro TDD)
+- T9 — IA decision-first: top-4 + abas em dashboard/page.tsx (P2, **grande — 2-3h sozinho**, refactor estrutural; precisa de subagent-driven com revisão dupla rigorosa)
+- T10 — histórico com label humano (P3)
+- T11 — maturidade no rodapé (`TaxSourceNote`) (P3)
+- T12 — zona sensível movida pra aba Conta (P3)
+
+**Restrições obrigatórias para retomada:**
+1. **TDD RED → GREEN** em cada unidade. Verificar RED real antes de implementar (não pular o passo).
+2. **Verificação antes de cada push:** `npx vitest run` sem falhas, `npx tsc --noEmit` limpo. Se mudar layout (T9), `npm run build` também.
+3. **Commits atômicos** Conventional PT-BR com trailer `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`.
+4. **Push fast-forward** `HEAD:main` + `claude/relatorio-pdf-redesign`. Monitorar `gh api repos/munhoz-iago/SimulaMEI/commits/<sha>/status` até `success`.
+5. **Trust-but-verify**: ler código depois de cada relatório de subagent — vários relatos foram imprecisos em sessões anteriores; verificar verbatim contra o arquivo.
+6. **Subagent-driven** (`superpowers:subagent-driven-development`): implementer + spec reviewer + code quality reviewer para tasks substantivos. T9 exige revisão dupla rigorosa.
+7. **rtk proxy colapsa `| tail`** de vitest/git — a linha `PASS (n) FAIL (n)` é confiável; para detalhe per-teste, ler o arquivo `[full output: ...log]` que o vitest aponta.
+
+**Achados de design (vindos da execução de P0, relevantes pra P1/P2):**
+- Produto SimulaMEI é **MEI-only por construção**. Em qualquer task que precisar de regime, **hardcode `'mei'` no call site** é correto (`labelAnexoPorRegime` já suporta `'simples'` pra futuro).
+- `getDashboardKPIs` já unifica a fonte de projeção (live monthly_inputs). Evita duplicação no topo.
+- `dashboard/page.tsx` foi expandido pelo billing (lista "Meus relatórios pagos", `paidItems`, label por regime). **Cuidado pra não regredir essas mudanças** ao mexer no arquivo nas tasks T5/T7/T9/T11/T12.
+
+---
+
 ## File Structure
 
 **Novos (puros, com test co-located):**
