@@ -19,6 +19,7 @@ import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
 import { getDashboardContext } from '@/lib/dashboard/context'
 import { getDashboardKPIs } from '@/lib/dashboard/kpis'
 import { confidenceLevel } from '@/lib/dashboard/confidence'
+import { labelAnexoPorRegime, type RegimeAtual } from '@/lib/dashboard/labels'
 import { fmt, fmtPct } from '@/lib/format'
 import type { ResultadoSimulacao } from '@/types/tributario'
 
@@ -221,6 +222,11 @@ export default async function DashboardPage() {
   // Aliases pra manter o resto do JSX legível e mudar o mínimo
   const usoTeto = kpis.usoTeto
   const tetoTone = kpis.tone
+  // SimulaMEI atende MEIs por design — o anexo aqui é projeção, não atual.
+  // Sem campo dedicado em user_profiles para sinalizar migração, assumimos
+  // regime 'mei' quando há perfil tipado. Quando/se migração for rastreada
+  // (ex.: profile.regime), trocar aqui pela leitura real.
+  const regimeAtual: RegimeAtual = profile?.tipo_mei ? 'mei' : undefined
 
   const calendarItems = getFiscalCalendarItems({
     nome: profile?.nome ?? user.email?.split('@')[0] ?? 'Sua conta',
@@ -335,8 +341,8 @@ export default async function DashboardPage() {
                       : kpis.source !== 'empty' ? 'baseada no histórico' : 'lance dados',
                   },
                   {
-                    label: 'Anexo atual',
-                    value: kpis.source !== 'empty' ? `Anexo ${kpis.anexoAtual}` : '—',
+                    label: regimeAtual === 'mei' ? 'Anexo aplicável' : 'Anexo atual',
+                    value: kpis.source !== 'empty' ? labelAnexoPorRegime(regimeAtual, kpis.anexoAtual) : '—',
                     sub: kpis.fatorRAtual > 0 ? `Fator R ${fmtPct(kpis.fatorRAtual)}` : 'Fator R pendente',
                   },
                   {
@@ -378,7 +384,9 @@ export default async function DashboardPage() {
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--text3)' }}>
                     {kpis.fatorRAtual > 0
-                      ? (kpis.fatorRAtual >= 0.28 ? 'Anexo III ✓' : 'abaixo de 28%')
+                      ? (kpis.fatorRAtual >= 0.28
+                          ? labelAnexoPorRegime(regimeAtual, 'III')
+                          : labelAnexoPorRegime(regimeAtual, 'V'))
                       : 'sem folha lançada'}
                   </span>
                 </Panel>
