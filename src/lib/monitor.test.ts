@@ -141,4 +141,76 @@ describe('getFiscalCalendarItems', () => {
     expect(frItem).toBeDefined()
     expect(frItem!.title).toBe('Fator R abaixo de 28% — Anexo V aplicado')
   })
+
+  // §4.2 do spec: "margem confortável" não pode aparecer se a projeção já
+  // estoura o teto, mesmo com usoTeto entre 0.5 e 0.85 (o "Meio do caminho"
+  // só vale quando ambos sinais estão saudáveis).
+  it('NÃO afirma "margem confortável" quando projeção excede o teto', () => {
+    const items = getFiscalCalendarItems({
+      refDate: new Date(2026, 6, 10),
+      nome: 'Ana',
+      tipoMei: 'geral' satisfies TipoMei,
+      anexoAtual: 'III',
+      elegivelFatorR: false,
+      usoTeto: 0.60,
+      projecaoUso: 1.45, // projeção crítica
+      faturamentoMedio: 10_000,
+      totalLancamentos: 5,
+    })
+
+    const meio = items.find(item => item.title.startsWith('Meio do caminho'))
+    expect(meio).toBeDefined()
+    expect(meio!.body.toLowerCase()).not.toContain('confortável')
+    expect(meio!.body).toMatch(/projeç|excede|estouro/i)
+  })
+
+  it('mantém "margem confortável" quando uso médio e projeção também saudável', () => {
+    const items = getFiscalCalendarItems({
+      refDate: new Date(2026, 6, 10),
+      nome: 'Ana',
+      tipoMei: 'geral' satisfies TipoMei,
+      anexoAtual: 'III',
+      elegivelFatorR: false,
+      usoTeto: 0.60,
+      projecaoUso: 0.70,
+      faturamentoMedio: 10_000,
+      totalLancamentos: 5,
+    })
+
+    const meio = items.find(item => item.title.startsWith('Meio do caminho'))
+    expect(meio).toBeDefined()
+    expect(meio!.body.toLowerCase()).toContain('confortável')
+  })
+
+  // §5.3: DASN-SIMEI é declaração do MEI. DEFIS é da ME/EPP no Simples.
+  // Não pode misturar — o usuário olhando o dashboard precisa saber qual
+  // obrigação se aplica ao SEU regime.
+  it('regime "mei" (default): mostra DASN-SIMEI, não DEFIS', () => {
+    const items = getFiscalCalendarItems({
+      refDate: new Date(2026, 3, 10), // abril → dentro da janela da DASN-SIMEI
+      nome: 'Ana',
+      tipoMei: 'geral' satisfies TipoMei,
+      anexoAtual: 'III',
+      elegivelFatorR: false,
+      totalLancamentos: 3,
+    })
+
+    expect(items.some(item => item.title.startsWith('DASN-SIMEI'))).toBe(true)
+    expect(items.some(item => item.title.startsWith('DEFIS'))).toBe(false)
+  })
+
+  it('regime "simples": mostra DEFIS, não DASN-SIMEI', () => {
+    const items = getFiscalCalendarItems({
+      refDate: new Date(2026, 1, 15), // fev → dentro da janela do DEFIS
+      nome: 'Ana',
+      tipoMei: 'geral' satisfies TipoMei,
+      anexoAtual: 'III',
+      elegivelFatorR: false,
+      regime: 'simples',
+      totalLancamentos: 3,
+    })
+
+    expect(items.some(item => item.title.startsWith('DEFIS'))).toBe(true)
+    expect(items.some(item => item.title.startsWith('DASN-SIMEI'))).toBe(false)
+  })
 })

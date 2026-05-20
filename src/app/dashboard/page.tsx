@@ -235,6 +235,7 @@ export default async function DashboardPage() {
     ultimoLancamentoMes: monitorRows.at(-1)?.mes ?? null,
     ultimoLancamentoAno: monitorRows.at(-1)?.ano ?? null,
     totalLancamentos: monitorRows.length,
+    regime: regimeAtual ?? 'mei',
   })
   const completedPerspectiveCount = [
     Boolean(latest),
