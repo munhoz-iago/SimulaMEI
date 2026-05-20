@@ -18,6 +18,8 @@ import { MonitorInsights } from '@/components/dashboard/MonitorInsights'
 import { Panel } from '@/components/dashboard/Panel'
 import { Pill } from '@/components/dashboard/Pill'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
+import { TaxSourceNote } from '@/components/resultado/TaxSourceNote'
+import { FONTES_FISCAIS } from '@/lib/tributario/oportunidades/fontes'
 import { getDashboardContext } from '@/lib/dashboard/context'
 import { getDashboardKPIs } from '@/lib/dashboard/kpis'
 import { confidenceLevel } from '@/lib/dashboard/confidence'
@@ -240,12 +242,6 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
     totalLancamentos: monitorRows.length,
     regime: regimeAtual ?? 'mei',
   })
-  const completedPerspectiveCount = [
-    Boolean(latest),
-    oportunidades.length > 0,
-    monitoredCnaes > 0,
-    !simulationsError,
-  ].filter(Boolean).length
 
   const { userName, greeting } = ctx
   const fatorRValue = latest?.fatorR?.fatorR
@@ -296,8 +292,8 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
         tetoAnual={kpis.tetoAnual}
       />
 
-      {/* ── Row 1: 3 colunas principais ─────────────────────── */}
-          <section style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr 0.9fr', gap: 16, marginBottom: 16 }} className="db-row1">
+      {/* ── Row 1: 2 colunas (maturidade migrada para o rodapé) ── */}
+          <section style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 16, marginBottom: 16 }} className="db-row1">
 
             {/* Card 1: Teto MEI (= Total Balance) */}
             <Panel style={{ padding: 28 }}>
@@ -448,51 +444,6 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
               </div>
             </div>
 
-            {/* Card 3: Maturidade do sistema */}
-            <Panel style={{ padding: 24, display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 16 }}>
-                Maturidade
-              </span>
-
-              {/* Ring visual — SVG simples */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
-                <svg width="100" height="100" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="38" fill="none" stroke="var(--bg3)" strokeWidth="10"/>
-                  <circle
-                    cx="50" cy="50" r="38" fill="none"
-                    stroke="var(--lime)" strokeWidth="10"
-                    strokeDasharray={`${(completedPerspectiveCount / 4) * 238.76} 238.76`}
-                    strokeLinecap="round"
-                    transform="rotate(-90 50 50)"
-                    style={{ transition: 'stroke-dasharray 0.6s ease' }}
-                  />
-                  <text x="50" y="46" textAnchor="middle" fill="var(--text1)" fontSize="20" fontWeight="800" fontFamily="monospace">{completedPerspectiveCount}</text>
-                  <text x="50" y="62" textAnchor="middle" fill="var(--text3)" fontSize="11">/4 ativas</text>
-                </svg>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0, flex: 1 }}>
-                {[
-                  { label: 'Simulação fiscal', ok: Boolean(latest) },
-                  { label: 'Oportunidades', ok: oportunidades.length > 0 },
-                  { label: 'CNAEs monitorados', ok: monitoredCnaes > 0 },
-                  { label: 'Fonte de dados', ok: !simulationsError },
-                ].map((item, i, arr) => (
-                  <div key={item.label} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '10px 0',
-                    borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
-                  }}>
-                    <span style={{ fontSize: 12, color: 'var(--text2)' }}>{item.label}</span>
-                    <span style={{
-                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                      background: item.ok ? 'var(--lime)' : 'var(--border2)',
-                      boxShadow: item.ok ? '0 0 6px var(--lime)' : 'none',
-                    }} />
-                  </div>
-                ))}
-              </div>
-            </Panel>
           </section>
 
           {/* ── Decision-first: tab bar abaixo do Row 1 ── */}
@@ -927,6 +878,16 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
             </Panel>
           </section>
           )}
+
+          {/* ── Rodapé: maturidade do motor (fonte normativa + versão) ── */}
+          <TaxSourceNote
+            taxRuleVersion={TAX_RULE_VERSION}
+            mapeamento={[
+              { valores: 'Anexo, alíquota e DAS', fonte: FONTES_FISCAIS.resolucaoCgsn140 },
+              { valores: 'Teto MEI', fonte: FONTES_FISCAIS.simplesNacionalLegislacao },
+            ]}
+            style={{ marginTop: 32, textAlign: 'center' }}
+          />
     </>
   )
 }
