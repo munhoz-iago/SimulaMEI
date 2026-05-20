@@ -5,7 +5,9 @@ import {
   CNAE_OFICIAL_TOTAL,
   TAX_RULE_VERSION,
   gerarOportunidadesFiscais,
+  getCnae,
 } from '@/lib/tributario'
+import { simulacaoLabel } from '@/lib/dashboard/simulacaoLabel'
 import { FatorRInterativo } from '@/components/resultado/FatorRInterativo'
 import { summarizeMonthlyMonitor, detectAnexoTransition, getFiscalCalendarItems } from '@/lib/monitor'
 import { REGIME_LABELS } from '@/constants/tributario'
@@ -16,9 +18,15 @@ import { MonitorInsights } from '@/components/dashboard/MonitorInsights'
 import { Panel } from '@/components/dashboard/Panel'
 import { Pill } from '@/components/dashboard/Pill'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
+import { TaxSourceNote } from '@/components/resultado/TaxSourceNote'
+import { FONTES_FISCAIS } from '@/lib/tributario/oportunidades/fontes'
 import { getDashboardContext } from '@/lib/dashboard/context'
 import { getDashboardKPIs } from '@/lib/dashboard/kpis'
-import { labelAnexoPorRegime } from '@/lib/dashboard/labels'
+import { confidenceLevel } from '@/lib/dashboard/confidence'
+import { labelAnexoPorRegime, type RegimeAtual } from '@/lib/dashboard/labels'
+import { recomendarAcao } from '@/lib/dashboard/recomendacao'
+import { DashboardTopCards } from '@/components/dashboard/DashboardTopCards'
+import { DashboardTabs, parseDashboardTab } from '@/components/dashboard/DashboardTabs'
 import { fmt, fmtPct } from '@/lib/format'
 import type { ResultadoSimulacao } from '@/types/tributario'
 
@@ -51,16 +59,6 @@ interface MonthlyInputRow {
 }
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
-
-function formatDate(value?: string) {
-  if (!value) return 'Sem data'
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
-}
 
 function metricTone(value: 'ok' | 'warn' | 'danger' | 'neutral') {
   return {
@@ -147,7 +145,13 @@ async function getCachedOportunidades(simulation: SimulationRow | undefined) {
   )()
 }
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams?: Promise<{ aba?: string | string[] }>
+}
+
+export default async function DashboardPage(props: DashboardPageProps = {}) {
+  const params = (await props.searchParams) ?? {}
+  const activeTab = parseDashboardTab(params.aba)
   // Contexto compartilhado (auth + onboarding + greeting) deduplicado via cache
   const ctx = await getDashboardContext()
   const supabase = await createClient()
@@ -221,6 +225,8 @@ export default async function DashboardPage() {
   // Aliases pra manter o resto do JSX legível e mudar o mínimo
   const usoTeto = kpis.usoTeto
   const tetoTone = kpis.tone
+  // SimulaMEI atende MEIs por design — anexo aqui é projeção, não atual.
+  const regimeAtual: RegimeAtual = profile?.tipo_mei ? 'mei' : undefined
 
   const calendarItems = getFiscalCalendarItems({
     nome: profile?.nome ?? user.email?.split('@')[0] ?? 'Sua conta',
@@ -234,17 +240,35 @@ export default async function DashboardPage() {
     ultimoLancamentoMes: monitorRows.at(-1)?.mes ?? null,
     ultimoLancamentoAno: monitorRows.at(-1)?.ano ?? null,
     totalLancamentos: monitorRows.length,
+    regime: regimeAtual ?? 'mei',
   })
-  const completedPerspectiveCount = [
-    Boolean(latest),
-    oportunidades.length > 0,
-    monitoredCnaes > 0,
-    !simulationsError,
-  ].filter(Boolean).length
 
   const { userName, greeting } = ctx
   const fatorRValue = latest?.fatorR?.fatorR
   const tetoColor = metricTone(tetoTone)
+
+  // Inputs decision-first para o card "Próxima ação" do top-4
+  const refDate = new Date()
+  const ultimaMes = monitorRows.at(-1)?.mes ?? null
+  const ultimaAno = monitorRows.at(-1)?.ano ?? null
+  const faltaLancamentoMesAtual = !(ultimaMes === currentMonth && ultimaAno === currentYear)
+  const cnaeInfo = profile?.cnae_principal
+    ? (latest?.fatorR ? { elegivelFatorR: true } : { elegivelFatorR: Boolean(latest?.fatorR) })
+    : { elegivelFatorR: false }
+  const proximaAcao = recomendarAcao({
+    cenario: latest?.alertaTeto.cenario ?? 'dentro_limite',
+    fatorR: latest?.fatorR
+      ? {
+          atingeMinimo: latest.fatorR.atingeMinimo,
+          aumentoFolhaMensalNecessario: latest.fatorR.aumentoFolhaMensalNecessario,
+        }
+      : undefined,
+    mesEstourarTeto: kpis.mesEstourarTeto,
+    elegivelFatorR: cnaeInfo.elegivelFatorR,
+    faltaLancamentoMesAtual: faltaLancamentoMesAtual && monitorRows.length > 0,
+    diaDoMes: refDate.getDate(),
+    mesAtual: currentMonth,
+  })
 
   return (
     <>
@@ -258,8 +282,18 @@ export default async function DashboardPage() {
       {/* Sidebar + greeting header agora vivem em /dashboard/layout.tsx
           e em <DashboardPageHeader/> acima. Conteúdo flui direto. */}
 
-      {/* ── Row 1: 3 colunas principais ─────────────────────── */}
-          <section style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr 0.9fr', gap: 16, marginBottom: 16 }} className="db-row1">
+      {/* ── Top 4 (decision-first IA): teto · projeção · estouro · ação ── */}
+      <DashboardTopCards
+        pctTetoUsado={kpis.usoTeto * 100}
+        projecaoAnual={kpis.projecaoAnual}
+        projecaoConfidenceMeses={kpis.monthsOfHistory}
+        mesEstourarTeto={kpis.mesEstourarTeto}
+        proximaAcao={proximaAcao}
+        tetoAnual={kpis.tetoAnual}
+      />
+
+      {/* ── Row 1: 2 colunas (maturidade migrada para o rodapé) ── */}
+          <section style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 16, marginBottom: 16 }} className="db-row1">
 
             {/* Card 1: Teto MEI (= Total Balance) */}
             <Panel style={{ padding: 28 }}>
@@ -364,9 +398,9 @@ export default async function DashboardPage() {
                   <span style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 900, color: 'var(--lime)', lineHeight: 1 }}>
                     {kpis.projecaoAnual > 0 ? fmt(kpis.projecaoAnual) : '—'}
                   </span>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  <span style={{ fontSize: 11, color: kpis.projecaoAnual > 0 && confidenceLevel(kpis.monthsOfHistory).level === 'limitada' ? 'var(--yellow)' : 'var(--text3)' }}>
                     {kpis.projecaoAnual > 0
-                      ? kpis.monthsOfHistory >= 3 ? 'anual estimado' : `de ${formatMonthCount(kpis.monthsOfHistory)}`
+                      ? confidenceLevel(kpis.monthsOfHistory).label
                       : 'lance dados'}
                   </span>
                 </Panel>
@@ -394,7 +428,7 @@ export default async function DashboardPage() {
                   <span style={{ fontSize: 11, color: 'var(--text3)' }}>
                     {kpis.monthsOfHistory > 0
                       ? kpis.hasCurrentMonthEntry ? 'mês atual lançado' : 'lance o mês corrente'
-                      : currentPlan === 'free' ? `${simulationsUsed}/${FREE_SIMULATION_LIMIT} simulações` : `${simulationsUsed} simulações`}
+                      : currentPlan === 'free' ? `${Math.min(simulationsUsed, FREE_SIMULATION_LIMIT)}/${FREE_SIMULATION_LIMIT} simulações` : `${simulationsUsed} simulações`}
                   </span>
                 </Panel>
                 <Panel style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', overflow: 'hidden' }}>
@@ -410,55 +444,13 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            {/* Card 3: Maturidade do sistema */}
-            <Panel style={{ padding: 24, display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', marginBottom: 16 }}>
-                Maturidade
-              </span>
-
-              {/* Ring visual — SVG simples */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
-                <svg width="100" height="100" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="38" fill="none" stroke="var(--bg3)" strokeWidth="10"/>
-                  <circle
-                    cx="50" cy="50" r="38" fill="none"
-                    stroke="var(--lime)" strokeWidth="10"
-                    strokeDasharray={`${(completedPerspectiveCount / 4) * 238.76} 238.76`}
-                    strokeLinecap="round"
-                    transform="rotate(-90 50 50)"
-                    style={{ transition: 'stroke-dasharray 0.6s ease' }}
-                  />
-                  <text x="50" y="46" textAnchor="middle" fill="var(--text1)" fontSize="20" fontWeight="800" fontFamily="monospace">{completedPerspectiveCount}</text>
-                  <text x="50" y="62" textAnchor="middle" fill="var(--text3)" fontSize="11">/4 ativas</text>
-                </svg>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0, flex: 1 }}>
-                {[
-                  { label: 'Simulação fiscal', ok: Boolean(latest) },
-                  { label: 'Oportunidades', ok: oportunidades.length > 0 },
-                  { label: 'CNAEs monitorados', ok: monitoredCnaes > 0 },
-                  { label: 'Fonte de dados', ok: !simulationsError },
-                ].map((item, i, arr) => (
-                  <div key={item.label} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '10px 0',
-                    borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
-                  }}>
-                    <span style={{ fontSize: 12, color: 'var(--text2)' }}>{item.label}</span>
-                    <span style={{
-                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                      background: item.ok ? 'var(--lime)' : 'var(--border2)',
-                      boxShadow: item.ok ? '0 0 6px var(--lime)' : 'none',
-                    }} />
-                  </div>
-                ))}
-              </div>
-            </Panel>
           </section>
 
-          {/* ── Row 2: Monitor mensal (full width, peça principal de ação) ── */}
-          {profile?.cnae_principal && profile?.tipo_mei && (
+          {/* ── Decision-first: tab bar abaixo do Row 1 ── */}
+          <DashboardTabs active={activeTab} />
+
+          {/* ── Aba: Monitor mensal ── */}
+          {activeTab === 'monitor' && profile?.cnae_principal && profile?.tipo_mei && (
             <section id="monitor" style={{ marginBottom: 16, scrollMarginTop: 24 }}>
               <Panel style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{
@@ -520,7 +512,7 @@ export default async function DashboardPage() {
           )}
 
           {/* ── Insights preditivos baseados no histórico do Monitor ─ */}
-          {profile?.cnae_principal && profile?.tipo_mei && monitorRows.length > 0 && (
+          {activeTab === 'monitor' && profile?.cnae_principal && profile?.tipo_mei && monitorRows.length > 0 && (
             <MonitorInsights
               history={monitorRows.map(r => ({
                 ano: r.ano,
@@ -534,7 +526,8 @@ export default async function DashboardPage() {
             />
           )}
 
-          {/* ── Row 2 (legado): Atividades recentes + Monitor (compacto fallback) ─ */}
+          {/* ── Aba: Simulações ── */}
+          {activeTab === 'simulacoes' && (
           <section style={{ display: 'grid', gridTemplateColumns: profile?.cnae_principal ? '1fr' : '1fr 380px', gap: 16, marginBottom: 16 }} className="db-row2">
 
             {/* Tabela de simulações */}
@@ -566,47 +559,64 @@ export default async function DashboardPage() {
                   </p>
                 </div>
               ) : simulations.length > 0 ? (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: 'var(--bg2)' }}>
-                      {['ID', 'CNAE', 'Projeção (snapshot)', 'Cenário', 'Data'].map(col => (
-                        <th key={col} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text3)', whiteSpace: 'nowrap' }}>
-                          {col}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {simulations.map((item, i) => {
-                      const isOk = item.resultado.alertaTeto.cenario === 'dentro_limite'
-                      const isDanger = item.resultado.alertaTeto.cenario === 'excesso_grave'
-                      const statusColor = isOk ? 'var(--lime)' : isDanger ? 'var(--red)' : 'var(--yellow)'
-                      const statusLabel = isOk ? 'Saudável' : isDanger ? 'Crítico' : 'Atenção'
-                      return (
-                        <tr key={item.id} style={{ borderTop: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.012)' }}>
-                          <td style={{ padding: '13px 16px', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text3)', whiteSpace: 'nowrap' }}>
-                            #{item.id.slice(-6).toUpperCase()}
-                          </td>
-                          <td style={{ padding: '13px 16px', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            <span style={{ fontSize: 13, fontWeight: 600 }}>{item.entrada.cnae.slice(0, 32)}{item.entrada.cnae.length > 32 ? '…' : ''}</span>
-                          </td>
-                          <td style={{ padding: '13px 16px', fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 700, color: 'var(--text1)', whiteSpace: 'nowrap' }}>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {simulations.map((item, i) => {
+                    const isOk = item.resultado.alertaTeto.cenario === 'dentro_limite'
+                    const isDanger = item.resultado.alertaTeto.cenario === 'excesso_grave'
+                    const statusColor = isOk ? 'var(--lime)' : isDanger ? 'var(--red)' : 'var(--yellow)'
+                    const cnaeInfo = getCnae(item.entrada.cnae)
+                    const label = simulacaoLabel({
+                      geradoEm: item.created_at,
+                      cnae: item.entrada.cnae,
+                      cenario: item.resultado.alertaTeto.cenario,
+                      cnaeDescricao: cnaeInfo?.descricao,
+                    })
+                    const hashCurto = `#${item.id.slice(-6).toUpperCase()}`
+                    return (
+                      <li
+                        key={item.id}
+                        style={{
+                          padding: '13px 24px',
+                          borderTop: i === 0 ? 'none' : '1px solid var(--border)',
+                          background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.012)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: 16,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+                          <span
+                            aria-label="cenário"
+                            title={item.resultado.alertaTeto.cenario}
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              background: statusColor,
+                              boxShadow: `0 0 6px ${statusColor}`,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {label}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+                          <span style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, color: 'var(--text2)', whiteSpace: 'nowrap' }}>
                             {fmt(item.resultado.alertaTeto.projecaoAnual)}
-                          </td>
-                          <td style={{ padding: '13px 16px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
-                              <span style={{ width: 7, height: 7, borderRadius: '50%', background: statusColor, flexShrink: 0, boxShadow: `0 0 5px ${statusColor}` }} />
-                              <span style={{ color: statusColor, fontWeight: 700 }}>{statusLabel}</span>
-                            </span>
-                          </td>
-                          <td style={{ padding: '13px 16px', color: 'var(--text3)', fontSize: 12, whiteSpace: 'nowrap' }}>
-                            {formatDate(item.created_at)}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                          </span>
+                          <span
+                            title={item.id}
+                            style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text3)', whiteSpace: 'nowrap' }}
+                          >
+                            {hashCurto}
+                          </span>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
               ) : (
                 <div style={{ padding: '32px 24px', textAlign: 'center' }}>
                   <p style={{ color: 'var(--text3)', fontSize: 13, lineHeight: 1.7, margin: '0 0 14px' }}>
@@ -625,7 +635,7 @@ export default async function DashboardPage() {
                   fontSize: 12, color: freeSimulationLimitReached ? 'var(--red)' : 'var(--text3)',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}>
-                  <span>{simulationsUsed} de {FREE_SIMULATION_LIMIT} simulações usadas</span>
+                  <span>{Math.min(simulationsUsed, FREE_SIMULATION_LIMIT)} de {FREE_SIMULATION_LIMIT} simulações usadas</span>
                   {freeSimulationLimitReached && (
                     <Link href="/upgrade" style={{ fontSize: 12, fontWeight: 800, color: 'var(--lime)', textDecoration: 'none' }}>
                       Fazer upgrade →
@@ -655,8 +665,10 @@ export default async function DashboardPage() {
               </Panel>
             )}
           </section>
+          )}
 
-          {/* ── Row 3: Oportunidades + Calendário ────────────────── */}
+          {/* ── Aba: Agenda fiscal (oportunidades + calendário) ── */}
+          {activeTab === 'agenda' && (
           <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
 
             <Panel style={{ padding: 0, overflow: 'hidden' }}>
@@ -755,19 +767,41 @@ export default async function DashboardPage() {
                   )
                 })}
 
-                {latest?.fatorR && latest.alertaTeto.projecaoAnual > 0 && (
-                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                    <FatorRInterativo
-                      projecao={latest.alertaTeto.projecaoAnual}
-                      fatorRInicial={latest.fatorR.fatorR}
-                    />
-                  </div>
-                )}
               </div>
             </Panel>
           </section>
+          )}
 
-          {/* ── PDF CTA banner ───────────────────────────────────── */}
+          {/* ── Aba: Fator R (calculadora interativa) ── */}
+          {activeTab === 'fator-r' && (
+            <section style={{ marginBottom: 16 }}>
+              <Panel style={{ padding: '24px 28px' }}>
+                <div style={{ marginBottom: 16 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>
+                    Fator R
+                  </span>
+                  <h2 style={{ fontSize: 17, fontWeight: 800, margin: '4px 0 0' }}>Calculadora interativa de Anexo III × V</h2>
+                </div>
+                {latest?.fatorR && latest.alertaTeto.projecaoAnual > 0 ? (
+                  <FatorRInterativo
+                    projecao={latest.alertaTeto.projecaoAnual}
+                    fatorRInicial={latest.fatorR.fatorR}
+                  />
+                ) : (
+                  <div style={{ padding: '24px 0', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text3)', fontSize: 13, lineHeight: 1.7, margin: '0 0 12px' }}>
+                      Rode uma simulação com CNAE elegível (serviços) e folha para destravar a calculadora.
+                    </p>
+                    <Link href="/dashboard/simular" className="dashboard-action dashboard-primary-action" style={{ padding: '8px 14px', fontSize: 12 }}>
+                      Ir para o simulador
+                    </Link>
+                  </div>
+                )}
+              </Panel>
+            </section>
+          )}
+
+          {/* ── PDF CTA banner (sempre visível, fora das abas) ── */}
           <section style={{ marginBottom: 16 }}>
             <Panel style={{
               padding: '24px 32px',
@@ -802,7 +836,8 @@ export default async function DashboardPage() {
             </Panel>
           </section>
 
-          {/* ── Bottom: Conta + Zona sensível ────────────────────── */}
+          {/* ── Aba: Conta (perfil + zona sensível) ── */}
+          {activeTab === 'conta' && (
           <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <Panel style={{ padding: '24px 28px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -842,6 +877,17 @@ export default async function DashboardPage() {
               <DeleteAccountSection />
             </Panel>
           </section>
+          )}
+
+          {/* ── Rodapé: maturidade do motor (fonte normativa + versão) ── */}
+          <TaxSourceNote
+            taxRuleVersion={TAX_RULE_VERSION}
+            mapeamento={[
+              { valores: 'Anexo, alíquota e DAS', fonte: FONTES_FISCAIS.resolucaoCgsn140 },
+              { valores: 'Teto MEI', fonte: FONTES_FISCAIS.simplesNacionalLegislacao },
+            ]}
+            style={{ marginTop: 32, textAlign: 'center' }}
+          />
     </>
   )
 }

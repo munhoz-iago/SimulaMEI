@@ -1,13 +1,17 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, Suspense, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { AuthAlert, AuthCard, AuthPage } from '@/components/auth/AuthScaffold'
 import { createClient } from '@/lib/supabase/client'
 
 type ResetState = 'idle' | 'loading' | 'sent' | 'error'
 
-export default function RecuperarSenhaPage() {
+function RecuperarSenhaForm() {
+  const searchParams = useSearchParams()
+  const nextParam = searchParams.get('next') ?? '/dashboard'
+  const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/dashboard'
   const [email, setEmail] = useState('')
   const [state, setState] = useState<ResetState>('idle')
   const [errorMessage, setErrorMessage] = useState('')
@@ -19,7 +23,7 @@ export default function RecuperarSenhaPage() {
 
     const supabase = createClient()
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/atualizar-senha`,
+      redirectTo: `${window.location.origin}/auth/atualizar-senha?next=${encodeURIComponent(next)}`,
     })
 
     if (error) {
@@ -34,7 +38,7 @@ export default function RecuperarSenhaPage() {
   return (
     <AuthPage>
       <AuthCard>
-        <Link href="/auth/login" className="auth-link">
+        <Link href={next === '/dashboard' ? '/auth/login' : `/auth/login?next=${encodeURIComponent(next)}`} className="auth-link">
           Voltar para entrar
         </Link>
         <h1 className="auth-title" style={{ marginTop: 22 }}>
@@ -57,6 +61,7 @@ export default function RecuperarSenhaPage() {
               <input
                 id="recover-email"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={event => setEmail(event.target.value)}
                 required
@@ -80,5 +85,17 @@ export default function RecuperarSenhaPage() {
         )}
       </AuthCard>
     </AuthPage>
+  )
+}
+
+export default function RecuperarSenhaPage() {
+  return (
+    <Suspense fallback={
+      <main className="auth-page">
+        <span className="auth-copy">Carregando...</span>
+      </main>
+    }>
+      <RecuperarSenhaForm />
+    </Suspense>
   )
 }

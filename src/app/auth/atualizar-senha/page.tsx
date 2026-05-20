@@ -11,6 +11,8 @@ type UpdateState = 'checking' | 'idle' | 'loading' | 'success' | 'error'
 function AtualizarSenhaForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const nextParam = searchParams.get('next') ?? '/dashboard'
+  const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/dashboard'
   const [senha, setSenha] = useState('')
   const [confirmacao, setConfirmacao] = useState('')
   const [state, setState] = useState<UpdateState>('checking')
@@ -60,12 +62,12 @@ function AtualizarSenhaForm() {
     if (state !== 'success') return
 
     const timeoutId = window.setTimeout(() => {
-      router.replace('/dashboard')
+      router.replace(next)
       router.refresh()
     }, 1200)
 
     return () => window.clearTimeout(timeoutId)
-  }, [router, state])
+  }, [next, router, state])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -100,7 +102,7 @@ function AtualizarSenhaForm() {
   return (
     <AuthPage>
       <AuthCard maxWidth={440}>
-        <Link href="/auth/login" className="auth-link">
+        <Link href={next === '/dashboard' ? '/auth/login' : `/auth/login?next=${encodeURIComponent(next)}`} className="auth-link">
           Voltar para entrar
         </Link>
         <h1 className="auth-title" style={{ marginTop: 22 }}>
@@ -121,8 +123,8 @@ function AtualizarSenhaForm() {
             <AuthAlert tone="success">
               Senha atualizada com sucesso. Redirecionando...
             </AuthAlert>
-            <Link href="/dashboard" className="auth-primary-button">
-              Ir para o painel
+            <Link href={next} className="auth-primary-button">
+              {next === '/dashboard' ? 'Ir para o painel' : 'Ir para seu destino'}
             </Link>
           </div>
         ) : recoveryLinkInvalid ? (
@@ -143,6 +145,7 @@ function AtualizarSenhaForm() {
               <input
                 id="update-password-new"
                 type="password"
+                autoComplete="new-password"
                 value={senha}
                 onChange={event => setSenha(event.target.value)}
                 required
@@ -159,6 +162,7 @@ function AtualizarSenhaForm() {
               <input
                 id="update-password-confirm"
                 type="password"
+                autoComplete="new-password"
                 value={confirmacao}
                 onChange={event => setConfirmacao(event.target.value)}
                 required

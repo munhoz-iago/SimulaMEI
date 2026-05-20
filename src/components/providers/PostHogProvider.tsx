@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import posthog from 'posthog-js'
-import { CookieBanner } from './CookieBanner'
+import { CookieBannerGate } from './CookieBannerGate'
 
 const CONSENT_COOKIE = 'analytics_consent'
 
@@ -51,7 +51,7 @@ export function PostHogProvider({
   return (
     <>
       {children}
-      <CookieBanner />
+      <CookieBannerGate />
     </>
   )
 }
