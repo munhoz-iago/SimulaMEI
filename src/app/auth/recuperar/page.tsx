@@ -57,6 +57,7 @@ export default function RecuperarSenhaPage() {
               <input
                 id="recover-email"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={event => setEmail(event.target.value)}
                 required

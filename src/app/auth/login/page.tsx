@@ -135,6 +135,7 @@ function LoginForm() {
             <input
               id="login-email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
@@ -155,6 +156,7 @@ function LoginForm() {
             <input
               id="login-password"
               type="password"
+              autoComplete="current-password"
               value={senha}
               onChange={e => setSenha(e.target.value)}
               required
