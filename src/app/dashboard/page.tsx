@@ -18,6 +18,7 @@ import { Pill } from '@/components/dashboard/Pill'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
 import { getDashboardContext } from '@/lib/dashboard/context'
 import { getDashboardKPIs } from '@/lib/dashboard/kpis'
+import { confidenceLevel } from '@/lib/dashboard/confidence'
 import { labelAnexoPorRegime } from '@/lib/dashboard/labels'
 import { fmt, fmtPct } from '@/lib/format'
 import type { ResultadoSimulacao } from '@/types/tributario'
@@ -364,9 +365,9 @@ export default async function DashboardPage() {
                   <span style={{ fontFamily: 'var(--mono)', fontSize: 22, fontWeight: 900, color: 'var(--lime)', lineHeight: 1 }}>
                     {kpis.projecaoAnual > 0 ? fmt(kpis.projecaoAnual) : '—'}
                   </span>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  <span style={{ fontSize: 11, color: kpis.projecaoAnual > 0 && confidenceLevel(kpis.monthsOfHistory).level === 'limitada' ? 'var(--yellow)' : 'var(--text3)' }}>
                     {kpis.projecaoAnual > 0
-                      ? kpis.monthsOfHistory >= 3 ? 'anual estimado' : `de ${formatMonthCount(kpis.monthsOfHistory)}`
+                      ? confidenceLevel(kpis.monthsOfHistory).label
                       : 'lance dados'}
                   </span>
                 </Panel>
