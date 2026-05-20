@@ -553,6 +553,9 @@ export default async function DashboardPage() {
                     Histórico
                   </span>
                   <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Simulações recentes</h2>
+                  <p style={{ fontSize: 11, color: 'var(--text3)', margin: '4px 0 0', lineHeight: 1.5 }}>
+                    Cada projeção abaixo é a foto do momento da simulação — não reflete lançamentos do Monitor mensal feitos depois.
+                  </p>
                 </div>
                 <Link
                   href={freeSimulationLimitReached ? '/upgrade' : '/dashboard/simular'}
@@ -574,7 +577,7 @@ export default async function DashboardPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: 'var(--bg2)' }}>
-                      {['ID', 'CNAE', 'Projeção', 'Cenário', 'Data'].map(col => (
+                      {['ID', 'CNAE', 'Projeção na simulação', 'Cenário', 'Data'].map(col => (
                         <th key={col} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text3)', whiteSpace: 'nowrap' }}>
                           {col}
                         </th>
