@@ -22,6 +22,7 @@ import { confidenceLevel } from '@/lib/dashboard/confidence'
 import { labelAnexoPorRegime, type RegimeAtual } from '@/lib/dashboard/labels'
 import { recomendarAcao } from '@/lib/dashboard/recomendacao'
 import { DashboardTopCards } from '@/components/dashboard/DashboardTopCards'
+import { DashboardTabs, parseDashboardTab } from '@/components/dashboard/DashboardTabs'
 import { fmt, fmtPct } from '@/lib/format'
 import type { ResultadoSimulacao } from '@/types/tributario'
 
@@ -150,7 +151,13 @@ async function getCachedOportunidades(simulation: SimulationRow | undefined) {
   )()
 }
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams?: Promise<{ aba?: string | string[] }>
+}
+
+export default async function DashboardPage(props: DashboardPageProps = {}) {
+  const params = (await props.searchParams) ?? {}
+  const activeTab = parseDashboardTab(params.aba)
   // Contexto compartilhado (auth + onboarding + greeting) deduplicado via cache
   const ctx = await getDashboardContext()
   const supabase = await createClient()
@@ -496,8 +503,11 @@ export default async function DashboardPage() {
             </Panel>
           </section>
 
-          {/* ── Row 2: Monitor mensal (full width, peça principal de ação) ── */}
-          {profile?.cnae_principal && profile?.tipo_mei && (
+          {/* ── Decision-first: tab bar abaixo do Row 1 ── */}
+          <DashboardTabs active={activeTab} />
+
+          {/* ── Aba: Monitor mensal ── */}
+          {activeTab === 'monitor' && profile?.cnae_principal && profile?.tipo_mei && (
             <section id="monitor" style={{ marginBottom: 16, scrollMarginTop: 24 }}>
               <Panel style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{
@@ -559,7 +569,7 @@ export default async function DashboardPage() {
           )}
 
           {/* ── Insights preditivos baseados no histórico do Monitor ─ */}
-          {profile?.cnae_principal && profile?.tipo_mei && monitorRows.length > 0 && (
+          {activeTab === 'monitor' && profile?.cnae_principal && profile?.tipo_mei && monitorRows.length > 0 && (
             <MonitorInsights
               history={monitorRows.map(r => ({
                 ano: r.ano,
@@ -573,7 +583,8 @@ export default async function DashboardPage() {
             />
           )}
 
-          {/* ── Row 2 (legado): Atividades recentes + Monitor (compacto fallback) ─ */}
+          {/* ── Aba: Simulações ── */}
+          {activeTab === 'simulacoes' && (
           <section style={{ display: 'grid', gridTemplateColumns: profile?.cnae_principal ? '1fr' : '1fr 380px', gap: 16, marginBottom: 16 }} className="db-row2">
 
             {/* Tabela de simulações */}
@@ -694,8 +705,10 @@ export default async function DashboardPage() {
               </Panel>
             )}
           </section>
+          )}
 
-          {/* ── Row 3: Oportunidades + Calendário ────────────────── */}
+          {/* ── Aba: Agenda fiscal (oportunidades + calendário) ── */}
+          {activeTab === 'agenda' && (
           <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
 
             <Panel style={{ padding: 0, overflow: 'hidden' }}>
@@ -794,19 +807,41 @@ export default async function DashboardPage() {
                   )
                 })}
 
-                {latest?.fatorR && latest.alertaTeto.projecaoAnual > 0 && (
-                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                    <FatorRInterativo
-                      projecao={latest.alertaTeto.projecaoAnual}
-                      fatorRInicial={latest.fatorR.fatorR}
-                    />
-                  </div>
-                )}
               </div>
             </Panel>
           </section>
+          )}
 
-          {/* ── PDF CTA banner ───────────────────────────────────── */}
+          {/* ── Aba: Fator R (calculadora interativa) ── */}
+          {activeTab === 'fator-r' && (
+            <section style={{ marginBottom: 16 }}>
+              <Panel style={{ padding: '24px 28px' }}>
+                <div style={{ marginBottom: 16 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>
+                    Fator R
+                  </span>
+                  <h2 style={{ fontSize: 17, fontWeight: 800, margin: '4px 0 0' }}>Calculadora interativa de Anexo III × V</h2>
+                </div>
+                {latest?.fatorR && latest.alertaTeto.projecaoAnual > 0 ? (
+                  <FatorRInterativo
+                    projecao={latest.alertaTeto.projecaoAnual}
+                    fatorRInicial={latest.fatorR.fatorR}
+                  />
+                ) : (
+                  <div style={{ padding: '24px 0', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text3)', fontSize: 13, lineHeight: 1.7, margin: '0 0 12px' }}>
+                      Rode uma simulação com CNAE elegível (serviços) e folha para destravar a calculadora.
+                    </p>
+                    <Link href="/dashboard/simular" className="dashboard-action dashboard-primary-action" style={{ padding: '8px 14px', fontSize: 12 }}>
+                      Ir para o simulador
+                    </Link>
+                  </div>
+                )}
+              </Panel>
+            </section>
+          )}
+
+          {/* ── PDF CTA banner (sempre visível, fora das abas) ── */}
           <section style={{ marginBottom: 16 }}>
             <Panel style={{
               padding: '24px 32px',
@@ -841,7 +876,8 @@ export default async function DashboardPage() {
             </Panel>
           </section>
 
-          {/* ── Bottom: Conta + Zona sensível ────────────────────── */}
+          {/* ── Aba: Conta (perfil + zona sensível) ── */}
+          {activeTab === 'conta' && (
           <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <Panel style={{ padding: '24px 28px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -881,6 +917,7 @@ export default async function DashboardPage() {
               <DeleteAccountSection />
             </Panel>
           </section>
+          )}
     </>
   )
 }
