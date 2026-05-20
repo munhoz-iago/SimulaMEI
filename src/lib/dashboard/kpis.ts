@@ -53,6 +53,22 @@ export interface DashboardKPIs {
   monthsOfHistory: number
   /** Se há um lançamento do mês corrente */
   hasCurrentMonthEntry: boolean
+  /** Mês (1-12) em que a projeção atual leva o acumulado a estourar o teto;
+   *  null se a projeção fica abaixo do teto. Baseado em ritmo constante. */
+  mesEstourarTeto: number | null
+}
+
+/** Calcula em qual mês a projeção bate o teto, dado o ritmo médio.
+ *  Retorna null quando a projeção fica abaixo do teto. */
+export function deriveMesEstourarTeto(
+  projecaoAnual: number,
+  tetoAnual: number,
+): number | null {
+  if (projecaoAnual <= tetoAnual) return null
+  const rate = projecaoAnual / 12
+  if (rate <= 0) return null
+  const mes = Math.ceil(tetoAnual / rate)
+  return mes >= 1 && mes <= 12 ? mes : null
 }
 
 interface DashboardKPIsInput {
@@ -99,6 +115,7 @@ const EMPTY_KPIS = (input: Pick<DashboardKPIsInput, 'plan' | 'freeLimitReached' 
     },
     monthsOfHistory: 0,
     hasCurrentMonthEntry: false,
+    mesEstourarTeto: null,
   }
 }
 
@@ -250,6 +267,7 @@ export function getDashboardKPIs(input: DashboardKPIsInput): DashboardKPIs {
         : { label: `Lançar ${new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(refDate)}`, href: '/dashboard#monitor' },
       monthsOfHistory: input.monthlyInputsCount,
       hasCurrentMonthEntry: hasCurrentMonth,
+      mesEstourarTeto: deriveMesEstourarTeto(m.projecaoAnual, tetoAnual),
     }
   }
 
@@ -280,6 +298,7 @@ export function getDashboardKPIs(input: DashboardKPIsInput): DashboardKPIs {
       primaryCta: { label: 'Ativar Monitor mensal', href: '/dashboard#monitor' },
       monthsOfHistory: 0,
       hasCurrentMonthEntry: false,
+      mesEstourarTeto: r.alertaTeto.mesEstourarTeto,
     }
   }
 

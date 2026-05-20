@@ -19,7 +19,9 @@ import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
 import { getDashboardContext } from '@/lib/dashboard/context'
 import { getDashboardKPIs } from '@/lib/dashboard/kpis'
 import { confidenceLevel } from '@/lib/dashboard/confidence'
-import { labelAnexoPorRegime } from '@/lib/dashboard/labels'
+import { labelAnexoPorRegime, type RegimeAtual } from '@/lib/dashboard/labels'
+import { recomendarAcao } from '@/lib/dashboard/recomendacao'
+import { DashboardTopCards } from '@/components/dashboard/DashboardTopCards'
 import { fmt, fmtPct } from '@/lib/format'
 import type { ResultadoSimulacao } from '@/types/tributario'
 
@@ -222,6 +224,8 @@ export default async function DashboardPage() {
   // Aliases pra manter o resto do JSX legível e mudar o mínimo
   const usoTeto = kpis.usoTeto
   const tetoTone = kpis.tone
+  // SimulaMEI atende MEIs por design — anexo aqui é projeção, não atual.
+  const regimeAtual: RegimeAtual = profile?.tipo_mei ? 'mei' : undefined
 
   const calendarItems = getFiscalCalendarItems({
     nome: profile?.nome ?? user.email?.split('@')[0] ?? 'Sua conta',
@@ -248,6 +252,29 @@ export default async function DashboardPage() {
   const fatorRValue = latest?.fatorR?.fatorR
   const tetoColor = metricTone(tetoTone)
 
+  // Inputs decision-first para o card "Próxima ação" do top-4
+  const refDate = new Date()
+  const ultimaMes = monitorRows.at(-1)?.mes ?? null
+  const ultimaAno = monitorRows.at(-1)?.ano ?? null
+  const faltaLancamentoMesAtual = !(ultimaMes === currentMonth && ultimaAno === currentYear)
+  const cnaeInfo = profile?.cnae_principal
+    ? (latest?.fatorR ? { elegivelFatorR: true } : { elegivelFatorR: Boolean(latest?.fatorR) })
+    : { elegivelFatorR: false }
+  const proximaAcao = recomendarAcao({
+    cenario: latest?.alertaTeto.cenario ?? 'dentro_limite',
+    fatorR: latest?.fatorR
+      ? {
+          atingeMinimo: latest.fatorR.atingeMinimo,
+          aumentoFolhaMensalNecessario: latest.fatorR.aumentoFolhaMensalNecessario,
+        }
+      : undefined,
+    mesEstourarTeto: kpis.mesEstourarTeto,
+    elegivelFatorR: cnaeInfo.elegivelFatorR,
+    faltaLancamentoMesAtual: faltaLancamentoMesAtual && monitorRows.length > 0,
+    diaDoMes: refDate.getDate(),
+    mesAtual: currentMonth,
+  })
+
   return (
     <>
       {/* Header da página (sidebar vive no layout) */}
@@ -259,6 +286,16 @@ export default async function DashboardPage() {
 
       {/* Sidebar + greeting header agora vivem em /dashboard/layout.tsx
           e em <DashboardPageHeader/> acima. Conteúdo flui direto. */}
+
+      {/* ── Top 4 (decision-first IA): teto · projeção · estouro · ação ── */}
+      <DashboardTopCards
+        pctTetoUsado={kpis.usoTeto * 100}
+        projecaoAnual={kpis.projecaoAnual}
+        projecaoConfidenceMeses={kpis.monthsOfHistory}
+        mesEstourarTeto={kpis.mesEstourarTeto}
+        proximaAcao={proximaAcao}
+        tetoAnual={kpis.tetoAnual}
+      />
 
       {/* ── Row 1: 3 colunas principais ─────────────────────── */}
           <section style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr 0.9fr', gap: 16, marginBottom: 16 }} className="db-row1">
