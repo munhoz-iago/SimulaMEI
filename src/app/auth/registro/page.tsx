@@ -137,6 +137,7 @@ export default function RegistroPage() {
             <input
               id="register-email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
@@ -152,6 +153,7 @@ export default function RegistroPage() {
             <input
               id="register-password"
               type="password"
+              autoComplete="new-password"
               value={senha}
               onChange={e => setSenha(e.target.value)}
               required
@@ -167,6 +169,7 @@ export default function RegistroPage() {
             <input
               id="register-password-confirm"
               type="password"
+              autoComplete="new-password"
               value={confirmar}
               onChange={e => setConfirmar(e.target.value)}
               required

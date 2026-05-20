@@ -143,6 +143,7 @@ function AtualizarSenhaForm() {
               <input
                 id="update-password-new"
                 type="password"
+                autoComplete="new-password"
                 value={senha}
                 onChange={event => setSenha(event.target.value)}
                 required
@@ -159,6 +160,7 @@ function AtualizarSenhaForm() {
               <input
                 id="update-password-confirm"
                 type="password"
+                autoComplete="new-password"
                 value={confirmacao}
                 onChange={event => setConfirmacao(event.target.value)}
                 required
