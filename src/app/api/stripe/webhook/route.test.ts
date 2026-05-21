@@ -291,6 +291,93 @@ describe('/api/stripe/webhook POST', () => {
     expect(updateChain.in).toHaveBeenCalledWith('id', ['client-31'])
   })
 
+  it('marks the accountant subscription past_due on invoice.payment_failed', async () => {
+    constructEventMock.mockReturnValue({
+      id: 'evt_invoice_failed',
+      type: 'invoice.payment_failed',
+      data: {
+        object: {
+          id: 'in_1',
+          customer: 'cus_1',
+          subscription: 'sub_1',
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ received: true })
+    expect(subscriptionUpdateMock).toHaveBeenCalledWith({ status: 'past_due' })
+    expect(officesUpdateMock).toHaveBeenCalledWith({ stripe_subscription_status: 'past_due' })
+    expect(profilesUpdateMock).not.toHaveBeenCalled()
+  })
+
+  it('reactivates the accountant subscription on invoice.paid', async () => {
+    constructEventMock.mockReturnValue({
+      id: 'evt_invoice_paid',
+      type: 'invoice.paid',
+      data: {
+        object: {
+          id: 'in_2',
+          customer: 'cus_1',
+          subscription: 'sub_1',
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ received: true })
+    expect(subscriptionUpdateMock).toHaveBeenCalledWith({ status: 'active' })
+    expect(officesUpdateMock).toHaveBeenCalledWith({ stripe_subscription_status: 'active' })
+  })
+
+  it('downgrades a consumer monitor plan to free on invoice.payment_failed', async () => {
+    createAdminClientMock.mockReturnValue(makeAdminClient({ storedSubscription: null }))
+    constructEventMock.mockReturnValue({
+      id: 'evt_invoice_consumer',
+      type: 'invoice.payment_failed',
+      data: {
+        object: {
+          id: 'in_3',
+          customer: 'cus_consumer',
+          subscription: 'sub_consumer',
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ received: true })
+    expect(profilesUpdateMock).toHaveBeenCalledWith({
+      stripe_subscription_status: 'past_due',
+      plano: 'free',
+    })
+  })
+
+  it('ignores invoices without an associated subscription', async () => {
+    constructEventMock.mockReturnValue({
+      id: 'evt_invoice_oneshot',
+      type: 'invoice.paid',
+      data: {
+        object: {
+          id: 'in_4',
+          customer: 'cus_x',
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ received: true })
+    expect(subscriptionUpdateMock).not.toHaveBeenCalled()
+    expect(profilesUpdateMock).not.toHaveBeenCalled()
+  })
+
   it('persists report_fingerprint and simulation_id when a report purchase is paid', async () => {
     constructEventMock.mockReturnValue({
       id: 'evt_report',

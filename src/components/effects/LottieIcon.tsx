@@ -21,6 +21,15 @@ interface LottieIconProps {
 }
 
 /**
+ * Lê prefers-reduced-motion de forma síncrona. No SSR retorna false e o
+ * primeiro render no cliente já resolve o valor real.
+ */
+function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+/**
  * Wrapper de animação Lottie com:
  * - Lazy load do `lottie-react` (não carrega no bundle inicial)
  * - Fallback estático pra prefers-reduced-motion
@@ -44,16 +53,13 @@ export function LottieIcon({
     autoplay?: boolean
     style?: CSSProperties
   }> | null>(null)
-  const [reducedMotion, setReducedMotion] = useState(false)
+  // reduced-motion resolvido no inicializador lazy (não em effect+setState):
+  // evita o render em cascata e o valor já está correto no primeiro render.
+  const [reducedMotion] = useState(prefersReducedMotion)
 
   useEffect(() => {
-    // Respeita reduced-motion: não anima, usa fallback
-    if (typeof window === 'undefined') return
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-    if (mediaQuery.matches) {
-      setReducedMotion(true)
-      return
-    }
+    // prefers-reduced-motion: não anima, usa fallback (já refletido no estado)
+    if (reducedMotion) return
 
     let cancelled = false
     // Lazy load do lottie-react E do JSON em paralelo
@@ -69,7 +75,7 @@ export function LottieIcon({
     })
 
     return () => { cancelled = true }
-  }, [src])
+  }, [src, reducedMotion])
 
   const wrapperStyle: CSSProperties = {
     width: size,

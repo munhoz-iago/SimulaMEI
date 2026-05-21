@@ -18,22 +18,27 @@ import { useEffect, useRef, useState } from 'react'
  * que vai funcionar. O CSS `cursor: none` só aplica nesse caso — evita o
  * bug "cursor nativo some e custom não aparece" se algo falhar.
  */
+
+/**
+ * Detecta na montagem se o device suporta o cursor custom.
+ * Roda no inicializador lazy do useState (não em effect) — evita o
+ * setState-em-effect que dispara render em cascata. No SSR retorna false
+ * e o primeiro render no cliente já resolve o valor correto.
+ */
+function detectCursorSupport(): boolean {
+  if (typeof window === 'undefined') return false
+  const hasFinePointer = window.matchMedia('(pointer: fine)').matches
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  return hasFinePointer && !prefersReducedMotion
+}
+
 export function CustomCursor() {
-  const [enabled, setEnabled] = useState(false)
+  const [enabled] = useState(detectCursorSupport)
   const dotRef = useRef<HTMLDivElement | null>(null)
   const ringRef = useRef<HTMLDivElement | null>(null)
 
-  // Effect 1: detecta se device suporta cursor custom (re-render se sim)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const hasFinePointer = window.matchMedia('(pointer: fine)').matches
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (!hasFinePointer || prefersReducedMotion) return
-    setEnabled(true)
-  }, [])
-
-  // Effect 2: registra listeners DEPOIS que os elementos renderizam
-  // (depende de `enabled` pra rodar após o re-render que cria dot/ring)
+  // Registra listeners DEPOIS que os elementos renderizam
+  // (depende de `enabled` pra rodar após o render que cria dot/ring)
   useEffect(() => {
     if (!enabled) return
     const dot = dotRef.current

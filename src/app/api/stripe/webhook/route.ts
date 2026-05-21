@@ -138,6 +138,77 @@ async function handleCheckoutExpired(admin: SupabaseAdminLike, session: Stripe.C
   await markAccountantCheckoutExpired(admin, session.id)
 }
 
+/**
+ * Resolve o subscription id de uma invoice independente da versão do tipo
+ * Stripe (campo direto `subscription` ou aninhado em `parent`).
+ */
+function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
+  const direct = (invoice as { subscription?: string | { id?: string } | null }).subscription
+  if (direct) return getStripeObjectId(direct)
+
+  const parent = (invoice as {
+    parent?: { subscription_details?: { subscription?: string | { id?: string } | null } | null } | null
+  }).parent
+  return getStripeObjectId(parent?.subscription_details?.subscription ?? null)
+}
+
+/**
+ * invoice.paid / invoice.payment_failed — mantém o estado de billing
+ * sincronizado nas renovações recorrentes (o checkout inicial não cobre isto).
+ *
+ * - Assinatura de contador: atualiza office_subscriptions + accountant_offices.
+ * - Assinatura de consumidor (monitor_mensal): atualiza user_profiles pelo
+ *   stripe_customer_id, já que não há office vinculado.
+ */
+async function handleInvoiceEvent(
+  admin: SupabaseAdminLike,
+  invoice: Stripe.Invoice,
+  eventType: 'invoice.paid' | 'invoice.payment_failed',
+) {
+  const subscriptionId = getInvoiceSubscriptionId(invoice)
+  if (!subscriptionId) {
+    // Invoice avulsa (ex.: relatório one-shot) não tem estado recorrente a sincronizar.
+    return
+  }
+
+  const paid = eventType === 'invoice.paid'
+  const customerId = getStripeObjectId(invoice.customer)
+
+  // Caminho contador: a subscription está registrada em office_subscriptions.
+  const officeId = await getOfficeIdByStripeSubscription(admin, subscriptionId)
+  if (officeId) {
+    const status = paid ? 'active' : 'past_due'
+    const subscriptionsTable = admin.from('office_subscriptions') as {
+      update(payload: Record<string, unknown>): UpdateQuery
+    }
+    const officesTable = admin.from('accountant_offices') as {
+      update(payload: Record<string, unknown>): UpdateQuery
+    }
+    await subscriptionsTable
+      .update({ status })
+      .eq('stripe_subscription_id', subscriptionId)
+    await officesTable
+      .update({ stripe_subscription_status: status })
+      .eq('stripe_subscription_id', subscriptionId)
+    return
+  }
+
+  // Caminho consumidor: monitor_mensal vive em user_profiles, vinculado pelo customer.
+  if (!customerId) {
+    console.warn('[stripe-webhook] invoice sem customer e sem office:', invoice.id)
+    return
+  }
+  const profilesTable = admin.from('user_profiles') as {
+    update(payload: Record<string, unknown>): UpdateQuery
+  }
+  await profilesTable
+    .update({
+      stripe_subscription_status: paid ? 'active' : 'past_due',
+      ...(paid ? {} : { plano: 'free' }),
+    })
+    .eq('stripe_customer_id', customerId)
+}
+
 export async function POST(request: Request) {
   if (!isStripeConfigured() || !process.env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json({ error: 'Stripe webhook não configurado.' }, { status: 503 })
@@ -194,6 +265,10 @@ export async function POST(request: Request) {
 
     if (event.type === 'checkout.session.expired') {
       await handleCheckoutExpired(admin, event.data.object as Stripe.Checkout.Session)
+    }
+
+    if (event.type === 'invoice.paid' || event.type === 'invoice.payment_failed') {
+      await handleInvoiceEvent(admin, event.data.object as Stripe.Invoice, event.type)
     }
   } catch (error) {
     console.error('[stripe-webhook] handler error:', error)

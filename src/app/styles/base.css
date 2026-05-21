@@ -17,6 +17,16 @@ body {
   overflow-x: hidden;
 }
 
+[data-theme="light"] body {
+  background:
+    linear-gradient(90deg, oklch(28% 0.014 255 / 0.026) 1px, transparent 1px),
+    linear-gradient(180deg, oklch(28% 0.014 255 / 0.018) 1px, transparent 1px),
+    radial-gradient(circle at 45% -18%, oklch(72% 0.11 135 / 0.11), transparent 42%),
+    radial-gradient(circle at 88% 14%, oklch(78% 0.06 220 / 0.09), transparent 38%),
+    var(--bg0);
+  background-size: 96px 96px, 96px 96px, 100% 100%, 100% 100%, auto;
+}
+
 body::before {
   content: '';
   position: fixed;
@@ -25,6 +35,10 @@ body::before {
   z-index: 9999;
   opacity: 0.035;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+[data-theme="light"] body::before {
+  opacity: 0.018;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -109,6 +123,17 @@ textarea:focus-visible {
   width: 50%; height: 60%;
   background: radial-gradient(circle, var(--cyan) 0%, transparent 65%);
   animation: heroAuroraDrift2 18s ease-in-out infinite;
+}
+[data-theme="light"] .hero-aurora {
+  opacity: 0.52;
+}
+[data-theme="light"] .hero-aurora::before {
+  background: radial-gradient(circle, oklch(72% 0.12 132 / 0.36) 0%, transparent 62%);
+  filter: blur(96px);
+}
+[data-theme="light"] .hero-aurora::after {
+  background: radial-gradient(circle, oklch(78% 0.08 215 / 0.28) 0%, transparent 66%);
+  filter: blur(96px);
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-aurora::before,

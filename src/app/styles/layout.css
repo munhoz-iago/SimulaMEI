@@ -2,6 +2,7 @@
 .shared-result-banner { animation: fadeUp 360ms var(--ease-out) both; }
 .site-shell { position: relative; isolation: isolate; }
 .site-shell::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: -1; background: linear-gradient(115deg, transparent 0 54%, oklch(88% 0.19 126 / 0.035) 54% 54.4%, transparent 54.4%), linear-gradient(70deg, transparent 0 62%, oklch(73% 0.18 52 / 0.03) 62% 62.35%, transparent 62.35%); }
+[data-theme="light"] .site-shell::after { background: linear-gradient(115deg, transparent 0 54%, oklch(43% 0.15 130 / 0.014) 54% 54.35%, transparent 54.35%), linear-gradient(70deg, transparent 0 62%, oklch(46% 0.15 52 / 0.012) 62% 62.3%, transparent 62.3%); }
 
 .section-shell { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
 
@@ -13,6 +14,8 @@
 /* ── Instrument panels ─────────────────────────────────────── */
 .instrument-panel { background: linear-gradient(180deg, oklch(100% 0 0 / 0.025), transparent 42%), var(--bg1); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--panel-shadow); overflow: hidden; }
 .instrument-panel-header { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 13px 16px; border-bottom: 1px solid var(--border); background: oklch(100% 0 0 / 0.018); }
+[data-theme="light"] .instrument-panel { background: linear-gradient(180deg, oklch(100% 0 0 / 0.72), oklch(100% 0 0 / 0.26) 44%, transparent), var(--bg1); }
+[data-theme="light"] .instrument-panel-header { background: oklch(97% 0.004 250 / 0.68); }
 .instrument-label { color: var(--text3); font-family: var(--mono); font-size: 11px; font-weight: 850; letter-spacing: 0.04em; text-transform: uppercase; }
 
 /* ── Evidence strip ────────────────────────────────────────── */
@@ -22,6 +25,7 @@
 
 /* ── Floating section nav ──────────────────────────────────── */
 .floating-section-nav { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 160; display: flex; align-items: center; gap: 2px; max-width: calc(100vw - 24px); padding: 4px; border: 1px solid var(--border); border-radius: 999px; background: color-mix(in oklch, var(--bg1) 86%, transparent); backdrop-filter: blur(14px) saturate(150%); box-shadow: 0 20px 54px oklch(2% 0.01 255 / 0.32); }
+[data-theme="light"] .floating-section-nav { background: color-mix(in oklch, var(--bg1) 92%, transparent); box-shadow: 0 18px 44px oklch(38% 0.018 255 / 0.14), 0 1px 2px oklch(38% 0.018 255 / 0.08); }
 .floating-section-nav a { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 7px 11px; border-radius: 999px; color: var(--text2); font-size: 12px; font-weight: 800; text-decoration: none; transition: background-color 180ms var(--ease-out), color 180ms var(--ease-out), transform 180ms var(--ease-out); }
 .floating-section-nav a[aria-current="true"] { background: var(--lime); color: var(--ink-on-accent); }
 .floating-section-nav span { font-family: var(--mono); font-size: 10px; opacity: 0.72; }

@@ -18,9 +18,22 @@ export function FatorRInterativo({ projecao, fatorRInicial }: FatorRInterativoPr
     Math.max((projecao * fatorRInicial) / 12, 0)
   )
 
+  const projecaoValida = Number.isFinite(projecao) && projecao > 0
+
+  // Economia anual III vs V — calculado aqui (antes de qualquer return) para
+  // não violar as regras de hooks. Com projeção inválida resolve em 0 e o
+  // valor é descartado pelo placeholder; a chamada precisa ser incondicional.
+  const economiaAnual = useMemo(
+    () =>
+      projecaoValida
+        ? calcularSimples(projecao, 'V').dasAnual - calcularSimples(projecao, 'III').dasAnual
+        : 0,
+    [projecao, projecaoValida],
+  )
+
   // Defesa: sem projeção válida, o componente fica inerte e enganador.
   // Mostra um placeholder pedindo simulação real ao invés de R$ 0 em tudo.
-  if (!Number.isFinite(projecao) || projecao <= 0) {
+  if (!projecaoValida) {
     return (
       <div style={{
         background: 'var(--bg1)', border: '1px solid var(--border)',
@@ -43,12 +56,6 @@ export function FatorRInterativo({ projecao, fatorRInicial }: FatorRInterativoPr
   // Quanto falta para chegar em 28%
   const folhaMinima = (FATOR_R_MINIMO * projecao) / 12
   const falta = folhaMinima - folhaMensal
-
-  // Economia anual III vs V
-  const economiaAnual = useMemo(
-    () => calcularSimples(projecao, 'V').dasAnual - calcularSimples(projecao, 'III').dasAnual,
-    [projecao],
-  )
 
   const fillPct = Math.min((fr / 0.5) * 100, 100)
   // Position of 28% marker relative to 0–50% range
