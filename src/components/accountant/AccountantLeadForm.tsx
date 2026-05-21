@@ -6,6 +6,37 @@ import { captureProductEvent } from '@/lib/analytics/events'
 
 type FormState = 'idle' | 'submitting' | 'sent'
 
+export type AccountantLeadIntent = 'waitlist' | 'enterprise'
+
+export interface AccountantLeadIntentConfig {
+  submitLabel: string
+  submittingLabel: string
+  defaultCarteiraRange: typeof ACCOUNTANT_CLIENT_RANGES[number]
+  sentTitle: string
+  sentMessage: string
+}
+
+// Variantes de copy + pré-seleção por intenção. Mantida como função pura
+// pra cobertura por teste unitário (não depende de DOM/sessionStorage).
+export function getAccountantLeadIntentConfig(intent: AccountantLeadIntent): AccountantLeadIntentConfig {
+  if (intent === 'enterprise') {
+    return {
+      submitLabel: 'Falar com nosso comercial',
+      submittingLabel: 'Enviando...',
+      defaultCarteiraRange: '150+',
+      sentTitle: 'Contato recebido!',
+      sentMessage: 'Recebemos seu contato. Nosso comercial responde em até 1 dia útil (carteiras 150+ entram em fila prioritária).',
+    }
+  }
+  return {
+    submitLabel: 'Entrar na lista de acesso antecipado',
+    submittingLabel: 'Registrando...',
+    defaultCarteiraRange: '21-50',
+    sentTitle: 'Cadastro recebido!',
+    sentMessage: 'Recebemos seu cadastro. Contato em até 48h conforme a faixa de carteira.',
+  }
+}
+
 const ALLOWED_RANGES = new Set(ACCOUNTANT_CLIENT_RANGES)
 
 const fieldStyle: React.CSSProperties = {
@@ -39,7 +70,14 @@ function Label({ htmlFor, children }: { htmlFor: string; children: React.ReactNo
   )
 }
 
-export function AccountantLeadForm({ source = 'para-contadores' }: { source?: string }) {
+export function AccountantLeadForm({
+  source = 'para-contadores',
+  intent = 'waitlist',
+}: {
+  source?: string
+  intent?: AccountantLeadIntent
+}) {
+  const intentConfig = getAccountantLeadIntentConfig(intent)
   const [state, setState] = useState<FormState>('idle')
   const [error, setError] = useState('')
   const [preselectedPlan, setPreselectedPlan] = useState<string | null>(null)
@@ -47,7 +85,7 @@ export function AccountantLeadForm({ source = 'para-contadores' }: { source?: st
     nomeEscritorio: '',
     email: '',
     telefone: '',
-    carteiraRange: '21-50',
+    carteiraRange: intentConfig.defaultCarteiraRange as string,
     ferramentaAtual: 'Planilha',
     consentimentoLgpd: false,
   })
@@ -113,10 +151,10 @@ export function AccountantLeadForm({ source = 'para-contadores' }: { source?: st
       }}>
         <div style={{ fontSize: 20, marginBottom: 8 }}>✓</div>
         <div style={{ color: 'var(--lime)', fontWeight: 800, marginBottom: 6 }}>
-          Cadastro recebido!
+          {intentConfig.sentTitle}
         </div>
         <p style={{ color: 'var(--text2)', fontSize: 14, lineHeight: 1.6 }}>
-          Recebemos seu cadastro. Contato em até 48h conforme a faixa de carteira.
+          {intentConfig.sentMessage}
         </p>
       </div>
     )
@@ -233,7 +271,7 @@ export function AccountantLeadForm({ source = 'para-contadores' }: { source?: st
           opacity: state === 'submitting' ? 0.72 : 1,
         }}
       >
-        {state === 'submitting' ? 'Registrando...' : 'Entrar na lista de acesso antecipado'}
+        {state === 'submitting' ? intentConfig.submittingLabel : intentConfig.submitLabel}
       </button>
     </form>
   )

@@ -104,7 +104,7 @@ const ACCOUNTANT_PLANS: AccountantPlanOption[] = [
     price: 'Sob contrato',
     priceSuffix: '',
     description: 'Para carteiras grandes, multi-seat, SLA e integrações sob contrato.',
-    href: '/para-contadores',
+    href: '/para-contadores?intent=enterprise#contato',
     cta: 'Falar com comercial',
     accent: 'var(--text1)',
     features: [

@@ -25,7 +25,7 @@
   .dashboard-header-actions { justify-items: start !important; }
   .dashboard-radar-header { flex-direction: column !important; align-items: flex-start !important; }
   .dashboard-radar-score { text-align: left !important; min-width: 0 !important; }
-  .dashboard-radar-metrics, .excess-grid, .accountant-detail-grid, .accountant-simulation-grid, .onboarding-duo-grid, .accountant-hero-grid, .accountant-value-grid, .accountant-form-grid, .cnae-accountant-cta { grid-template-columns: 1fr !important; }
+  .dashboard-radar-metrics, .excess-grid, .accountant-detail-grid, .accountant-simulation-grid, .onboarding-duo-grid, .accountant-hero-grid, .accountant-value-grid, .accountant-form-grid, .accountant-contato-grid, .cnae-accountant-cta { grid-template-columns: 1fr !important; }
   .onboarding-sidebar { position: static !important; top: auto !important; }
   .res-grid > * { padding: 14px !important; }
   .hero-section-inner { padding: 0 20px !important; }

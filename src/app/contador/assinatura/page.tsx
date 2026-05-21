@@ -504,7 +504,7 @@ export default async function AccountantBillingPage() {
               </ul>
 
               <Link
-                href="/para-contadores"
+                href="/para-contadores?intent=enterprise#contato"
                 style={{
                   display: 'block', textAlign: 'center',
                   padding: '10px 14px',

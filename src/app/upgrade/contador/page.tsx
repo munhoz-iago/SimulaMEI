@@ -458,7 +458,7 @@ export default async function AccountantUpgradePage({
           </ul>
 
           <Link
-            href="/para-contadores"
+            href="/para-contadores?intent=enterprise#contato"
             className="pressable"
             style={{
               display: 'block', textAlign: 'center',
