@@ -12,24 +12,44 @@ export interface LoginContextCopy {
 
 /**
  * Returns context-aware copy for the login page based on `next`.
- * Returns null when `next` doesn't match any known context — caller should use defaults.
+ *
+ * Match order (more-specific first):
+ *   1. `/upgrade/contador` + `?autocheckout=pro` → Pro plan copy
+ *   2. `/upgrade/contador` + `?autocheckout=starter` → Starter plan copy
+ *   3. `/dashboard/relatorio*` or `/relatorio*` → relatório preview
+ *   4. `/dashboard/simular*` → simulator preview
+ *   5. default → null (caller should use defaults)
+ *
+ * URL params are parsed via `new URL` (not substring `includes`) so that
+ * `?autocheckout=prowler` or `?notautocheckout=pro` do NOT match. Malformed
+ * `next` values fall through to null instead of throwing.
  */
 export function getLoginContextCopy(next: string): LoginContextCopy | null {
-  if (next.startsWith('/upgrade/contador') && next.includes('autocheckout=pro')) {
+  let url: URL
+  try {
+    url = new URL(next, 'http://x')
+  } catch {
+    return null
+  }
+
+  const pathname = url.pathname
+  const autocheckout = url.searchParams.get('autocheckout')
+
+  if (pathname.startsWith('/upgrade/contador') && autocheckout === 'pro') {
     return {
       title: 'Falta só entrar',
       subtitle: 'Você está a um clique do plano Pro (R$ 247/mês).',
     }
   }
 
-  if (next.startsWith('/upgrade/contador') && next.includes('autocheckout=starter')) {
+  if (pathname.startsWith('/upgrade/contador') && autocheckout === 'starter') {
     return {
       title: 'Falta só entrar',
       subtitle: 'Você está a um clique do plano Starter (R$ 97/mês).',
     }
   }
 
-  if (next.startsWith('/dashboard/relatorio') || next === '/relatorio') {
+  if (pathname.startsWith('/dashboard/relatorio') || pathname.startsWith('/relatorio')) {
     return {
       preview: {
         heading: 'Seu relatório fica pronto após o login',
@@ -38,7 +58,7 @@ export function getLoginContextCopy(next: string): LoginContextCopy | null {
     }
   }
 
-  if (next.startsWith('/dashboard/simular')) {
+  if (pathname.startsWith('/dashboard/simular')) {
     return {
       preview: {
         heading: '',
