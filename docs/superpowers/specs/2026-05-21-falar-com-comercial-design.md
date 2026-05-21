@@ -16,6 +16,16 @@ A infra completa para capturar leads já existe (componente, endpoint, tabela, a
 - `src/app/contador/assinatura/page.tsx:520` — card Enterprise no dashboard do contador logado. `Link href="/para-contadores"`.
 - `src/app/upgrade/page.tsx:108` — data: `cta: 'Falar com comercial', href: '/para-contadores'`.
 
+### O CTA "Entrar na lista →" — link morto literal
+
+- `src/app/para-contadores/page.tsx:188` — botão dentro do card "Prova operacional" (`:168`) com texto *"Entrar na lista →"* e `href="#contadores-form"`.
+- **A âncora `#contadores-form` NÃO EXISTE em `/para-contadores`.** Existe em `src/components/layout/ContadoresSection.tsx:143`, mas esse componente é renderizado pela **homepage** (via `HomeClient.tsx:137`), não por `/para-contadores`.
+- **Resultado:** clicar não faz nada. Browser não acha a âncora na rota atual, não navega, não rola. Botão silenciosamente quebrado.
+- **Ironia tripla:** o comentário no `ContadoresSection.tsx:141` declara `"Right: CTA de trial direto (substituiu o lead form — onboarding já funciona)"`. Alguém removeu o lead form da homepage propositalmente, mas:
+  1. Manteve o `id="contadores-form"` no novo bloco de trial.
+  2. Não atualizou o `href` em `/para-contadores`.
+  3. Não atualizou a copy: o botão promete *waitlist* ("Entrar na lista"), o destino real era *trial direto* — promessa quebrada mesmo se a âncora funcionasse.
+
 ### Página `/para-contadores` (`src/app/para-contadores/page.tsx`, 349 linhas)
 
 **Não tem formulário de contato.** Verificado por leitura completa + grep:
@@ -68,6 +78,7 @@ Verificado por leitura (`AccountantLeadForm.tsx`):
   - Confirmação: *"Recebemos seu contato. Nosso comercial responde em até 1 dia útil (carteiras 150+ entram em fila prioritária)."*
   - Pré-define `carteiraRange = '150+'` (faixa Enterprise).
 - **Os 3 CTAs "Falar com comercial" passam a apontar para `/para-contadores#contato`** com `?intent=enterprise` para o form saber que veio do Enterprise. Implementação: server component lê `searchParams.intent`, passa `intent="enterprise"` ao componente.
+- **O CTA "Entrar na lista →" passa a apontar para `#contato` (sem intent)** — mesma âncora interna, mas mantém o `intent` default `'waitlist'`. Cumpre a promessa literal da copy ("Entrar na lista") porque agora o form **é** o destino real.
 - **Fallback mailto explícito** ao lado do form: link visível para `contato@simulamei.com.br` com assunto pré-preenchido (`?subject=Plano Enterprise — Contato comercial`). Para quem não quer formulário.
 - **Remover a copy mentirosa** (`:246`) ou — preferível — **realinhá-la** ao formulário recém-plugado, mantendo a promessa cumprida.
 - **NÃO** criar `/contato` separado, **NÃO** criar Calendly link (não está no stack), **NÃO** introduzir WhatsApp clickable (o telefone do form já cobre).
@@ -77,9 +88,10 @@ Verificado por leitura (`AccountantLeadForm.tsx`):
 **P0 — destrava receita:**
 - W1: Adicionar prop `intent` em `AccountantLeadForm` com variantes de copy + pré-seleção da carteira.
 - W2: Renderizar `<AccountantLeadForm intent={intent} />` em `/para-contadores` numa seção `id="contato"`.
-- W3: Apontar os 3 CTAs Enterprise para `/para-contadores#contato?intent=enterprise`.
+- W3: Apontar os 3 CTAs Enterprise para `/para-contadores?intent=enterprise#contato`.
 - W4: Adicionar mailto fallback visível ao lado do form.
 - W5: Realinhar a copy mentirosa (`:246`) à realidade.
+- W9: **Corrigir `href` do "Entrar na lista →" (`/para-contadores/page.tsx:188`)** de `"#contadores-form"` para `"#contato"`. Botão deixa de estar morto e passa a cumprir a promessa de waitlist.
 
 **P1 — medição (aditivo, sem renomes):**
 - W6: Evento `enterprise_lead_form_viewed` ao renderizar com `intent=enterprise` (server-side ou intersection observer).
@@ -166,6 +178,31 @@ Depois (com o form agora real):
 
 Ou — alternativa mais limpa — substituir o parágrafo inteiro pelo block de TRUST_POINTS já enriquecido, deixando o convite ao form na seção `#contato` em si.
 
+### W9 — Corrigir "Entrar na lista →" (`/para-contadores:188`)
+
+**Arquivo:** `src/app/para-contadores/page.tsx:188`
+
+Antes:
+```tsx
+<Link href="#contadores-form" ...>
+  Entrar na lista →
+</Link>
+```
+
+Depois:
+```tsx
+<Link href="#contato" ...>
+  Entrar na lista →
+</Link>
+```
+
+**Justificativa:**
+1. `#contadores-form` é âncora morta nesta rota (vive em `ContadoresSection`, renderizado só na homepage).
+2. Como W2 cria `<section id="contato">` na mesma rota, a navegação passa a ser **interna** (não tira o usuário de `/para-contadores`).
+3. Sem `?intent=` na URL, o form usa `intent='waitlist'` default, com CTA *"Entrar na lista de acesso antecipado"* — alinha com a promessa do botão upstream.
+
+**Não confundir:** o card "Prova operacional" (`:168-191`) onde está esse botão é argumento de prova social (18.300+ simulações). O usuário que clica daí está pedindo waitlist, não Enterprise. **Manter `intent=waitlist` é correto** — não inserir `?intent=enterprise` aqui.
+
 ### W6/W7/W8 — Telemetria (P1, aditivo)
 
 Manter compatibilidade com `accountant_signup_interest` existente. Adicionar APENAS propriedades novas — nunca renomear o evento. Padrão idêntico ao TASK-3 do trabalho de auditoria anterior.
@@ -188,7 +225,8 @@ captureProductEvent('enterprise_mailto_clicked', { source })
 
 ## 6. Sucesso
 
-- [ ] Os 3 CTAs "Falar com comercial" levam a `/para-contadores#contato?intent=enterprise` e o scroll cai sobre o formulário.
+- [ ] Os 3 CTAs "Falar com comercial" levam a `/para-contadores?intent=enterprise#contato` e o scroll cai sobre o formulário.
+- [ ] O CTA "Entrar na lista →" (`/para-contadores:188`) leva a `#contato` (sem intent) e cumpre a promessa de waitlist.
 - [ ] Form renderizado com CTA "Falar com nosso comercial" e carteira pré-selecionada em `150+`.
 - [ ] POST `/api/accountant-leads` aceita o payload e retorna 200; lead aparece em `accountant_leads` com flag `intent=enterprise` (se a tabela já tem coluna `intent`; senão, propriedade vai no PostHog).
 - [ ] Mailto `contato@simulamei.com.br` visível ao lado/abaixo do form.
@@ -228,7 +266,7 @@ captureProductEvent('enterprise_mailto_clicked', { source })
 
 *Arquivos tocados:*
 - `src/components/accountant/AccountantLeadForm.tsx` (prop `intent`, copy variants)
-- `src/app/para-contadores/page.tsx` (renderiza form, copy `:246`, section `#contato`)
+- `src/app/para-contadores/page.tsx` (renderiza form em `:344` antes do `<footer>`, copy mentirosa em `:246`, href do "Entrar na lista" em `:188`, section `#contato`)
 - `src/app/upgrade/contador/page.tsx` (href Enterprise `:461` ou próximo)
 - `src/app/contador/assinatura/page.tsx` (href Enterprise `:507` ou próximo)
 - `src/app/upgrade/page.tsx` (data object `:107`)
