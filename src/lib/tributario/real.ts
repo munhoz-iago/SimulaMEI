@@ -3,6 +3,13 @@
 // ESTIMATIVA APENAS - Lucro Real real requer contabilidade completa
 
 import type { ResultadoReal, CnaeCategoriaFiscal } from '@/types/tributario'
+import {
+  SALARIO_MINIMO_2026,
+  INSS_PRO_LABORE_RATE,
+  INSS_PATRONAL_RATE,
+  ESTIMATIVA_ICMS_EFETIVO,
+  ESTIMATIVA_IPI_EFETIVO,
+} from '@/constants/tributario'
 
 // Aliquotas Lucro Real (PIS/COFINS regime nao-cumulativo)
 const ALIQ_IRPJ           = 0.15
@@ -12,11 +19,6 @@ const ALIQ_PIS_NC         = 0.0165 // nao-cumulativo
 const ALIQ_COFINS_NC      = 0.076  // nao-cumulativo
 const ALIQ_ISS_MEDIA      = 0.03   // ISS medio para servicos
 
-// INSS socio-administrador (pro-labore minimo = salario minimo 2026)
-const PRO_LABORE_MINIMO = 1_518.00
-const INSS_PRO_LABORE   = 0.11  // contribuicao previdenciaria do socio
-const INSS_PATRONAL     = 0.20  // contribuicao patronal sobre pro-labore
-
 export const MARGEM_REAL_DEFAULT = 0.30
 
 /**
@@ -24,6 +26,7 @@ export const MARGEM_REAL_DEFAULT = 0.30
  *
  * PIS/COFINS regime nao-cumulativo com credito estimado em 40% do debito.
  * ISS incide apenas sobre servicos.
+ * ICMS/IPI estimados para comercio e industria.
  * INSS socio + patronal compoem o `custoTotal`.
  *
  * @param receitaAnual  - Receita bruta anual projetada
@@ -52,17 +55,19 @@ export function calcularReal(
   const pis    = receitaAnual * ALIQ_PIS_NC    * 0.60
   const cofins = receitaAnual * ALIQ_COFINS_NC * 0.60
 
-  // ISS incide apenas sobre prestacao de servicos
+  // Tributos Estaduais/Municipais
   const isServico = categoria === 'servicos' || categoria === 'ti_consultoria'
   const iss = isServico ? receitaAnual * ALIQ_ISS_MEDIA : 0
+  const icms = (categoria === 'comercio' || categoria === 'industria') ? receitaAnual * ESTIMATIVA_ICMS_EFETIVO : 0
+  const ipi = (categoria === 'industria') ? receitaAnual * ESTIMATIVA_IPI_EFETIVO : 0
 
-  const total = irpj + csll + pis + cofins + iss
+  const total = irpj + csll + pis + cofins + iss + icms + ipi
   const aliquotaEfetiva = receitaAnual > 0 ? total / receitaAnual : 0
 
   // INSS socio: base = max(folhaMensal, salario minimo), multiplicado por 12 meses
-  const proLaboreBase  = Math.max(folhaMensal, PRO_LABORE_MINIMO)
-  const inssProLabore  = proLaboreBase * INSS_PRO_LABORE * 12
-  const inssPatronal   = proLaboreBase * INSS_PATRONAL * 12
+  const proLaboreBase  = Math.max(folhaMensal, SALARIO_MINIMO_2026)
+  const inssProLabore  = proLaboreBase * INSS_PRO_LABORE_RATE * 12
+  const inssPatronal   = proLaboreBase * INSS_PATRONAL_RATE * 12
 
   const custoTotal = total + inssProLabore + inssPatronal
   const aliquotaEfetivaCustoTotal = receitaAnual > 0 ? custoTotal / receitaAnual : 0

@@ -3,13 +3,15 @@
 // TAX_RULE_VERSION: 'BR-MEI-SN-2026-04-28'
 
 import type { AlertaProLabore, FolhaCalculada, FolhaInput, ResultadoFatorR } from '@/types/tributario'
+import {
+  TETO_INSS_MENSAL_2026,
+  INSS_PRO_LABORE_RATE,
+  INSS_PATRONAL_RATE,
+} from '@/constants/tributario'
 import { calcularAliquotaEfetiva } from './anexos'
 
 export const FATOR_R_MINIMO = 0.28 // 28%
-export const INSS_PATRONAL_RATE = 0.20
 export const FGTS_RATE = 0.08
-export const INSS_PESSOAL_PRO_LABORE_RATE = 0.11
-export const TETO_INSS_MENSAL_2026 = 8_475.55
 
 function moedaPositiva(value: number | undefined): number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0
@@ -50,21 +52,24 @@ export function calcularFolhaFatorR(folha?: FolhaInput, fallbackMensal = 0): Fol
   }
 }
 
-export function calcularFolhaMinimaFatorR(rbt12: number): number {
+export function calcularFolhaMinimaAnualFatorR(rbt12: number): number {
   return Math.max(0, rbt12 * FATOR_R_MINIMO)
 }
 
 export function calcularAumentoFolhaMensalNecessario(rbt12: number, folhaMensalAtual: number): number {
-  return Math.max(0, (calcularFolhaMinimaFatorR(rbt12) / 12) - folhaMensalAtual)
+  const folhaMinimaAnual = calcularFolhaMinimaAnualFatorR(rbt12)
+  return Math.max(0, (folhaMinimaAnual / 12) - folhaMensalAtual)
 }
 
 export function calcularInssPessoalProLabore(proLaboreMensal: number): number {
-  return Math.min(moedaPositiva(proLaboreMensal), TETO_INSS_MENSAL_2026) * INSS_PESSOAL_PRO_LABORE_RATE
+  return Math.min(moedaPositiva(proLaboreMensal), TETO_INSS_MENSAL_2026) * INSS_PRO_LABORE_RATE
 }
 
 export function gerarAlertaProLabore(folha: FolhaCalculada, fatorR: number): AlertaProLabore | undefined {
   if (folha.totalMensal <= 0 || fatorR < FATOR_R_MINIMO) return undefined
 
+  // Alerta se o pro-labore e muito alto em relacao a folha total (risco fiscal/previdenciario)
+  // Se for 100% pro-labore (sem CLT), e comum em pequenas empresas, mas vale o alerta se > 70%
   const percentualFolha = folha.proLabore / folha.totalMensal
   if (percentualFolha <= 0.7) return undefined
 
@@ -91,7 +96,7 @@ export function calcularFatorR(
   const atingeMinimo = fatorR >= FATOR_R_MINIMO
   const anexoResultante = atingeMinimo ? 'III' : 'V'
 
-  const folhaMinimaAnual = calcularFolhaMinimaFatorR(rbt12)
+  const folhaMinimaAnual = calcularFolhaMinimaAnualFatorR(rbt12)
   const folhaMinimaMensal = folhaMinimaAnual / 12
   const aumentoFolhaMensalNecessario = calcularAumentoFolhaMensalNecessario(
     rbt12,

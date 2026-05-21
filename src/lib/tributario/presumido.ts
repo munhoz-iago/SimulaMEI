@@ -3,6 +3,13 @@
 // ESTIMATIVA APENAS - LP real requer contabilidade completa
 
 import type { ResultadoPresumido, CnaeCategoriaFiscal } from '@/types/tributario'
+import {
+  SALARIO_MINIMO_2026,
+  INSS_PRO_LABORE_RATE,
+  INSS_PATRONAL_RATE,
+  ESTIMATIVA_ICMS_EFETIVO,
+  ESTIMATIVA_IPI_EFETIVO,
+} from '@/constants/tributario'
 
 // Percentuais de presuncao do lucro por categoria (RIR/1999 + atualizacoes)
 // Comercio/industria/construcao: 8% | Servicos gerais: 32%
@@ -22,18 +29,14 @@ const ALIQ_PIS             = 0.0065 // regime cumulativo
 const ALIQ_COFINS          = 0.03   // regime cumulativo
 const ALIQ_ISS_MEDIA       = 0.03   // ISS medio (varia por municipio: 2-5%)
 
-// INSS socio-administrador (pro-labore minimo = salario minimo 2026)
-const PRO_LABORE_MINIMO = 1_518.00
-const INSS_PRO_LABORE   = 0.11  // contribuicao previdenciaria do socio
-const INSS_PATRONAL     = 0.20  // contribuicao patronal sobre pro-labore
-
 /**
  * Calcula estimativa do Lucro Presumido com presuncao correta por categoria.
  *
  * Inclui INSS do socio (pro-labore 11%) e INSS patronal (20%) no `custoTotal`,
  * pois esses encargos nao fazem parte do DAS mas sao obrigatorios no regime.
  *
- * ISS incide apenas sobre atividades de servicos.
+ * ISS incide apenas sobre prestacao de servicos.
+ * ICMS/IPI estimados para comercio e industria.
  *
  * @param receitaAnual  - Receita bruta anual projetada
  * @param categoria     - Categoria fiscal do CNAE (padrao: 'servicos')
@@ -50,7 +53,7 @@ export function calcularPresumido(
   // IRPJ base
   let irpj = lucroPresumido * ALIQ_IRPJ
 
-  // Adicional IRPJ: 10% sobre o lucro presumido trimestral que excede R$ 60k
+  // Adicional IRPJ: 10% sobre the lucro presumido trimestral que excede R$ 60k
   const lucroTrimestral = lucroPresumido / 4
   if (lucroTrimestral > 60_000) {
     irpj += (lucroTrimestral - 60_000) * 4 * ALIQ_IRPJ_ADICIONAL
@@ -60,17 +63,19 @@ export function calcularPresumido(
   const pis    = receitaAnual * ALIQ_PIS
   const cofins = receitaAnual * ALIQ_COFINS
 
-  // ISS incide apenas sobre prestacao de servicos
+  // Tributos Estaduais/Municipais
   const isServico = categoria === 'servicos' || categoria === 'ti_consultoria'
   const iss = isServico ? receitaAnual * ALIQ_ISS_MEDIA : 0
+  const icms = (categoria === 'comercio' || categoria === 'industria') ? receitaAnual * ESTIMATIVA_ICMS_EFETIVO : 0
+  const ipi = (categoria === 'industria') ? receitaAnual * ESTIMATIVA_IPI_EFETIVO : 0
 
-  const total = irpj + csll + pis + cofins + iss
+  const total = irpj + csll + pis + cofins + iss + icms + ipi
   const aliquotaEfetiva = receitaAnual > 0 ? total / receitaAnual : 0
 
   // INSS socio: base = max(folhaMensal, salario minimo), multiplicado por 12 meses
-  const proLaboreBase  = Math.max(folhaMensal, PRO_LABORE_MINIMO)
-  const inssProLabore  = proLaboreBase * INSS_PRO_LABORE * 12
-  const inssPatronal   = proLaboreBase * INSS_PATRONAL * 12
+  const proLaboreBase  = Math.max(folhaMensal, SALARIO_MINIMO_2026)
+  const inssProLabore  = proLaboreBase * INSS_PRO_LABORE_RATE * 12
+  const inssPatronal   = proLaboreBase * INSS_PATRONAL_RATE * 12
 
   const custoTotal = total + inssProLabore + inssPatronal
   const aliquotaEfetivaCustoTotal = receitaAnual > 0 ? custoTotal / receitaAnual : 0

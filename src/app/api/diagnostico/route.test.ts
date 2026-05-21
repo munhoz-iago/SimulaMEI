@@ -2,12 +2,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import type { ResultadoSimulacao } from '@/types/tributario'
 
-const { createClientMock, gerarDiagnosticoFiscalMock, simularMock, getCnaeMock, normalizeCnaeCodeMock } = vi.hoisted(() => ({
+const { 
+  createClientMock, 
+  gerarDiagnosticoFiscalMock, 
+  simularMock, 
+  getCnaeMock, 
+  normalizeCnaeCodeMock,
+  consumeRateLimitMock
+} = vi.hoisted(() => ({
   createClientMock: vi.fn(),
   gerarDiagnosticoFiscalMock: vi.fn(),
   simularMock: vi.fn(),
   getCnaeMock: vi.fn(),
   normalizeCnaeCodeMock: vi.fn(),
+  consumeRateLimitMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -24,13 +32,18 @@ vi.mock('@/lib/tributario', () => ({
   normalizeCnaeCode: normalizeCnaeCodeMock,
 }))
 
+vi.mock('@/lib/security/rate-limit', () => ({
+  consumeRateLimit: consumeRateLimitMock,
+  applyRateLimitHeaders: vi.fn((res) => res),
+}))
+
 import { GET, POST } from './route'
 
-function makeRequest(body: unknown) {
+function makeRequest(body: unknown = null) {
   return new NextRequest('http://localhost/api/diagnostico', {
-    method: 'POST',
+    method: body ? 'POST' : 'GET',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
+    ...(body ? { body: JSON.stringify(body) } : {}),
   })
 }
 
@@ -69,9 +82,11 @@ const resultado = {
   geradoEm: '2026-05-08T00:00:00.000Z',
 } as unknown as ResultadoSimulacao
 
-describe('/api/diagnostico POST', () => {
+describe('/api/diagnostico', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubEnv('APP_HASH_SECRET', 'test-secret')
+    consumeRateLimitMock.mockResolvedValue({ allowed: true, remaining: 10, resetAt: new Date().toISOString() })
     createClientMock.mockResolvedValue(makeServerClient({ id: 'user-1' }))
     normalizeCnaeCodeMock.mockReturnValue('6204-0/00')
     getCnaeMock.mockReturnValue({ cnae: '6204-0/00' })
@@ -79,66 +94,70 @@ describe('/api/diagnostico POST', () => {
     gerarDiagnosticoFiscalMock.mockResolvedValue({ resumoExecutivo: 'ok' })
   })
 
-  it('requires an authenticated Supabase session', async () => {
-    createClientMock.mockResolvedValue(makeServerClient(null))
+  describe('POST', () => {
+    it('requires an authenticated Supabase session', async () => {
+      createClientMock.mockResolvedValue(makeServerClient(null))
 
-    const response = await POST(makeRequest({ entrada }))
+      const response = await POST(makeRequest({ entrada }))
 
-    expect(response.status).toBe(401)
-    expect(gerarDiagnosticoFiscalMock).not.toHaveBeenCalled()
+      expect(response.status).toBe(401)
+      expect(gerarDiagnosticoFiscalMock).not.toHaveBeenCalled()
+    })
+
+    it('rejects invalid payloads before calling Anthropic', async () => {
+      const response = await POST(makeRequest({ entrada: { ...entrada, mesAtual: 13 } }))
+
+      expect(response.status).toBe(400)
+      expect(gerarDiagnosticoFiscalMock).not.toHaveBeenCalled()
+    })
+
+    it('rejects unknown CNAEs before calling Anthropic', async () => {
+      getCnaeMock.mockReturnValueOnce(undefined)
+
+      const response = await POST(makeRequest({ entrada }))
+
+      expect(response.status).toBe(400)
+      expect(gerarDiagnosticoFiscalMock).not.toHaveBeenCalled()
+    })
+
+    it('recalculates the simulation server-side before generating the diagnosis', async () => {
+      const response = await POST(makeRequest({
+        entrada,
+        resultado: { entrada: { ...entrada, cnae: 'malicious' } },
+      }))
+
+      expect(response.status).toBe(200)
+      await expect(response.json()).resolves.toEqual({ resumoExecutivo: 'ok' })
+      expect(simularMock).toHaveBeenCalledWith({ ...entrada, cnae: '6204-0/00' })
+      expect(gerarDiagnosticoFiscalMock).toHaveBeenCalledWith(resultado)
+    })
   })
 
-  it('rejects invalid payloads before calling Anthropic', async () => {
-    const response = await POST(makeRequest({ entrada: { ...entrada, mesAtual: 13 } }))
+  describe('GET', () => {
+    it('requires authentication when loading the latest saved simulation', async () => {
+      createClientMock.mockResolvedValue(makeServerClient(null))
 
-    expect(response.status).toBe(400)
-    expect(gerarDiagnosticoFiscalMock).not.toHaveBeenCalled()
-  })
+      const response = await GET(makeRequest())
 
-  it('rejects unknown CNAEs before calling Anthropic', async () => {
-    getCnaeMock.mockReturnValueOnce(undefined)
+      expect(response.status).toBe(401)
+      expect(gerarDiagnosticoFiscalMock).not.toHaveBeenCalled()
+    })
 
-    const response = await POST(makeRequest({ entrada }))
+    it('returns 404 when the authenticated user has no saved simulation', async () => {
+      const response = await GET(makeRequest())
 
-    expect(response.status).toBe(400)
-    expect(gerarDiagnosticoFiscalMock).not.toHaveBeenCalled()
-  })
+      expect(response.status).toBe(404)
+      expect(gerarDiagnosticoFiscalMock).not.toHaveBeenCalled()
+    })
 
-  it('recalculates the simulation server-side before generating the diagnosis', async () => {
-    const response = await POST(makeRequest({
-      entrada,
-      resultado: { entrada: { ...entrada, cnae: 'malicious' } },
-    }))
+    it('generates a diagnosis from the latest saved simulation', async () => {
+      createClientMock.mockResolvedValue(makeServerClient({ id: 'user-1' }, [{ resultado }]))
 
-    expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({ resumoExecutivo: 'ok' })
-    expect(simularMock).toHaveBeenCalledWith({ ...entrada, cnae: '6204-0/00' })
-    expect(gerarDiagnosticoFiscalMock).toHaveBeenCalledWith(resultado)
-  })
+      const response = await GET(makeRequest())
 
-  it('requires authentication when loading the latest saved simulation', async () => {
-    createClientMock.mockResolvedValue(makeServerClient(null))
-
-    const response = await GET()
-
-    expect(response.status).toBe(401)
-    expect(gerarDiagnosticoFiscalMock).not.toHaveBeenCalled()
-  })
-
-  it('returns 404 when the authenticated user has no saved simulation', async () => {
-    const response = await GET()
-
-    expect(response.status).toBe(404)
-    expect(gerarDiagnosticoFiscalMock).not.toHaveBeenCalled()
-  })
-
-  it('generates a diagnosis from the latest saved simulation', async () => {
-    createClientMock.mockResolvedValue(makeServerClient({ id: 'user-1' }, [{ resultado }]))
-
-    const response = await GET()
-
-    expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({ resumoExecutivo: 'ok' })
-    expect(gerarDiagnosticoFiscalMock).toHaveBeenCalledWith(resultado)
+      expect(response.status).toBe(200)
+      await expect(response.json()).resolves.toEqual({ resumoExecutivo: 'ok' })
+      expect(gerarDiagnosticoFiscalMock).toHaveBeenCalledWith(resultado)
+    })
   })
 })

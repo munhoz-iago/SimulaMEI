@@ -5,6 +5,7 @@
 // vaga CLT com salario equivalente a receita atual dividida por 12.
 
 import type { ResultadoCLT } from '@/types/tributario'
+import { SALARIO_MINIMO_2026 } from '@/constants/tributario'
 
 // Tabela INSS 2026 - aliquotas progressivas por faixa (empregado)
 // Base no salario minimo de R$ 1.518
@@ -71,7 +72,8 @@ function calcularIRRFMensal(salarioBruto: number, inss: number): number {
  * @param receitaAnual - Receita bruta anual projetada (base para salario equivalente)
  */
 export function calcularCLT(receitaAnual: number): ResultadoCLT {
-  const salarioBruto = receitaAnual / 12
+  // Garantir que o salário não seja inferior ao mínimo
+  const salarioBruto = Math.max(receitaAnual / 12, SALARIO_MINIMO_2026)
 
   // Encargos mensais do empregado
   const inssEmpregadoMensal  = calcularINSSProgressivo(salarioBruto)

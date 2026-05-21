@@ -4,6 +4,11 @@ import { createClient } from '@/lib/supabase/server'
 import { gerarDiagnosticoFiscal } from '@/lib/ai/diagnostico'
 import { getCnae, normalizeCnaeCode, simular } from '@/lib/tributario'
 import type { EntradaSimulacao, ResultadoSimulacao } from '@/types/tributario'
+import { PUBLIC_RATE_LIMITS } from '@/constants/security'
+import { applyRateLimitHeaders, consumeRateLimit } from '@/lib/security/rate-limit'
+import { hashIpAddress } from '@/lib/security/hash'
+import { getClientIp } from '@/lib/security/request'
+import { logger } from '@/lib/logger'
 
 interface SimulationRow {
   resultado: ResultadoSimulacao
@@ -43,11 +48,30 @@ function toEntradaSimulacao(entrada: z.infer<typeof diagnosticoPostSchema>['entr
   }
 }
 
+async function applyDiagnosticoRateLimit(req: NextRequest) {
+  const ipHash = hashIpAddress(getClientIp(req))
+  return consumeRateLimit({
+    namespace: 'diagnostico',
+    subjectHash: ipHash,
+    limit: PUBLIC_RATE_LIMITS.diagnostico.limit,
+    windowSeconds: PUBLIC_RATE_LIMITS.diagnostico.windowSeconds,
+  })
+}
+
 // POST /api/diagnostico
 // Body: { entrada: EntradaSimulacao } — recalcula a simulação no servidor
 // GET  /api/diagnostico — busca a última simulação do usuário autenticado
 export async function POST(req: NextRequest) {
   try {
+    const rateLimit = await applyDiagnosticoRateLimit(req)
+    if (!rateLimit.allowed) {
+      return applyRateLimitHeaders(
+        NextResponse.json({ error: 'Limite de diagnósticos atingido. Tente novamente mais tarde.' }, { status: 429 }),
+        rateLimit,
+        PUBLIC_RATE_LIMITS.diagnostico.limit,
+      )
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -68,15 +92,24 @@ export async function POST(req: NextRequest) {
 
     const resultado = simular(entrada)
     const diagnostico = await gerarDiagnosticoFiscal(resultado)
-    return NextResponse.json(diagnostico)
+    return applyRateLimitHeaders(NextResponse.json(diagnostico), rateLimit, PUBLIC_RATE_LIMITS.diagnostico.limit)
   } catch (err) {
-    console.error('[/api/diagnostico] POST error:', err)
+    logger.error('/api/diagnostico', 'POST error', err)
     return NextResponse.json({ error: 'Erro ao gerar diagnóstico fiscal.' }, { status: 500 })
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const rateLimit = await applyDiagnosticoRateLimit(req)
+    if (!rateLimit.allowed) {
+      return applyRateLimitHeaders(
+        NextResponse.json({ error: 'Limite de diagnósticos atingido. Tente novamente mais tarde.' }, { status: 429 }),
+        rateLimit,
+        PUBLIC_RATE_LIMITS.diagnostico.limit,
+      )
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -97,9 +130,9 @@ export async function GET() {
     }
 
     const diagnostico = await gerarDiagnosticoFiscal(latest)
-    return NextResponse.json(diagnostico)
+    return applyRateLimitHeaders(NextResponse.json(diagnostico), rateLimit, PUBLIC_RATE_LIMITS.diagnostico.limit)
   } catch (err) {
-    console.error('[/api/diagnostico] GET error:', err)
+    logger.error('/api/diagnostico', 'GET error', err)
     return NextResponse.json({ error: 'Erro ao gerar diagnóstico fiscal.' }, { status: 500 })
   }
 }

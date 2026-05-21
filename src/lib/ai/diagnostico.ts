@@ -1,63 +1,99 @@
-import Anthropic from '@anthropic-ai/sdk'
-import type { ResultadoSimulacao } from '@/types/tributario'
-import { getCnae } from '@/lib/tributario'
+import Anthropic from "@anthropic-ai/sdk";
+import type { ResultadoSimulacao } from "@/types/tributario";
+import { getCnae } from "@/lib/tributario";
+import { logger } from "@/lib/logger";
 
-const DIAGNOSTICO_MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5'
-const DIAGNOSTICO_MAX_TOKENS = 1024
+const DIAGNOSTICO_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5";
+const DIAGNOSTICO_MAX_TOKENS = 1024;
+
+function createFallbackDiagnostico(): DiagnosticoFiscal {
+  return {
+    resumoExecutivo:
+      "Não foi possível gerar o diagnóstico automático. Por favor, consulte um contador.",
+    situacaoTeto: {
+      diagnostico: "indisponível",
+      interpretacao:
+        "O serviço de diagnóstico está temporariamente indisponível.",
+      acaoRecomendada:
+        "Entre em contato com o suporte ou consulte um contador.",
+    },
+    oportunidadesFiscais: [],
+    proximosPassos: [
+      {
+        ordem: 1,
+        acao: "Consulte um contador para análise fiscal personalizada",
+        motivo: "O diagnóstico automático não pôde ser gerado",
+      },
+    ],
+    alertas: [
+      {
+        tipo: "risco",
+        mensagem: "Diagnóstico automático indisponível. Consulte um contador.",
+      },
+    ],
+    perguntasParaContador: [
+      "O diagnóstico automático falhou. Pode revisar minha situação fiscal manualmente?",
+    ],
+    error: "parse_failed",
+  } as DiagnosticoFiscal & { error: string };
+}
 
 export interface DiagnosticoFiscal {
-  resumoExecutivo: string
+  resumoExecutivo: string;
   situacaoTeto: {
-    diagnostico: string
-    interpretacao: string
-    acaoRecomendada: string
-  }
+    diagnostico: string;
+    interpretacao: string;
+    acaoRecomendada: string;
+  };
   oportunidadesFiscais: Array<{
-    titulo: string
-    economia: string
-    descricao: string
-    dificuldade: 'baixa' | 'média' | 'alta'
-    prazo: 'imediato' | '30 dias' | '3 meses' | '6 meses'
-  }>
+    titulo: string;
+    economia: string;
+    descricao: string;
+    dificuldade: "baixa" | "média" | "alta";
+    prazo: "imediato" | "30 dias" | "3 meses" | "6 meses";
+  }>;
   proximosPassos: Array<{
-    ordem: number
-    acao: string
-    motivo: string
-  }>
+    ordem: number;
+    acao: string;
+    motivo: string;
+  }>;
   alertas: Array<{
-    tipo: 'risco' | 'oportunidade' | 'prazo'
-    mensagem: string
-  }>
-  perguntasParaContador: string[]
+    tipo: "risco" | "oportunidade" | "prazo";
+    mensagem: string;
+  }>;
+  perguntasParaContador: string[];
 }
 
 function formatBRL(value: number): string {
-  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return value.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function buildPrompt(resultado: ResultadoSimulacao): string {
-  const { entrada, alertaTeto, fatorR, anexoAtual, comparativo } = resultado
-  const cnaeInfo = getCnae(entrada.cnae)
+  const { entrada, alertaTeto, fatorR, anexoAtual, comparativo } = resultado;
+  const cnaeInfo = getCnae(entrada.cnae);
 
-  const simplesAtual = comparativo.simplesAnexoAtual
-  const presumido = comparativo.presumido
-  const real = comparativo.real
-  const melhorRegime = comparativo.melhorRegime
+  const simplesAtual = comparativo.simplesAnexoAtual;
+  const presumido = comparativo.presumido;
+  const real = comparativo.real;
+  const melhorRegime = comparativo.melhorRegime;
 
   const melhorRegimeLabel: Record<string, string> = {
     simplesAtual: `Simples Nacional (Anexo ${anexoAtual})`,
-    simplesOtimo: 'Simples Nacional (Anexo III)',
-    presumido: 'Lucro Presumido',
-    real: 'Lucro Real',
-  }
+    simplesOtimo: "Simples Nacional (Anexo III)",
+    presumido: "Lucro Presumido",
+    real: "Lucro Real",
+  };
 
-  const custoAtual = simplesAtual.dasAnual
+  const custoAtual = simplesAtual.dasAnual;
   return `Você é um consultor tributário especializado em MEI e Simples Nacional no Brasil.
 Analise os dados fiscais abaixo e produza um relatório de diagnóstico empresarial em português, com linguagem acessível para um empreendedor — não para um contador.
 
 ## Dados do negócio
 
-CNAE: ${entrada.cnae} — ${cnaeInfo?.descricao ?? 'Atividade não identificada'} (${cnaeInfo?.categoria ?? ''})
+CNAE: ${entrada.cnae} — ${cnaeInfo?.descricao ?? "Atividade não identificada"} (${cnaeInfo?.categoria ?? ""})
 Tipo MEI: ${entrada.tipoMei}
 Mês atual: ${entrada.mesAtual}/2026
 Faturamento acumulado: R$ ${formatBRL(alertaTeto.faturamentoAcumulado)}
@@ -72,10 +108,14 @@ Anexo atual do Simples: ${anexoAtual}
 Alíquota efetiva atual: ${simplesAtual.aliquotaEfetiva.toFixed(2)}%
 DAS anual estimado: R$ ${formatBRL(simplesAtual.dasAnual)}
 
-${fatorR ? `Fator R: ${fatorR.fatorRPercent.toFixed(1)}% — ${fatorR.atingeMinimo ? 'Elegível ao Anexo III' : 'Abaixo de 28%, no Anexo V'}
+${
+  fatorR
+    ? `Fator R: ${fatorR.fatorRPercent.toFixed(1)}% — ${fatorR.atingeMinimo ? "Elegível ao Anexo III" : "Abaixo de 28%, no Anexo V"}
 Anexo resultante pelo Fator R: ${fatorR.anexoResultante}
 Pró-labore mínimo para atingir 28%: R$ ${formatBRL(fatorR.proLaboreMinimo)}/mês
-Economia anual estimada se elegível Anexo III: R$ ${formatBRL(fatorR.economiaAnual)}` : 'Fator R: não se aplica ao CNAE informado'}
+Economia anual estimada se elegível Anexo III: R$ ${formatBRL(fatorR.economiaAnual)}`
+    : "Fator R: não se aplica ao CNAE informado"
+}
 
 Comparativo de regimes:
 - Simples Nacional (Anexo ${anexoAtual}): R$ ${formatBRL(custoAtual)}/ano (${simplesAtual.aliquotaEfetiva.toFixed(2)}%)
@@ -128,27 +168,38 @@ Regras:
 - Máximo 3 alertas
 - Máximo 4 perguntas para o contador
 - Nunca mencione valores fictícios — use apenas os dados fornecidos
-- ${fatorR ? 'Analise a oportunidade do Fator R com os dados fornecidos' : 'Não mencione Fator R pois não se aplica ao CNAE informado'}
-- Tom: direto, encorajador, sem alarmismo desnecessário`
+- ${fatorR ? "Analise a oportunidade do Fator R com os dados fornecidos" : "Não mencione Fator R pois não se aplica ao CNAE informado"}
+- Tom: direto, encorajador, sem alarmismo desnecessário`;
 }
 
 export async function gerarDiagnosticoFiscal(
   resultado: ResultadoSimulacao,
 ): Promise<DiagnosticoFiscal> {
-  const client = new Anthropic()
-  const prompt = buildPrompt(resultado)
+  const client = new Anthropic();
+  const prompt = buildPrompt(resultado);
 
   const response = await client.messages.create({
     model: DIAGNOSTICO_MODEL,
     max_tokens: DIAGNOSTICO_MAX_TOKENS,
-    messages: [{ role: 'user', content: prompt }],
-  })
+    messages: [{ role: "user", content: prompt }],
+  });
 
-  const textBlock = response.content.find((b) => b.type === 'text')
-  if (!textBlock || textBlock.type !== 'text') {
-    throw new Error('Resposta inesperada da API Claude')
+  const textBlock = response.content.find((b) => b.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    throw new Error("Resposta inesperada da API Claude");
   }
 
-  const json = textBlock.text.trim()
-  return JSON.parse(json) as DiagnosticoFiscal
+  const json = textBlock.text.trim();
+
+  try {
+    return JSON.parse(json) as DiagnosticoFiscal;
+  } catch (parseError) {
+    const truncatedText = json.length > 200 ? json.slice(0, 200) + "..." : json;
+    logger.error("diagnostico.parse", "Falha ao parsear resposta da IA", {
+      error: parseError instanceof Error ? parseError.message : "unknown",
+      rawText: truncatedText,
+      cnae: resultado.entrada.cnae,
+    });
+    return createFallbackDiagnostico();
+  }
 }

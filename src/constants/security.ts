@@ -11,4 +11,9 @@ export const PUBLIC_RATE_LIMITS = {
     limit: 5,
     windowSeconds: 60 * 60,
   },
+  diagnostico: {
+    // Endpoint de IA: limitar para evitar abuso de custos
+    limit: 10,
+    windowSeconds: 60 * 60,
+  },
 } as const
