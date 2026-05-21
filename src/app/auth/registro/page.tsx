@@ -1,16 +1,20 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { AuthAlert, AuthCard, AuthDivider, AuthPage, GoogleIcon } from '@/components/auth/AuthScaffold'
 import { createClient } from '@/lib/supabase/client'
 import { getOAuthErrorMessage, getSignupSubmissionFeedback } from '@/lib/auth/messages'
 
 type AuthStep = 'idle' | 'loading' | 'error' | 'success'
 
-export default function RegistroPage() {
+function RegistroForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const nextParam = searchParams.get('next') ?? '/dashboard'
+  const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/'
+
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [confirmar, setConfirmar] = useState('')
@@ -43,12 +47,12 @@ export default function RegistroPage() {
       email,
       password: senha,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     })
 
     if (data.session) {
-      router.push('/dashboard')
+      router.push(next)
       router.refresh()
       return
     }
@@ -73,7 +77,7 @@ export default function RegistroPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     })
 
     if (error) {
@@ -205,11 +209,23 @@ export default function RegistroPage() {
 
         <p className="auth-footer" style={{ marginTop: 16 }}>
           Já tem conta?{' '}
-          <Link href="/auth/login">
+          <Link href={next === '/dashboard' ? '/auth/login' : `/auth/login?next=${encodeURIComponent(next)}`}>
             Entrar
           </Link>
         </p>
       </AuthCard>
     </AuthPage>
+  )
+}
+
+export default function RegistroPage() {
+  return (
+    <Suspense fallback={
+      <main className="auth-page">
+        <span className="auth-copy">Carregando...</span>
+      </main>
+    }>
+      <RegistroForm />
+    </Suspense>
   )
 }

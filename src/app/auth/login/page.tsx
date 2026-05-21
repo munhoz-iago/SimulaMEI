@@ -230,7 +230,7 @@ function LoginForm() {
 
         <p className="auth-footer">
           Não tem conta?{' '}
-          <Link href="/auth/registro">
+          <Link href={next === '/dashboard' ? '/auth/registro' : `/auth/registro?next=${encodeURIComponent(next)}`}>
             Criar conta grátis
           </Link>
         </p>
