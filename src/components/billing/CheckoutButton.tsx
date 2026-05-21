@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { captureProductEvent, type ProductEventName } from '@/lib/analytics/events'
+import { buildCheckoutAuthRedirectUrl } from './checkout-auth-redirect'
 
 type CheckoutState = 'idle' | 'loading' | 'office_missing'
 
@@ -11,6 +12,7 @@ export function CheckoutButton({
   children,
   eventName,
   officeRequired,
+  planForAuth,
   style,
 }: {
   endpoint: string
@@ -18,6 +20,13 @@ export function CheckoutButton({
   eventName: ProductEventName
   /** Se true, trata 403 office_not_found com CTA em vez de mensagem de erro genérica */
   officeRequired?: boolean
+  /**
+   * Se setada, ao receber 401 (autenticação obrigatória) o componente
+   * captura `checkout_auth_required` e redireciona para o login com
+   * deep-link `?next=/upgrade/contador?autocheckout=<plan>&plan=<plan>`.
+   * Ausente → 401 cai no fallback genérico de erro.
+   */
+  planForAuth?: 'starter' | 'pro'
   style?: React.CSSProperties
 }) {
   const [state, setState] = useState<CheckoutState>('idle')
@@ -33,6 +42,12 @@ export function CheckoutButton({
 
     if (response.status === 403 && officeRequired) {
       setState('office_missing')
+      return
+    }
+
+    if (response.status === 401 && planForAuth) {
+      captureProductEvent('checkout_auth_required', { plan: planForAuth, endpoint })
+      window.location.href = buildCheckoutAuthRedirectUrl(planForAuth)
       return
     }
 

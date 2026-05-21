@@ -404,6 +404,7 @@ export default async function AccountantUpgradePage({
                   endpoint={plan.endpoint}
                   eventName="accountant_checkout_started"
                   officeRequired
+                  planForAuth={plan.planKey}
                   style={{
                     minHeight: 42,
                     background: plan.recommended ? 'var(--lime)' : 'var(--bg2)',

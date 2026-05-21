@@ -446,6 +446,7 @@ export default async function AccountantBillingPage() {
                     <CheckoutButton
                       endpoint={option.endpoint}
                       eventName="accountant_checkout_started"
+                      planForAuth={option.plan}
                       style={{
                         minHeight: 40,
                         background: option.recommended ? 'var(--lime)' : 'var(--bg2)',
