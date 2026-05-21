@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { captureProductEvent } from '@/lib/analytics/events'
-
-const ENDPOINT_BY_PLAN = {
-  starter: '/api/checkout/accountant-starter',
-  pro: '/api/checkout/accountant-pro',
-} as const
+import {
+  ACCOUNTANT_CHECKOUT_ENDPOINTS,
+  type AccountantPaidPlan,
+} from '@/lib/accountant/billing'
 
 type Status = 'firing' | 'failed'
 
@@ -18,21 +17,22 @@ type Status = 'firing' | 'failed'
  * manual da página abaixo.
  *
  * `useRef` guard impede double-fire em re-renders / Strict Mode.
- *
- * NÃO está montado em nenhuma página ainda — montagem é Task #30.
+ * `AbortController` cancela o fetch se o usuário navegar mid-request
+ * (evita setState em componente unmounted e sessão Stripe órfã).
  */
-export function AutoCheckoutTrigger({ plan }: { plan: 'starter' | 'pro' }) {
+export function AutoCheckoutTrigger({ plan }: { plan: AccountantPaidPlan }) {
   const triggered = useRef(false)
   const [status, setStatus] = useState<Status>('firing')
 
   useEffect(() => {
     if (triggered.current) return
     triggered.current = true
+    const ctrl = new AbortController()
 
     ;(async () => {
       try {
-        const endpoint = ENDPOINT_BY_PLAN[plan]
-        const response = await fetch(endpoint, { method: 'POST' })
+        const endpoint = ACCOUNTANT_CHECKOUT_ENDPOINTS[plan]
+        const response = await fetch(endpoint, { method: 'POST', signal: ctrl.signal })
         const payload = await response.json().catch(() => null) as { url?: string; error?: string } | null
 
         if (!response.ok || !payload?.url) {
@@ -42,10 +42,13 @@ export function AutoCheckoutTrigger({ plan }: { plan: 'starter' | 'pro' }) {
 
         captureProductEvent('checkout_resumed_after_login', { plan })
         window.location.href = payload.url
-      } catch {
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return
         setStatus('failed')
       }
     })()
+
+    return () => ctrl.abort()
   }, [plan])
 
   if (status === 'failed') return null

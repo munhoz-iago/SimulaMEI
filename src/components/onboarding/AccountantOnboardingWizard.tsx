@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ACCOUNTANT_CLIENT_RANGES, ACCOUNTANT_TOOL_OPTIONS } from '@/lib/accountant/leads'
+import type { AccountantPaidPlan } from '@/lib/accountant/billing'
 
 type SaveState = 'idle' | 'saving' | 'error'
 
@@ -34,7 +35,13 @@ function Label({ htmlFor, children }: { htmlFor: string; children: React.ReactNo
   )
 }
 
-export function AccountantOnboardingWizard({ email }: { email: string }) {
+export function AccountantOnboardingWizard({
+  email,
+  plan,
+}: {
+  email: string
+  plan?: AccountantPaidPlan | null
+}) {
   const router = useRouter()
   const [state, setState] = useState<SaveState>('idle')
   const [error, setError] = useState('')
@@ -70,7 +77,11 @@ export function AccountantOnboardingWizard({ email }: { email: string }) {
       return
     }
 
-    router.push('/contador')
+    if (plan) {
+      router.push(`/upgrade/contador?autocheckout=${plan}&plan=${plan}`)
+    } else {
+      router.push('/contador')
+    }
     router.refresh()
   }
 

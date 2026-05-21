@@ -20,6 +20,16 @@ export const ACCOUNTANT_PLAN_PRODUCTS: Record<AccountantPaidPlan, AccountantChec
   pro: 'accountant_pro',
 }
 
+/**
+ * Source-of-truth para os endpoints de checkout dos planos contador.
+ * Centraliza as URLs em vez de espalhar literais 'starter' | 'pro' →
+ * '/api/checkout/accountant-<plan>' em múltiplos componentes.
+ */
+export const ACCOUNTANT_CHECKOUT_ENDPOINTS: Record<AccountantPaidPlan, string> = {
+  starter: '/api/checkout/accountant-starter',
+  pro: '/api/checkout/accountant-pro',
+} as const
+
 const ACCOUNTANT_PRODUCT_PLANS: Record<string, AccountantPaidPlan> = {
   accountant_starter: 'starter',
   accountant_pro: 'pro',

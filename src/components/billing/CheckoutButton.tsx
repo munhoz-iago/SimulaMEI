@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { captureProductEvent, type ProductEventName } from '@/lib/analytics/events'
+import type { AccountantPaidPlan } from '@/lib/accountant/billing'
 import { buildCheckoutAuthRedirectUrl } from './checkout-auth-redirect'
 
 type CheckoutState = 'idle' | 'loading' | 'office_missing'
@@ -26,7 +27,7 @@ export function CheckoutButton({
    * deep-link `?next=/upgrade/contador?autocheckout=<plan>&plan=<plan>`.
    * Ausente → 401 cai no fallback genérico de erro.
    */
-  planForAuth?: 'starter' | 'pro'
+  planForAuth?: AccountantPaidPlan
   style?: React.CSSProperties
 }) {
   const [state, setState] = useState<CheckoutState>('idle')

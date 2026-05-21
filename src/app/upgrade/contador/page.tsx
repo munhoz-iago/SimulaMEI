@@ -1,9 +1,11 @@
 import Link from 'next/link'
+import { AutoCheckoutTrigger } from '@/components/billing/AutoCheckoutTrigger'
 import { CheckoutButton } from '@/components/billing/CheckoutButton'
 import { ScrollToFocusedPlan } from '@/components/billing/ScrollToFocusedPlan'
 import { StaticPageLayout } from '@/components/layout/StaticPageLayout'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentAccountantOffice } from '@/lib/accountant/server'
+import { isAccountantPaidPlan, type AccountantPaidPlan } from '@/lib/accountant/billing'
 import { getSiteUrl } from '@/constants/site'
 
 const PAGE_TITLE = 'Planos para Contadores — SimulaMEI'
@@ -97,6 +99,7 @@ interface SearchParams {
   plan?: string
   session_id?: string
   focus?: string
+  autocheckout?: string
 }
 
 export default async function AccountantUpgradePage({
@@ -111,6 +114,10 @@ export default async function AccountantUpgradePage({
   // e dispara auto-scroll para reduzir cliques até o checkout do Stripe.
   const focusedPlan: 'starter' | 'pro' | null =
     params.focus === 'starter' || params.focus === 'pro' ? params.focus : null
+  // Plano vindo do deep-link pós-login (?autocheckout=starter|pro) — monta
+  // o AutoCheckoutTrigger quando user está logado, tem escritório e é owner.
+  const autocheckoutPlan: AccountantPaidPlan | null =
+    isAccountantPaidPlan(params.autocheckout) ? params.autocheckout : null
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -121,6 +128,9 @@ export default async function AccountantUpgradePage({
   const hasOffice = officeResult ? Boolean(officeResult.office) : null
   const currentPlan = officeResult?.office?.plan
   const isOwner = officeResult?.office?.role === 'owner'
+
+  const shouldAutoCheckout =
+    autocheckoutPlan !== null && Boolean(user) && hasOffice === true && isOwner === true
 
   return (
     <StaticPageLayout
@@ -199,6 +209,11 @@ export default async function AccountantUpgradePage({
         </div>
       )}
 
+      {/* Auto-checkout pós-login: user logado + escritório + owner */}
+      {shouldAutoCheckout && autocheckoutPlan && (
+        <AutoCheckoutTrigger plan={autocheckoutPlan} />
+      )}
+
       {/* Banner: escritório ausente */}
       {hasOffice === false && (
         <div className="acc-fade-in" style={{
@@ -232,7 +247,7 @@ export default async function AccountantUpgradePage({
             </p>
           </div>
           <Link
-            href="/onboarding/contador"
+            href={autocheckoutPlan ? `/onboarding/contador?plan=${autocheckoutPlan}` : '/onboarding/contador'}
             className="pressable"
             style={{
               flexShrink: 0,
