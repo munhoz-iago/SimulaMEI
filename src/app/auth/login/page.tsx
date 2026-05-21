@@ -11,6 +11,7 @@ import {
   getLoginReasonFeedback,
   getOAuthErrorMessage,
 } from '@/lib/auth/messages'
+import { getLoginContextCopy } from '@/lib/auth/contextual-copy'
 
 type AuthStep = 'idle' | 'loading' | 'error' | 'success'
 
@@ -21,6 +22,9 @@ function LoginForm() {
   const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/'
   const queryErrorMessage = getLoginQueryFeedback(searchParams.get('error'))
   const queryReasonMessage = getLoginReasonFeedback(searchParams.get('reason'))
+  const contextCopy = getLoginContextCopy(next)
+  const title = contextCopy?.title ?? 'Entrar'
+  const subtitle = contextCopy?.subtitle ?? 'Acesse seu histórico de simulações e relatórios.'
 
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -110,12 +114,12 @@ function LoginForm() {
   return (
     <AuthPage>
       <AuthCard>
-        <h1 className="auth-title">Entrar</h1>
+        <h1 className="auth-title">{title}</h1>
         <p className="auth-copy" style={{ marginBottom: 28 }}>
-          Acesse seu histórico de simulações e relatórios.
+          {subtitle}
         </p>
 
-        {(next.startsWith('/dashboard/simular') || next.startsWith('/dashboard/relatorio') || next === '/relatorio') && (
+        {contextCopy?.preview && (
           <div style={{
             background: 'rgba(200,241,53,0.06)',
             border: '1px solid rgba(200,241,53,0.18)',
@@ -126,17 +130,12 @@ function LoginForm() {
             color: 'var(--text2)',
             lineHeight: 1.55,
           }}>
-            {next.startsWith('/dashboard/relatorio') || next === '/relatorio' ? (
-              <>
-                <strong style={{ color: 'var(--text1)', display: 'block', marginBottom: 6 }}>
-                  Seu relatório fica pronto após o login
-                </strong>
-                Comparativo dos 4 regimes tributários &middot; score fiscal &middot; PDF para o contador &middot; histórico salvo.
-                Sem custo, sem cartão.
-              </>
-            ) : (
-              <>Ao entrar você libera: histórico de simulações, relatório completo dos 4 regimes e alertas mensais. Sem custo, sem cartão.</>
+            {contextCopy.preview.heading && (
+              <strong style={{ color: 'var(--text1)', display: 'block', marginBottom: 6 }}>
+                {contextCopy.preview.heading}
+              </strong>
             )}
+            {contextCopy.preview.body}
           </div>
         )}
 
