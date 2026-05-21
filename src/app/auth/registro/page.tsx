@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { AuthAlert, AuthCard, AuthDivider, AuthPage, GoogleIcon } from '@/components/auth/AuthScaffold'
 import { createClient } from '@/lib/supabase/client'
 import { getOAuthErrorMessage, getSignupSubmissionFeedback } from '@/lib/auth/messages'
+import { getAuthCallbackOrigin } from '@/lib/auth/origin'
 
 type AuthStep = 'idle' | 'loading' | 'error' | 'success'
 
@@ -47,7 +48,7 @@ function RegistroForm() {
       email,
       password: senha,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        emailRedirectTo: `${getAuthCallbackOrigin()}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     })
 
@@ -77,7 +78,7 @@ function RegistroForm() {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
+      options: { redirectTo: `${getAuthCallbackOrigin()}/auth/callback?next=${encodeURIComponent(next)}` },
     })
 
     if (error) {

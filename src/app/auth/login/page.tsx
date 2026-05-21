@@ -12,6 +12,7 @@ import {
   getOAuthErrorMessage,
 } from '@/lib/auth/messages'
 import { getLoginContextCopy } from '@/lib/auth/contextual-copy'
+import { getAuthCallbackOrigin } from '@/lib/auth/origin'
 
 type AuthStep = 'idle' | 'loading' | 'error' | 'success'
 
@@ -70,7 +71,7 @@ function LoginForm() {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
+      options: { redirectTo: `${getAuthCallbackOrigin()}/auth/callback?next=${encodeURIComponent(next)}` },
     })
 
     if (error) {
@@ -96,7 +97,7 @@ function LoginForm() {
       type: 'signup',
       email: trimmedEmail,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        emailRedirectTo: `${getAuthCallbackOrigin()}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     })
 

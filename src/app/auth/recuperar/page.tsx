@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { AuthAlert, AuthCard, AuthPage } from '@/components/auth/AuthScaffold'
 import { createClient } from '@/lib/supabase/client'
+import { getAuthCallbackOrigin } from '@/lib/auth/origin'
 
 type ResetState = 'idle' | 'loading' | 'sent' | 'error'
 
@@ -23,7 +24,7 @@ function RecuperarSenhaForm() {
 
     const supabase = createClient()
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/atualizar-senha?next=${encodeURIComponent(next)}`,
+      redirectTo: `${getAuthCallbackOrigin()}/auth/atualizar-senha?next=${encodeURIComponent(next)}`,
     })
 
     if (error) {
