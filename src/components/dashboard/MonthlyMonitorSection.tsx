@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { fmt, fmtPct } from '@/lib/format'
 import type { MonthlyMonitorSummary } from '@/lib/monitor'
@@ -34,6 +34,10 @@ interface MonthlyMonitorSectionProps {
   initialTransition: TransitionPreview | null
   recentRows: RecentMonthlyRow[]
   monthlyInputsError?: string | null
+  /** Fallback opcional renderizado quando `initialSummary === null`
+   *  (perfil incompleto ou zero lançamentos). Quando ausente, renderiza
+   *  a UI normal com placeholders ('—'). */
+  emptyState?: React.ReactNode
 }
 
 function monthLabel(month: number) {
@@ -73,6 +77,7 @@ export function MonthlyMonitorSection({
   initialTransition,
   recentRows,
   monthlyInputsError,
+  emptyState,
 }: MonthlyMonitorSectionProps) {
   const router = useRouter()
   const formRef = useRef<HTMLFormElement | null>(null)
@@ -148,6 +153,14 @@ export function MonthlyMonitorSection({
     setSaving(false)
     setEditingKey(null)
     router.refresh()
+  }
+
+  // Fallback explicativo: quando o gate de monitorSummary não passou e o
+  // chamador forneceu um nó alternativo, renderiza ele em vez da UI
+  // normal com placeholders. Os hooks acima já rodaram — preserva
+  // ordem de hooks entre renders.
+  if (summary === null && emptyState) {
+    return <>{emptyState}</>
   }
 
   return (

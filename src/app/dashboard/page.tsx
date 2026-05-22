@@ -14,6 +14,8 @@ import { REGIME_LABELS } from '@/constants/tributario'
 import { FREE_SIMULATION_LIMIT, PLAN_ACCENT_COLORS, PLAN_DESCRIPTIONS, PLAN_LABELS } from '@/constants/plans'
 import { DeleteAccountSection } from '@/components/dashboard/DeleteAccountSection'
 import { MonthlyMonitorSection } from '@/components/dashboard/MonthlyMonitorSection'
+import { MonitorEmptyState } from '@/components/dashboard/MonitorEmptyState'
+import { diagnoseMonitorEmptyReason } from '@/components/dashboard/monitor-empty-state'
 import { MonitorInsights } from '@/components/dashboard/MonitorInsights'
 import { Panel } from '@/components/dashboard/Panel'
 import { Pill } from '@/components/dashboard/Pill'
@@ -204,6 +206,10 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
       mesAtual: monitorSeedRows.at(-1)?.mes ?? currentMonth,
       historico: monitorSeedRows,
     })
+    : null
+  const monitorEmptyReason = diagnoseMonitorEmptyReason(profile, monitorRows.length)
+  const monitorEmptyNode = monitorEmptyReason
+    ? <MonitorEmptyState reason={monitorEmptyReason} />
     : null
   const monitorTransition = detectAnexoTransition(monitorRows)
   const faturamentoMedio = monitorRows.length > 0
@@ -450,7 +456,7 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
           <DashboardTabs active={activeTab} />
 
           {/* ── Aba: Monitor mensal ── */}
-          {activeTab === 'monitor' && profile?.cnae_principal && profile?.tipo_mei && (
+          {activeTab === 'monitor' && (
             <section id="monitor" style={{ marginBottom: 16, scrollMarginTop: 24 }}>
               <Panel style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{
@@ -488,12 +494,12 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
                 </div>
                 <div style={{ padding: '24px 28px' }}>
                   <MonthlyMonitorSection
-                    cnae={profile.cnae_principal}
-                    tipoMei={profile.tipo_mei}
-                    defaultMonth={profile.mes_atual ?? currentMonth}
+                    cnae={profile?.cnae_principal ?? ''}
+                    tipoMei={profile?.tipo_mei ?? 'geral'}
+                    defaultMonth={profile?.mes_atual ?? currentMonth}
                     defaultYear={currentYear}
-                    defaultRevenue={profile.faturamento_mensal_estimado ?? 0}
-                    defaultPayroll={profile.folha_mensal ?? 0}
+                    defaultRevenue={profile?.faturamento_mensal_estimado ?? 0}
+                    defaultPayroll={profile?.folha_mensal ?? 0}
                     initialSummary={monitorSummary}
                     initialTransition={monitorTransition}
                     recentRows={monthlyInputs.map(item => ({
@@ -505,6 +511,7 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
                       fatorR: item.fator_r,
                     }))}
                     monthlyInputsError={monthlyInputsError}
+                    emptyState={monitorEmptyNode}
                   />
                 </div>
               </Panel>
@@ -528,7 +535,7 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
 
           {/* ── Aba: Simulações ── */}
           {activeTab === 'simulacoes' && (
-          <section style={{ display: 'grid', gridTemplateColumns: profile?.cnae_principal ? '1fr' : '1fr 380px', gap: 16, marginBottom: 16 }} className="db-row2">
+          <section style={{ display: 'grid', gridTemplateColumns: monitorEmptyNode ? '1fr 380px' : '1fr', gap: 16, marginBottom: 16 }} className="db-row2">
 
             {/* Tabela de simulações */}
             <Panel style={{ padding: 0, overflow: 'hidden' }}>
@@ -645,10 +652,10 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
               )}
             </Panel>
 
-            {/* Monitor mensal compacto — só mostra quando onboarding não foi
-                completado (cnae_principal ausente). Caso contrário, o
-                widget full-width acima já preenche esse papel. */}
-            {!profile?.cnae_principal && (
+            {/* Monitor mensal compacto — empty-state explicativo diagnosticado
+                (cnae faltando / tipo faltando / zero lançamentos). Quando o
+                gate passa, o widget full-width na tab Monitor preenche o papel. */}
+            {monitorEmptyNode && (
               <Panel style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
                   <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)', display: 'block', marginBottom: 2 }}>
@@ -656,11 +663,8 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
                   </span>
                   <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Monitor mensal</h2>
                 </div>
-                <div style={{ padding: '20px 24px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 32, marginBottom: 12 }}>📅</div>
-                  <p style={{ color: 'var(--text2)', fontSize: 13, lineHeight: 1.7, margin: '0 0 14px' }}>
-                    Complete o onboarding para ativar o monitor mensal com histórico e alerta de anexo.
-                  </p>
+                <div style={{ padding: '20px 24px' }}>
+                  {monitorEmptyNode}
                 </div>
               </Panel>
             )}
