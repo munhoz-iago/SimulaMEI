@@ -2,19 +2,32 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AccountantOnboardingWizard } from '@/components/onboarding/AccountantOnboardingWizard'
 import { getCurrentAccountantOffice } from '@/lib/accountant/server'
+import { isAccountantPaidPlan, type AccountantPaidPlan } from '@/lib/accountant/billing'
 import { createClient } from '@/lib/supabase/server'
+import { buildOnboardingNextUrl, buildOnboardingSuccessUrl } from './redirect-urls'
 
 export const metadata = {
   title: 'Onboarding Contador — SimulaMEI',
   description: 'Crie o escritório contábil para gerenciar carteira MEI no SimulaMEI.',
 }
 
-export default async function AccountantOnboardingPage() {
+interface SearchParams {
+  plan?: string
+}
+
+export default async function AccountantOnboardingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams>
+}) {
+  const params = searchParams ? await searchParams : {}
+  const plan: AccountantPaidPlan | null = isAccountantPaidPlan(params.plan) ? params.plan : null
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/auth/login?next=/onboarding/contador')
+    redirect(buildOnboardingNextUrl(plan))
   }
 
   const { office, error } = await getCurrentAccountantOffice(supabase, user.id, user.email)
@@ -23,7 +36,7 @@ export default async function AccountantOnboardingPage() {
   }
 
   if (office) {
-    redirect('/contador')
+    redirect(buildOnboardingSuccessUrl(plan))
   }
 
   return (
@@ -52,7 +65,7 @@ export default async function AccountantOnboardingPage() {
           </p>
         </header>
 
-        <AccountantOnboardingWizard email={user.email ?? ''} />
+        <AccountantOnboardingWizard email={user.email ?? ''} plan={plan} />
       </div>
     </main>
   )

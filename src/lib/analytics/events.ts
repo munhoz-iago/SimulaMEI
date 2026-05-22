@@ -15,6 +15,9 @@ export type ProductEventName =
   | 'accountant_signup_interest'
   | 'accountant_checkout_started'
   | 'accountant_billing_portal_opened'
+  | 'checkout_auth_required'
+  | 'checkout_resumed_after_login'
+  | 'checkout_abandoned_at_office_setup'
 
 export type LeadSaveStatus = 'saved' | 'failed'
 

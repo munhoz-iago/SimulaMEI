@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { TAX_RULE_VERSION } from '@/lib/tributario'
 import { getSiteUrl } from '@/constants/site'
+import { AccountantLeadForm } from '@/components/accountant/AccountantLeadForm'
 
 const PAGE_TITLE = 'SimulaMEI para Contadores — Painel de Carteira MEI'
 const PAGE_DESCRIPTION = 'Monitore clientes MEI com alertas de teto, Fator R, relatórios por carteira e planos para contadores a partir de R$ 97/mês, com garantia de 7 dias e suporte.'
@@ -57,7 +58,31 @@ const TRUST_POINTS = [
   'LGPD e consentimento explícito',
 ]
 
-export default function ParaContadoresPage() {
+interface SearchParams {
+  intent?: string
+}
+
+export default async function ParaContadoresPage({
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams>
+}) {
+  const params = searchParams ? await searchParams : {}
+  const intent: 'waitlist' | 'enterprise' =
+    params.intent === 'enterprise' ? 'enterprise' : 'waitlist'
+
+  const sectionTitle = intent === 'enterprise'
+    ? 'Falar com comercial'
+    : 'Entre na lista de acesso antecipado'
+  const sectionIntro = intent === 'enterprise'
+    ? 'Carteira 150+, multi-seat, white-label, SLA e integrações sob contrato. Conte um pouco do escritório que nosso time responde em até 1 dia útil.'
+    : 'Deixe seus dados e te avisamos quando o plano contador abrir. Carteiras maiores entram em fila prioritária.'
+  const mailtoSubject = encodeURIComponent(
+    intent === 'enterprise'
+      ? 'Plano Enterprise — Contato comercial'
+      : 'Plano contador — Lista de acesso antecipado'
+  )
+
   return (
     <main className="site-shell" style={{ minHeight: '100vh', background: 'var(--bg0)', color: 'var(--text1)' }}>
       <header style={{
@@ -172,7 +197,7 @@ export default function ParaContadoresPage() {
                   teto, Fator R, anexo provável e relatório para a conversa com o cliente.
                 </p>
                 <Link
-                  href="#contadores-form"
+                  href="#contato"
                   className="pressable"
                   style={{
                     justifySelf: 'start',
@@ -243,7 +268,7 @@ export default function ParaContadoresPage() {
             }}>
               <strong style={{ color: 'var(--text1)' }}>Segurança e confiança:</strong>{' '}
               dados de leads passam por consentimento LGPD; relatórios são estimativas auditáveis pelo
-              motor {TAX_RULE_VERSION}; contato comercial também pode ser feito pelo formulário desta página.
+              motor {TAX_RULE_VERSION}; contato comercial pode ser feito pelo formulário abaixo ou direto por e-mail.
             </div>
           </div>
 
@@ -337,6 +362,78 @@ export default function ParaContadoresPage() {
                 Garantia de 7 dias. Cancele quando quiser, sem fidelidade.
               </p>
             </div>
+          </aside>
+        </div>
+      </section>
+
+      <section
+        id="contato"
+        aria-labelledby="contato-title"
+        style={{ padding: '56px 0', borderTop: '1px solid var(--border)', background: 'var(--bg1)' }}
+      >
+        <div
+          className="section-shell accountant-contato-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)',
+            gap: 32,
+            alignItems: 'start',
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14 }}>
+              <span style={{ width: 30, height: 2, background: 'var(--lime)' }} />
+              <span style={{ color: 'var(--lime)', fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0 }}>
+                {intent === 'enterprise' ? 'Plano Enterprise' : 'Acesso antecipado'}
+              </span>
+            </div>
+            <h2
+              id="contato-title"
+              style={{ fontSize: 'clamp(26px, 3.4vw, 36px)', lineHeight: 1.1, marginBottom: 12, textWrap: 'balance' }}
+            >
+              {sectionTitle}
+            </h2>
+            <p style={{ color: 'var(--text2)', fontSize: 15, lineHeight: 1.65, marginBottom: 24, maxWidth: 560 }}>
+              {sectionIntro}
+            </p>
+            <AccountantLeadForm
+              intent={intent}
+              source={intent === 'enterprise' ? 'enterprise-cta' : 'para-contadores'}
+            />
+          </div>
+
+          <aside
+            style={{
+              border: '1px solid var(--border)',
+              background: 'var(--bg2)',
+              borderRadius: 'var(--radius-lg)',
+              padding: 22,
+              minWidth: 0,
+              alignSelf: 'start',
+            }}
+          >
+            <div style={{ color: 'var(--text3)', fontSize: 11, fontWeight: 900, textTransform: 'uppercase', marginBottom: 10 }}>
+              Prefere e-mail?
+            </div>
+            <p style={{ color: 'var(--text2)', fontSize: 14, lineHeight: 1.6, margin: '0 0 12px' }}>
+              Pode escrever direto pra gente — a caixa cai no mesmo time comercial.
+            </p>
+            <a
+              href={`mailto:contato@simulamei.com.br?subject=${mailtoSubject}`}
+              style={{
+                display: 'inline-block',
+                color: 'var(--lime)',
+                fontWeight: 800,
+                fontSize: 14,
+                wordBreak: 'break-all',
+                textDecoration: 'underline',
+              }}
+            >
+              contato@simulamei.com.br
+            </a>
+            <p style={{ color: 'var(--text3)', fontSize: 12, lineHeight: 1.5, margin: '12px 0 0' }}>
+              Respondemos em até 1 dia útil.
+            </p>
           </aside>
         </div>
       </section>
