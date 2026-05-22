@@ -89,6 +89,15 @@ export function OperationsCard({ profile }: OperationsCardProps) {
   const folhaRef = useRef<HTMLInputElement>(null)
   const objetivoRef = useRef<HTMLInputElement>(null)
   const [mesAtual, setMesAtual] = useState<number>(profile?.mes_atual ?? new Date().getMonth() + 1)
+  // Flag explícito: só inclui mesAtual no payload se o usuário efetivamente
+  // moveu o select. Sem isso, o default visual (`new Date().getMonth() + 1`)
+  // seria sempre considerado "diferente de null" e persistido no primeiro save.
+  const [mesTouched, setMesTouched] = useState(false)
+
+  function handleMesChange(value: number) {
+    setMesAtual(value)
+    setMesTouched(true)
+  }
 
   const view = (
     <div style={{ display: 'grid', gap: 12 }}>
@@ -160,7 +169,7 @@ export function OperationsCard({ profile }: OperationsCardProps) {
         <select
           id={mesId}
           value={mesAtual}
-          onChange={e => setMesAtual(Number(e.target.value))}
+          onChange={e => handleMesChange(Number(e.target.value))}
           style={inputStyle}
         >
           {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
@@ -200,7 +209,7 @@ export function OperationsCard({ profile }: OperationsCardProps) {
       payload.folhaMensal = folha
     }
 
-    if (mesAtual !== (profile?.mes_atual ?? null)) {
+    if (mesTouched && mesAtual !== profile?.mes_atual) {
       payload.mesAtual = mesAtual
     }
 

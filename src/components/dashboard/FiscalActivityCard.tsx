@@ -70,6 +70,15 @@ export function FiscalActivityCard({ profile }: FiscalActivityCardProps) {
   const initialCnae = profile?.cnae_principal ? getCnae(profile.cnae_principal) : null
   const [cnaeValue, setCnaeValue] = useState<CnaeInfo | null>(initialCnae ?? null)
   const [tipoMei, setTipoMei] = useState<TipoMei>(profile?.tipo_mei ?? 'geral')
+  // Flag explícito: só inclui tipoMei no payload se o usuário efetivamente
+  // mudou o radio. Sem isso, o default 'geral' (arbitrário) seria persistido
+  // no primeiro save de qualquer outro campo, mesmo se o profile real for null.
+  const [tipoTouched, setTipoTouched] = useState(false)
+
+  function handleTipoMeiChange(value: TipoMei) {
+    setTipoMei(value)
+    setTipoTouched(true)
+  }
 
   const municipioRef = useRef<HTMLInputElement>(null)
   const ufRef = useRef<HTMLInputElement>(null)
@@ -125,7 +134,7 @@ export function FiscalActivityCard({ profile }: FiscalActivityCardProps) {
               name={tipoMeiName}
               value="geral"
               checked={tipoMei === 'geral'}
-              onChange={() => setTipoMei('geral')}
+              onChange={() => handleTipoMeiChange('geral')}
             />
             MEI geral
           </label>
@@ -135,7 +144,7 @@ export function FiscalActivityCard({ profile }: FiscalActivityCardProps) {
               name={tipoMeiName}
               value="caminhoneiro"
               checked={tipoMei === 'caminhoneiro'}
-              onChange={() => setTipoMei('caminhoneiro')}
+              onChange={() => handleTipoMeiChange('caminhoneiro')}
             />
             MEI caminhoneiro
           </label>
@@ -180,7 +189,7 @@ export function FiscalActivityCard({ profile }: FiscalActivityCardProps) {
       payload.cnaePrincipal = newCnae
     }
 
-    if (tipoMei !== (profile?.tipo_mei ?? 'geral')) {
+    if (tipoTouched && tipoMei !== profile?.tipo_mei) {
       payload.tipoMei = tipoMei
     }
 
