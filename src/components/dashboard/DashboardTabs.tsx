@@ -3,21 +3,12 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useTransition } from 'react'
+import { TABS, type DashboardTab } from './dashboard-tabs-shared'
 
-const TABS = [
-  { id: 'monitor', label: 'Monitor mensal' },
-  { id: 'fator-r', label: 'Fator R' },
-  { id: 'simulacoes', label: 'Simulações' },
-  { id: 'agenda', label: 'Agenda fiscal' },
-  { id: 'conta', label: 'Conta' },
-] as const
-
-export type DashboardTab = typeof TABS[number]['id']
-
-export function parseDashboardTab(raw: string | string[] | undefined): DashboardTab {
-  const v = Array.isArray(raw) ? raw[0] : raw
-  return TABS.some(t => t.id === v) ? (v as DashboardTab) : 'monitor'
-}
+// Re-exporta o tipo pra preservar callers que importavam dele aqui.
+// (Tipos cruzam o boundary client/server sem problema — só funções/valores
+// disparam o erro "X is on the client".)
+export type { DashboardTab }
 
 interface Props {
   active: DashboardTab
