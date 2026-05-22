@@ -16,7 +16,13 @@ import { logger } from "@/lib/logger";
 interface MonthlyInputPayload {
   ano: number;
   mes: number;
-  faturamentoMes: number;
+  /**
+   * Faturamento mensal real. OPCIONAL — quando omitido, o endpoint preserva
+   * o `faturamento_mes` já salvo (modo "update folha apenas" usado pelo
+   * auto-save do Fator R, que não tem o faturamento real). Se a row ainda
+   * não existir e o payload vier sem faturamentoMes, o endpoint retorna 400.
+   */
+  faturamentoMes?: number;
   folhaMes: number;
   cnae: string;
   tipoMei: TipoMei;
@@ -52,7 +58,12 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as MonthlyInputPayload;
     const ano = Number(body.ano);
     const mes = Number(body.mes);
-    const faturamentoMes = Number(body.faturamentoMes);
+    // faturamentoMes é opcional. Omitido = "update folha apenas" (auto-save
+    // do Fator R não conhece o faturamento real; preserva o existente).
+    const faturamentoMesProvided = typeof body.faturamentoMes !== "undefined";
+    const faturamentoMes = faturamentoMesProvided
+      ? Number(body.faturamentoMes)
+      : null;
     const folhaMes = Number(body.folhaMes);
     const tipoMei = body.tipoMei;
     const cnae =
@@ -64,8 +75,9 @@ export async function POST(request: NextRequest) {
       !Number.isInteger(mes) ||
       mes < 1 ||
       mes > 12 ||
-      !Number.isFinite(faturamentoMes) ||
-      faturamentoMes < 0 ||
+      (faturamentoMesProvided &&
+        (!Number.isFinite(faturamentoMes) ||
+          (faturamentoMes as number) < 0)) ||
       !Number.isFinite(folhaMes) ||
       folhaMes < 0 ||
       !isTipoMei(tipoMei) ||
@@ -121,6 +133,24 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+
+    // Sem faturamentoMes no payload, precisamos do faturamento_mes existente
+    // pra recomputar derivados. Sem row prévia, não dá pra criar entrada
+    // só com folha (faturamento é o eixo do monitor).
+    if (!faturamentoMesProvided && !existingEntry) {
+      return NextResponse.json(
+        {
+          error:
+            "faturamentoMes obrigatório pra criar nova entrada mensal. Faça uma simulação primeiro pra registrar o faturamento real desse mês.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const effectiveFaturamentoMes = faturamentoMesProvided
+      ? (faturamentoMes as number)
+      : Number(existingEntry!.faturamento_mes);
+
     const mergedRows = [
       ...currentHistory
         .filter((item) => !(item.ano === ano && item.mes === mes))
@@ -135,7 +165,7 @@ export async function POST(request: NextRequest) {
       {
         ano,
         mes,
-        faturamentoMes,
+        faturamentoMes: effectiveFaturamentoMes,
         folhaMes,
       },
     ].sort((a, b) => a.ano * 100 + a.mes - (b.ano * 100 + b.mes));
@@ -172,7 +202,7 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           ano,
           mes,
-          faturamento_mes: faturamentoMes,
+          faturamento_mes: effectiveFaturamentoMes,
           folha_mes: folhaMes,
           cnae,
           tipo_mei: tipoMei,

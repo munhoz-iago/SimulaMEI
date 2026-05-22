@@ -59,14 +59,16 @@ export function FatorRInterativo({
   const saveFolha = useCallback(
     async (folha: number) => {
       if (!persistenceEnabled) return
-      const faturamentoMes = projecao / 12
+      // Não enviamos faturamentoMes — o endpoint preserva o faturamento_mes
+      // existente pra não sobrescrever simulações reais com projecao/12.
+      // Sem row pré-existente o endpoint retorna 400, comportamento aceitável
+      // (auto-save só dispara após uma simulação ter sido salva).
       const response = await fetch('/api/monthly-inputs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ano,
           mes,
-          faturamentoMes,
           folhaMes: folha,
           cnae,
           tipoMei,
@@ -76,7 +78,7 @@ export function FatorRInterativo({
         throw new Error(`save failed: ${response.status}`)
       }
     },
-    [persistenceEnabled, ano, mes, cnae, tipoMei, projecao],
+    [persistenceEnabled, ano, mes, cnae, tipoMei],
   )
 
   const { status: saveStatus } = useDebouncedAutoSave({
