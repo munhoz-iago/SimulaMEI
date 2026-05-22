@@ -19,16 +19,26 @@ export class DebouncedSaveScheduler<T> {
   private timer: ReturnType<typeof setTimeout> | null = null
   private lastSaved: T | undefined
   private hasLastSaved = false
+  private delay: number
 
   constructor(
     private readonly onSave: (value: T) => Promise<void>,
-    private readonly delay: number,
+    delay: number,
     private readonly onStatus: (status: AutoSaveStatus) => void,
-  ) {}
+  ) {
+    this.delay = delay
+  }
 
   setBaseline(value: T) {
     this.lastSaved = value
     this.hasLastSaved = true
+  }
+
+  /** Atualiza o delay em uso. Timer pendente NÃO é reagendado — só novos
+   *  schedule()s usam o novo valor. Comportamento intencional pra não
+   *  cancelar um save quase-concluído. */
+  setDelay(delay: number) {
+    this.delay = delay
   }
 
   schedule(value: T) {
@@ -102,6 +112,9 @@ export function useDebouncedAutoSave<T>({
         delay,
         setStatus,
       )
+    } else {
+      // Re-render com novo delay: scheduler reage sem perder baseline/state.
+      schedulerRef.current.setDelay(delay)
     }
 
     // Primeira renderização: o valor inicial é o "baseline" (já salvo),

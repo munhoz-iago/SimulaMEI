@@ -102,4 +102,34 @@ describe('DebouncedSaveScheduler', () => {
     await vi.advanceTimersByTimeAsync(2000)
     expect(onSave).toHaveBeenCalledTimes(1)
   })
+
+  it('setDelay altera o delay de schedules subsequentes', async () => {
+    const onSave = vi.fn(async () => {})
+    const sched = new DebouncedSaveScheduler(onSave, 1500, () => {})
+
+    sched.setBaseline(0)
+    sched.setDelay(500)
+    sched.schedule(100)
+
+    // Com delay novo (500ms), deve disparar em 500 — não em 1500
+    await vi.advanceTimersByTimeAsync(500)
+    expect(onSave).toHaveBeenCalledTimes(1)
+    expect(onSave).toHaveBeenCalledWith(100)
+  })
+
+  it('setDelay não cancela timer pendente (atual delay roda até o fim)', async () => {
+    const onSave = vi.fn(async () => {})
+    const sched = new DebouncedSaveScheduler(onSave, 1500, () => {})
+
+    sched.setBaseline(0)
+    sched.schedule(100)
+    await vi.advanceTimersByTimeAsync(500)
+
+    // Muda delay no meio do timer pendente
+    sched.setDelay(5000)
+
+    // Timer original de 1500 ms continua e dispara
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(onSave).toHaveBeenCalledTimes(1)
+  })
 })
