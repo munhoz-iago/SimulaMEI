@@ -18,6 +18,7 @@ export type ProductEventName =
   | 'checkout_auth_required'
   | 'checkout_resumed_after_login'
   | 'checkout_abandoned_at_office_setup'
+  | 'profile_field_updated'
 
 export type LeadSaveStatus = 'saved' | 'failed'
 
