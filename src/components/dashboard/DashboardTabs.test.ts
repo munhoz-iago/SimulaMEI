@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseDashboardTab } from './DashboardTabs'
+import { parseDashboardTab } from './dashboard-tabs-shared'
 
 describe('parseDashboardTab', () => {
   it('default monitor quando vazio', () => {
