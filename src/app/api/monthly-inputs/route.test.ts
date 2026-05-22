@@ -173,4 +173,70 @@ describe('/api/monthly-inputs POST', () => {
       tax_rule_version: expect.any(String),
     }), { onConflict: 'user_id,ano,mes' })
   })
+
+  it('preserves existing faturamento_mes when payload omits faturamentoMes (auto-save Fator R)', async () => {
+    // History contém (ano, mes) corrente com faturamento real salvo.
+    // Auto-save do Fator R só manda folhaMes — endpoint deve preservar
+    // o faturamento_mes ao invés de sobrescrever com projecao/12.
+    const now = new Date()
+    const currentYear = now.getUTCFullYear()
+    const currentMonth = now.getUTCMonth() + 1 // 1-12, sempre editável
+    const supabase = makeSupabaseMock({
+      history: [
+        {
+          ano: currentYear,
+          mes: currentMonth,
+          faturamento_mes: 12_000,
+          folha_mes: 4_000,
+          anexo_calculado: 'V',
+          fator_r: 0.24,
+        },
+      ],
+    })
+    createClientMock.mockResolvedValue(supabase.client)
+
+    const response = await POST(makeRequest({
+      ano: currentYear,
+      mes: currentMonth,
+      folhaMes: 5_500,
+      cnae: '6201-5/01',
+      tipoMei: 'geral',
+    }))
+
+    expect(response.status).toBe(200)
+    expect(supabase.upsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 'user-1',
+        ano: currentYear,
+        mes: currentMonth,
+        // CRÍTICO: preserva 12_000 ao invés de sobrescrever
+        faturamento_mes: 12_000,
+        folha_mes: 5_500,
+      }),
+      { onConflict: 'user_id,ano,mes' },
+    )
+  })
+
+  it('returns 400 when faturamentoMes is omitted and no existing row', async () => {
+    // Sem row pra (currentYear, currentMonth) — endpoint não pode adivinhar
+    // faturamento e deve recusar pra evitar inserir registro inválido.
+    const now = new Date()
+    const currentYear = now.getUTCFullYear()
+    const currentMonth = now.getUTCMonth() + 1
+    const supabase = makeSupabaseMock({ history: [] })
+    createClientMock.mockResolvedValue(supabase.client)
+
+    const response = await POST(makeRequest({
+      ano: currentYear,
+      mes: currentMonth,
+      folhaMes: 3_000,
+      cnae: '6201-5/01',
+      tipoMei: 'geral',
+    }))
+
+    expect(response.status).toBe(400)
+    const body = (await response.json()) as { error: string }
+    expect(body.error).toMatch(/faturamentoMes obrigatório/i)
+    expect(supabase.upsertMock).not.toHaveBeenCalled()
+  })
 })
