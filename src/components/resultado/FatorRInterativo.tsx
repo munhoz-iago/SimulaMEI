@@ -1,22 +1,90 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { calcularFatorR, calcularSimples } from '@/lib/tributario'
 import { FATOR_R_MINIMO } from '@/lib/tributario/fatorR'
 import { captureProductEvent } from '@/lib/analytics/events'
 import { fmt, fmtPct } from '@/lib/format'
 import { MonoVal, Tooltip } from '@/components/ui'
+import { FolhaInput } from '@/components/dashboard/FolhaInput'
+import {
+  useDebouncedAutoSave,
+  type AutoSaveStatus,
+} from '@/components/dashboard/use-debounced-auto-save'
 
 interface FatorRInterativoProps {
   projecao: number
   fatorRInicial: number
+  /** Ano da competência para persistência. Sem ele, auto-save desabilita. */
+  ano?: number
+  /** Mês (1-12) da competência para persistência. */
+  mes?: number
+  /** CNAE oficial — obrigatório no payload. */
+  cnae?: string
+  /** Tipo MEI — obrigatório no payload. */
+  tipoMei?: 'geral' | 'caminhoneiro'
 }
 
-export function FatorRInterativo({ projecao, fatorRInicial }: FatorRInterativoProps) {
+const STATUS_LABEL: Record<AutoSaveStatus, string> = {
+  idle: '',
+  saving: 'Salvando...',
+  saved: '✓ Salvo',
+  failed: 'Falha — tente de novo',
+}
+
+export function FatorRInterativo({
+  projecao,
+  fatorRInicial,
+  ano,
+  mes,
+  cnae,
+  tipoMei,
+}: FatorRInterativoProps) {
   const trackedRef = useRef(false)
   const [folhaMensal, setFolhaMensal] = useState(
     Math.max((projecao * fatorRInicial) / 12, 0)
   )
+
+  // Persistência só ativa quando todo o contexto está presente. Sem ele,
+  // o componente segue como calculadora efêmera (sem indicador).
+  const persistenceEnabled =
+    typeof ano === 'number' &&
+    typeof mes === 'number' &&
+    typeof cnae === 'string' &&
+    cnae.length > 0 &&
+    (tipoMei === 'geral' || tipoMei === 'caminhoneiro') &&
+    Number.isFinite(projecao) &&
+    projecao > 0
+
+  const saveFolha = useCallback(
+    async (folha: number) => {
+      if (!persistenceEnabled) return
+      const faturamentoMes = projecao / 12
+      const response = await fetch('/api/monthly-inputs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ano,
+          mes,
+          faturamentoMes,
+          folhaMes: folha,
+          cnae,
+          tipoMei,
+        }),
+      })
+      if (!response.ok) {
+        throw new Error(`save failed: ${response.status}`)
+      }
+    },
+    [persistenceEnabled, ano, mes, cnae, tipoMei, projecao],
+  )
+
+  const { status: saveStatus } = useDebouncedAutoSave({
+    value: folhaMensal,
+    onSave: saveFolha,
+    delay: 1500,
+    enabled: persistenceEnabled,
+  })
 
   // Defesa: sem projeção válida, o componente fica inerte e enganador.
   // Mostra um placeholder pedindo simulação real ao invés de R$ 0 em tudo.
@@ -66,10 +134,39 @@ export function FatorRInterativo({ projecao, fatorRInicial }: FatorRInterativoPr
         Arraste a folha mensal e veja o impacto no regime.
       </p>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20 }}>
-        <div>
-          <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Folha mensal simulada</div>
-          <MonoVal size={28}>{fmt(folhaMensal)}<span style={{ fontSize: 14, fontWeight: 400, color: 'var(--text2)' }}>/mês</span></MonoVal>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ fontSize: 11, color: 'var(--text3)' }}>Folha mensal simulada</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <FolhaInput
+              value={folhaMensal}
+              onChange={next => {
+                if (!trackedRef.current) {
+                  trackedRef.current = true
+                  captureProductEvent('fator_r_explored', { projecao })
+                }
+                setFolhaMensal(next)
+              }}
+              ariaLabel="Folha mensal em reais"
+            />
+            {persistenceEnabled && (
+              <span
+                aria-live="polite"
+                style={{
+                  fontSize: 11,
+                  color: saveStatus === 'failed' ? 'var(--red)' : 'var(--text3)',
+                  minHeight: 14,
+                  minWidth: 80,
+                }}
+              >
+                {STATUS_LABEL[saveStatus]}
+              </span>
+            )}
+          </div>
+          <MonoVal size={20}>
+            {fmt(folhaMensal)}
+            <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text2)' }}>/mês</span>
+          </MonoVal>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>Fator R resultante</div>

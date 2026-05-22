@@ -790,6 +790,15 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
                   <FatorRInterativo
                     projecao={latest.alertaTeto.projecaoAnual}
                     fatorRInicial={latest.fatorR.fatorR}
+                    ano={currentYear}
+                    mes={currentMonth}
+                    cnae={profile?.cnae_principal ?? latestSimulation?.entrada.cnae}
+                    tipoMei={
+                      (profile?.tipo_mei ?? latestSimulation?.entrada.tipoMei) as
+                        | 'geral'
+                        | 'caminhoneiro'
+                        | undefined
+                    }
                   />
                 ) : (
                   <div style={{ padding: '24px 0', textAlign: 'center' }}>
