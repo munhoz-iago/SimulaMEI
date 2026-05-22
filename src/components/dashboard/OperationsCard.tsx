@@ -65,15 +65,43 @@ function fmtBRL(value: number | null | undefined) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 }
 
-function parseNumberInput(raw: string | undefined): number | null {
+/**
+ * Parse a numeric input string with BR-first heuristic.
+ *
+ * Regras:
+ * - Com vírgula → BR: pontos = milhar (remove), vírgula = decimal (vira ponto).
+ *   `"1.500,50"` → 1500.5
+ * - Sem vírgula + 2+ pontos OU ponto seguido de exatamente 3 dígitos → BR milhar.
+ *   `"1.500"` → 1500; `"1.500.000"` → 1500000
+ * - Sem vírgula + 0-1 ponto + 1-2 dígitos depois → decimal US (raro em BRL).
+ *   `"1.5"` → 1.5
+ *
+ * Sanitização: rejeita qualquer caractere que não seja dígito, ponto, vírgula
+ * ou sinal negativo inicial.
+ */
+export function parseNumberInput(raw: string | undefined): number | null {
   if (raw === undefined) return null
-  const trimmed = raw.trim()
-  if (trimmed === '') return null
-  // Aceita "1.234,56" (BR) e "1234.56" (legacy)
-  const normalized = trimmed.includes(',')
-    ? trimmed.replace(/\./g, '').replace(',', '.')
-    : trimmed
-  const n = Number(normalized)
+  const cleaned = raw.trim()
+  if (!cleaned) return null
+
+  // Sanitize: aceita só dígitos, ponto, vírgula e sinal negativo inicial
+  if (!/^-?[\d.,]+$/.test(cleaned)) return null
+
+  // Com vírgula → BR. Pontos = milhar (remove), vírgula = decimal (vira ponto)
+  if (cleaned.includes(',')) {
+    const n = Number(cleaned.replace(/\./g, '').replace(',', '.'))
+    return Number.isFinite(n) ? n : null
+  }
+
+  // Sem vírgula. Múltiplos pontos OU ponto seguido de exatos 3 dígitos = BR milhar
+  const dots = (cleaned.match(/\./g) ?? []).length
+  if (dots >= 2 || /\.\d{3}(?:\D|$)/.test(cleaned)) {
+    const n = Number(cleaned.replace(/\./g, ''))
+    return Number.isFinite(n) ? n : null
+  }
+
+  // Sem vírgula + 0-1 ponto + 1-2 dígitos depois: trata como decimal US
+  const n = Number(cleaned)
   return Number.isFinite(n) ? n : null
 }
 
