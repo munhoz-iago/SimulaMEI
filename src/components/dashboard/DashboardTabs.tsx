@@ -64,15 +64,16 @@ export function DashboardTabs({ active, onPendingChange }: Props) {
       {TABS.map(t => {
         const isActive = active === t.id
         const href = `?aba=${t.id}`
-        // Tab clicada (destino da navegação) recebe o estilo de loading;
-        // a ativa fica intacta (mas ganha aria-busy se for o destino).
+        // Tab clicada (destino da navegação) recebe o estilo de loading
+        // + aria-busy — é ela que está "carregando", não a ativa.
+        // A ativa fica intacta visualmente até a navegação concluir.
         const isTabPending = isPending && !isActive
         return (
           <Link
             key={t.id}
             role="tab"
             aria-selected={isActive}
-            aria-busy={isPending && isActive}
+            aria-busy={isTabPending}
             data-pending={isTabPending || undefined}
             href={href}
             scroll={false}
