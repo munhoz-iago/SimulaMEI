@@ -13,6 +13,9 @@ import { summarizeMonthlyMonitor, detectAnexoTransition, getFiscalCalendarItems 
 import { REGIME_LABELS } from '@/constants/tributario'
 import { FREE_SIMULATION_LIMIT, PLAN_ACCENT_COLORS, PLAN_DESCRIPTIONS, PLAN_LABELS } from '@/constants/plans'
 import { DeleteAccountSection } from '@/components/dashboard/DeleteAccountSection'
+import { IdentityCard } from '@/components/dashboard/IdentityCard'
+import { FiscalActivityCard } from '@/components/dashboard/FiscalActivityCard'
+import { OperationsCard } from '@/components/dashboard/OperationsCard'
 import { MonthlyMonitorSection } from '@/components/dashboard/MonthlyMonitorSection'
 import { MonitorEmptyState } from '@/components/dashboard/MonitorEmptyState'
 import { diagnoseMonitorEmptyReason } from '@/components/dashboard/monitor-empty-state'
@@ -857,9 +860,16 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
             </Panel>
           </section>
 
-          {/* ── Aba: Conta (perfil + zona sensível) ── */}
+          {/* ── Aba: Conta (perfil editável + plano + zona sensível) ── */}
           {activeTab === 'conta' && (
-          <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <section
+            className="conta-grid"
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}
+          >
+            <IdentityCard profile={profile} email={user.email} />
+            <FiscalActivityCard profile={profile} />
+            <OperationsCard profile={profile} />
+
             <Panel style={{ padding: '24px 28px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 8, background: `${PLAN_ACCENT_COLORS[currentPlan]}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -868,7 +878,7 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
                   </svg>
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>Conta</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text3)' }}>Plano</div>
                   <div style={{ fontSize: 15, fontWeight: 800 }}>{PLAN_LABELS[currentPlan]}</div>
                 </div>
                 <Pill color={PLAN_ACCENT_COLORS[currentPlan]} style={{ marginLeft: 'auto' }}>

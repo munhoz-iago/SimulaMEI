@@ -1,6 +1,6 @@
 /* ── Responsive breakpoints ─────────────────────────────────── */
 @media(max-width:900px) {
-  .hero-grid, .sim-grid, .full-grid, .gate-grid, .cnt-grid { grid-template-columns: 1fr !important; }
+  .hero-grid, .sim-grid, .full-grid, .gate-grid, .cnt-grid, .conta-grid { grid-template-columns: 1fr !important; }
 }
 
 @media(max-width:768px) {
