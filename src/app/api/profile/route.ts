@@ -48,13 +48,25 @@ export async function PATCH(request: Request) {
     updates.nome = n
   }
   if (parsed.data.nomeNegocio !== undefined) {
+    // Campo opcional: permite '' para limpar. null = excedeu limite.
     const n = normalizeBoundedText(parsed.data.nomeNegocio, ONBOARDING_TEXT_LIMITS.nomeNegocio)
-    if (!n) return NextResponse.json({ error: 'Nome do negócio inválido.' }, { status: 400 })
+    if (n === null) {
+      return NextResponse.json(
+        { error: `Nome do negócio excedeu ${ONBOARDING_TEXT_LIMITS.nomeNegocio} caracteres.` },
+        { status: 400 },
+      )
+    }
     updates.nome_negocio = n
   }
   if (parsed.data.telefone !== undefined) {
+    // Campo opcional: permite '' para limpar. null = excedeu limite.
     const n = normalizeBoundedText(parsed.data.telefone, ONBOARDING_TEXT_LIMITS.telefone)
-    if (!n) return NextResponse.json({ error: 'Telefone inválido.' }, { status: 400 })
+    if (n === null) {
+      return NextResponse.json(
+        { error: `Telefone excedeu ${ONBOARDING_TEXT_LIMITS.telefone} caracteres.` },
+        { status: 400 },
+      )
+    }
     updates.telefone = n
   }
   if (parsed.data.cnaePrincipal !== undefined) {

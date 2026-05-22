@@ -246,4 +246,62 @@ describe('/api/profile PATCH', () => {
     expect(response.status).toBe(400)
     expect(supabase.updateMock).not.toHaveBeenCalled()
   })
+
+  describe('optional field clearing (nome_negocio, telefone)', () => {
+    it('persists empty string for nomeNegocio (clears optional field)', async () => {
+      const supabase = makeSupabaseMock()
+      createClientMock.mockResolvedValue(supabase.client)
+
+      const response = await PATCH(makeRequest({ nomeNegocio: '' }))
+
+      expect(response.status).toBe(200)
+      await expect(response.json()).resolves.toEqual({ ok: true })
+      expect(supabase.updateMock).toHaveBeenCalledWith({ nome_negocio: '' })
+    })
+
+    it('persists empty string for telefone (clears optional field)', async () => {
+      const supabase = makeSupabaseMock()
+      createClientMock.mockResolvedValue(supabase.client)
+
+      const response = await PATCH(makeRequest({ telefone: '' }))
+
+      expect(response.status).toBe(200)
+      await expect(response.json()).resolves.toEqual({ ok: true })
+      expect(supabase.updateMock).toHaveBeenCalledWith({ telefone: '' })
+    })
+
+    it('rejects empty string for nome (domain-required, cannot clear)', async () => {
+      const supabase = makeSupabaseMock()
+      createClientMock.mockResolvedValue(supabase.client)
+
+      const response = await PATCH(makeRequest({ nome: '' }))
+
+      expect(response.status).toBe(400)
+      await expect(response.json()).resolves.toEqual({ error: 'Nome inválido.' })
+      expect(supabase.updateMock).not.toHaveBeenCalled()
+    })
+
+    it('rejects empty string for municipio (domain-required, cannot clear)', async () => {
+      const supabase = makeSupabaseMock()
+      createClientMock.mockResolvedValue(supabase.client)
+
+      const response = await PATCH(makeRequest({ municipio: '' }))
+
+      expect(response.status).toBe(400)
+      await expect(response.json()).resolves.toEqual({ error: 'Município inválido.' })
+      expect(supabase.updateMock).not.toHaveBeenCalled()
+    })
+
+    it('rejects nomeNegocio exceeding length limit with specific message', async () => {
+      const supabase = makeSupabaseMock()
+      createClientMock.mockResolvedValue(supabase.client)
+
+      const response = await PATCH(makeRequest({ nomeNegocio: 'a'.repeat(200) }))
+
+      expect(response.status).toBe(400)
+      const body = await response.json() as { error?: string }
+      expect(body.error).toMatch(/excedeu/i)
+      expect(supabase.updateMock).not.toHaveBeenCalled()
+    })
+  })
 })
