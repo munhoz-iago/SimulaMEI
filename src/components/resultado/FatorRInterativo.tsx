@@ -88,6 +88,13 @@ export function FatorRInterativo({
     enabled: persistenceEnabled,
   })
 
+  // Economia anual III vs V — calculada antes do early-return para manter
+  // ordem estável de hooks (regras do React).
+  const economiaAnual = useMemo(
+    () => calcularSimples(projecao, 'V').dasAnual - calcularSimples(projecao, 'III').dasAnual,
+    [projecao],
+  )
+
   // Defesa: sem projeção válida, o componente fica inerte e enganador.
   // Mostra um placeholder pedindo simulação real ao invés de R$ 0 em tudo.
   if (!Number.isFinite(projecao) || projecao <= 0) {
@@ -113,12 +120,6 @@ export function FatorRInterativo({
   // Quanto falta para chegar em 28%
   const folhaMinima = (FATOR_R_MINIMO * projecao) / 12
   const falta = folhaMinima - folhaMensal
-
-  // Economia anual III vs V
-  const economiaAnual = useMemo(
-    () => calcularSimples(projecao, 'V').dasAnual - calcularSimples(projecao, 'III').dasAnual,
-    [projecao],
-  )
 
   const fillPct = Math.min((fr / 0.5) * 100, 100)
   // Position of 28% marker relative to 0–50% range
