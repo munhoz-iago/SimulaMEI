@@ -4,6 +4,13 @@ import { useId, useRef } from 'react'
 import type { UserProfileOnboarding } from '@/lib/onboarding'
 import { ONBOARDING_TEXT_LIMITS } from '@/lib/validation'
 import { ProfileEditCard } from './ProfileEditCard'
+import {
+  profileCardInput as inputStyle,
+  profileCardLabel as labelStyle,
+  profileCardRow,
+  profileCardRowLabel as rowLabelStyle,
+  profileCardRowValue as rowValueStyle,
+} from './profile-card-styles'
 
 interface IdentityCardProps {
   profile: Pick<UserProfileOnboarding, 'nome' | 'nome_negocio' | 'telefone'> | null
@@ -11,49 +18,10 @@ interface IdentityCardProps {
   email: string
 }
 
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: 11,
-  fontWeight: 700,
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  color: 'var(--text3)',
-  marginBottom: 6,
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '10px 12px',
-  borderRadius: 'var(--radius)',
-  border: '1px solid var(--border2)',
-  background: 'var(--bg2)',
-  color: 'var(--text1)',
-  fontSize: 14,
-  fontFamily: 'var(--sans, inherit)',
-}
-
 const rowStyle: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: '120px 1fr',
-  gap: 10,
-  alignItems: 'baseline',
+  ...profileCardRow('120px'),
   fontSize: 13,
   color: 'var(--text2)',
-}
-
-const rowLabelStyle: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 700,
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  color: 'var(--text3)',
-}
-
-const rowValueStyle: React.CSSProperties = {
-  fontSize: 14,
-  fontWeight: 600,
-  color: 'var(--text1)',
-  wordBreak: 'break-word',
 }
 
 export function IdentityCard({ profile, email }: IdentityCardProps) {
