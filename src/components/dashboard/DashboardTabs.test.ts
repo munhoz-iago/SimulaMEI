@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseDashboardTab } from './DashboardTabs'
+import { getDashboardTabHref, parseDashboardTab } from './DashboardTabs'
 
 describe('parseDashboardTab', () => {
   it('default monitor quando vazio', () => {
@@ -23,5 +23,10 @@ describe('parseDashboardTab', () => {
   it('aceita primeiro valor de array (Next searchParams)', () => {
     expect(parseDashboardTab(['agenda', 'conta'])).toBe('agenda')
     expect(parseDashboardTab(['lixo'])).toBe('monitor')
+  })
+
+  it('gera href absoluto para forçar troca de aba no dashboard', () => {
+    expect(getDashboardTabHref('fator-r')).toBe('/dashboard?aba=fator-r')
+    expect(getDashboardTabHref('simulacoes')).toBe('/dashboard?aba=simulacoes')
   })
 })

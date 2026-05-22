@@ -19,6 +19,10 @@ vi.mock('@/lib/accountant/server', () => ({
   getCurrentAccountantOffice: getCurrentAccountantOfficeMock,
 }))
 
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+}))
+
 import { POST } from './route'
 
 const OFFICE = {

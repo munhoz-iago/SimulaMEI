@@ -33,30 +33,42 @@ export default async function AccountantClientSimulationPage({ params }: PagePro
 
   return (
     <AccountantShell office={office} active="clients">
-      <section className="accountant-simulation-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 16, alignItems: 'start' }}>
-        <div style={{ border: '1px solid var(--border)', background: 'var(--bg1)', borderRadius: 'var(--radius-lg)', padding: 22 }}>
-          <h2 style={{ fontSize: 24, marginBottom: 8 }}>Simular {client.name}</h2>
-          <p style={{ color: 'var(--text2)', lineHeight: 1.6, marginBottom: 18 }}>
-            A simulação será salva no histórico do cliente e ficará disponível no perfil do escritório.
-          </p>
-          {client.ativo ? (
-            <OfficeClientSimulationForm client={client} defaultMonth={defaultMonth} />
-          ) : (
-            <div role="alert" style={{ border: '1px solid rgba(255, 193, 7, .35)', background: 'rgba(255, 193, 7, .1)', color: 'var(--yellow)', borderRadius: 'var(--radius)', padding: 14 }}>
-              Reative o cliente antes de criar uma nova simulação.
-            </div>
-          )}
+      <section style={{ border: '1px solid var(--border)', background: 'var(--bg1)', borderRadius: 'var(--radius-lg)', padding: 22, marginBottom: 18 }}>
+        <h2 style={{ fontSize: 24, marginBottom: 8 }}>Simular {client.name}</h2>
+        <p style={{ color: 'var(--text2)', lineHeight: 1.6, marginBottom: 16 }}>
+          A simulação será salva no histórico do cliente e ficará disponível no perfil do escritório.
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {[
+            `CNAE: ${client.cnae}`,
+            `Tipo: ${client.tipo_mei === 'caminhoneiro' ? 'MEI caminhoneiro' : 'MEI geral'}`,
+            `Status: ${client.ativo ? 'Ativo' : 'Pausado'}`,
+          ].map(item => (
+            <span
+              key={item}
+              style={{
+                border: '1px solid var(--border)',
+                borderRadius: 999,
+                background: 'var(--bg2)',
+                color: 'var(--text2)',
+                padding: '6px 9px',
+                fontSize: 12,
+                fontWeight: 850,
+              }}
+            >
+              {item}
+            </span>
+          ))}
         </div>
-
-        <aside style={{ border: '1px solid var(--border)', background: 'var(--bg1)', borderRadius: 'var(--radius)', padding: 18 }}>
-          <div style={{ color: 'var(--text3)', fontSize: 12, textTransform: 'uppercase', marginBottom: 8 }}>Base cadastral</div>
-          <div style={{ display: 'grid', gap: 8, color: 'var(--text2)', fontSize: 14 }}>
-            <span>CNAE: {client.cnae}</span>
-            <span>Tipo: {client.tipo_mei === 'caminhoneiro' ? 'MEI caminhoneiro' : 'MEI geral'}</span>
-            <span>Status: {client.ativo ? 'Ativo' : 'Pausado'}</span>
-          </div>
-        </aside>
       </section>
+
+      {client.ativo ? (
+        <OfficeClientSimulationForm client={client} defaultMonth={defaultMonth} />
+      ) : (
+        <div role="alert" style={{ border: '1px solid rgba(255, 193, 7, .35)', background: 'rgba(255, 193, 7, .1)', color: 'var(--yellow)', borderRadius: 'var(--radius)', padding: 14 }}>
+          Reative o cliente antes de criar uma nova simulação.
+        </div>
+      )}
     </AccountantShell>
   )
 }

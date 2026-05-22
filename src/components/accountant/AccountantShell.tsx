@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { BrandMark } from '@/components/brand/BrandMark'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { getAccountantBillingState } from '@/lib/accountant/billing-state'
 import type { CurrentAccountantOffice } from '@/lib/accountant/server'
@@ -106,6 +107,31 @@ const NAV_ITEMS = [
   },
 ] as const
 
+const SHORTCUT_ITEMS = [
+  ...NAV_ITEMS,
+  {
+    href: '/contador/clientes/novo',
+    label: 'Novo cliente',
+    key: null,
+    icon: (
+      <>
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </>
+    ),
+  },
+  {
+    href: '/dashboard',
+    label: 'Dashboard MEI',
+    key: null,
+    icon: (
+      <>
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </>
+    ),
+  },
+] as const
+
 function PlanBadge({ plan }: { plan: string }) {
   const planNormalized = plan.toLowerCase()
   const isEnterprise = planNormalized.includes('enterprise')
@@ -147,13 +173,65 @@ export function AccountantShell({ office, active, children }: AccountantShellPro
   const trialExpired = billingState.kind === 'trial_expired'
 
   return (
-    <main style={{
+    <div style={{
+      display: 'flex',
       minHeight: '100vh',
       background: 'var(--bg0)',
       color: 'var(--text1)',
-      padding: '32px 32px 56px',
     }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <aside aria-label="Atalhos do painel contador" className="db-sidebar">
+        <div className="db-sidebar-inner">
+          <Link href="/contador" className="db-sidebar-logo" aria-label="Painel contador">
+            <BrandMark size={32} />
+            <span className="db-nav-label" style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.02em' }}>
+              Contador
+            </span>
+          </Link>
+
+          <nav className="db-sidebar-nav" aria-label="Páginas do contador">
+            {SHORTCUT_ITEMS.map(item => {
+              const isActive = item.key === active
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.label}
+                  aria-current={isActive ? 'page' : undefined}
+                  className="db-nav-item"
+                  data-active={isActive}
+                >
+                  <span className="db-nav-icon-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      {item.icon}
+                    </svg>
+                  </span>
+                  <span className="db-nav-label">{item.label}</span>
+                </Link>
+              )
+            })}
+          </nav>
+
+          <div className="db-sidebar-bottom">
+            <Link href="/?from=contador" aria-label="Página inicial" className="db-nav-item">
+              <span className="db-nav-icon-box">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 12l9-9 9 9"/>
+                  <path d="M5 10v10a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1V10"/>
+                </svg>
+              </span>
+              <span className="db-nav-label">Página inicial</span>
+            </Link>
+          </div>
+        </div>
+      </aside>
+
+      <main style={{
+        flex: 1,
+        minWidth: 0,
+        padding: '32px 32px 56px',
+        overflowX: 'hidden',
+      }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* Header coerente com /dashboard: greeting compacto + actions à direita */}
         <header style={{
           display: 'flex',
@@ -320,6 +398,7 @@ export function AccountantShell({ office, active, children }: AccountantShellPro
 
         {children}
       </div>
-    </main>
+      </main>
+    </div>
   )
 }

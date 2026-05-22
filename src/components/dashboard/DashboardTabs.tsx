@@ -1,5 +1,3 @@
-import Link from 'next/link'
-
 const TABS = [
   { id: 'monitor', label: 'Monitor mensal' },
   { id: 'fator-r', label: 'Fator R' },
@@ -13,6 +11,10 @@ export type DashboardTab = typeof TABS[number]['id']
 export function parseDashboardTab(raw: string | string[] | undefined): DashboardTab {
   const v = Array.isArray(raw) ? raw[0] : raw
   return TABS.some(t => t.id === v) ? (v as DashboardTab) : 'monitor'
+}
+
+export function getDashboardTabHref(tab: DashboardTab): string {
+  return `/dashboard?aba=${tab}`
 }
 
 interface Props {
@@ -38,12 +40,12 @@ export function DashboardTabs({ active }: Props) {
       {TABS.map(t => {
         const isActive = active === t.id
         return (
-          <Link
+          <a
             key={t.id}
             role="tab"
             aria-selected={isActive}
-            href={`?aba=${t.id}`}
-            scroll={false}
+            aria-current={isActive ? 'page' : undefined}
+            href={getDashboardTabHref(t.id)}
             style={{
               padding: '10px 16px',
               fontSize: 13,
@@ -56,7 +58,7 @@ export function DashboardTabs({ active }: Props) {
             }}
           >
             {t.label}
-          </Link>
+          </a>
         )
       })}
     </div>

@@ -16,6 +16,16 @@ function isTipoMei(value: unknown): value is TipoMei {
   return value === 'geral' || value === 'caminhoneiro'
 }
 
+function isValidFolhaDetalhada(value: unknown): value is EntradaSimulacao['folhaDetalhada'] {
+  if (typeof value === 'undefined') return true
+  if (!value || typeof value !== 'object') return false
+
+  return ['salariosClt', 'proLabore', 'inssPatronal', 'fgts', 'rpa', 'beneficios'].every(key => {
+    const field = (value as Record<string, unknown>)[key]
+    return typeof field === 'undefined' || (typeof field === 'number' && Number.isFinite(field) && field >= 0)
+  })
+}
+
 function resolveCnae(payload: OfficeClientSimulationPayload, client: OfficeClientFiscalDefaults) {
   const source = typeof payload.cnae === 'string' && payload.cnae.trim()
     ? payload.cnae
@@ -46,7 +56,7 @@ export function normalizeOfficeClientSimulation(
   payload: OfficeClientSimulationPayload,
   client: OfficeClientFiscalDefaults,
 ): OfficeClientSimulationResult {
-  const { faturamentoAcumulado, mesAtual, folhaMensal } = payload
+  const { faturamentoAcumulado, mesAtual, folhaMensal, folhaDetalhada } = payload
 
   if (
     typeof faturamentoAcumulado !== 'number' ||
@@ -54,11 +64,12 @@ export function normalizeOfficeClientSimulation(
     typeof mesAtual !== 'number' ||
     !Number.isInteger(mesAtual) ||
     typeof folhaMensal !== 'number' ||
-    !Number.isFinite(folhaMensal)
+    !Number.isFinite(folhaMensal) ||
+    !isValidFolhaDetalhada(folhaDetalhada)
   ) {
     return {
       ok: false,
-      error: 'Campos inválidos. Verifique faturamentoAcumulado, mesAtual e folhaMensal.',
+      error: 'Campos inválidos. Verifique faturamentoAcumulado, mesAtual, folhaMensal e folhaDetalhada.',
     }
   }
 
@@ -83,6 +94,7 @@ export function normalizeOfficeClientSimulation(
       mesAtual,
       folhaMensal,
       cnae: cnae.value,
+      ...(folhaDetalhada ? { folhaDetalhada } : {}),
       tipoMei: tipoMei.value,
     },
   }

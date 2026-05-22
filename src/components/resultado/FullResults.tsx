@@ -21,6 +21,11 @@ import { FONTES_FISCAIS } from '@/lib/tributario/oportunidades/fontes'
 interface FullResultsProps {
   resultado: ResultadoSimulacao
   email: string
+  reportHref?: string | null
+  primaryAction?: {
+    href: string
+    label: string
+  } | null
 }
 
 interface RegimeItem {
@@ -32,12 +37,17 @@ interface RegimeItem {
   aliq: number
 }
 
-export function FullResults({ resultado, email }: FullResultsProps) {
+export function FullResults({ resultado, email, reportHref, primaryAction }: FullResultsProps) {
   const [activeRegime, setActiveRegime] = useState<string | null>(null)
   const pathname = usePathname()
   const inDashboard = pathname?.startsWith('/dashboard') ?? false
   // Rotas contextuais: dentro do /dashboard preserva o shell; fora aponta pras públicas
-  const reportHref = inDashboard ? '/dashboard/relatorio' : '/relatorio'
+  const resolvedReportHref = reportHref === undefined
+    ? inDashboard ? '/dashboard/relatorio' : '/relatorio'
+    : reportHref
+  const resolvedPrimaryAction = primaryAction === undefined
+    ? { href: '/para-contadores', label: 'Validar com contador' }
+    : primaryAction
   const { fatorR, anexoAtual, comparativo, alertaTeto } = resultado
   const projecao = alertaTeto.projecaoAnual
   const excesso = projecao / alertaTeto.tetoAnual
@@ -117,36 +127,40 @@ export function FullResults({ resultado, email }: FullResultsProps) {
             </h2>
           </div>
           <div className="full-results-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 10 }}>
-            <Link
-              href={reportHref}
-              className="dashboard-action dashboard-secondary-action"
-              onClick={() => captureProductEvent('pdf_cta_clicked', { source: 'full-results' })}
-              style={{
-                padding: '10px 18px', fontSize: 13, fontWeight: 700,
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Baixar relatório
-            </Link>
-            <Link
-              href="/para-contadores"
-              className="dashboard-action dashboard-primary-action"
-              style={{
-                padding: '10px 18px', fontSize: 13,
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-              Validar com contador
-            </Link>
+            {resolvedReportHref && (
+              <Link
+                href={resolvedReportHref}
+                className="dashboard-action dashboard-secondary-action"
+                onClick={() => captureProductEvent('pdf_cta_clicked', { source: 'full-results' })}
+                style={{
+                  padding: '10px 18px', fontSize: 13, fontWeight: 700,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Baixar relatório
+              </Link>
+            )}
+            {resolvedPrimaryAction && (
+              <Link
+                href={resolvedPrimaryAction.href}
+                className="dashboard-action dashboard-primary-action"
+                style={{
+                  padding: '10px 18px', fontSize: 13,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                {resolvedPrimaryAction.label}
+              </Link>
+            )}
           </div>
         </div>
 

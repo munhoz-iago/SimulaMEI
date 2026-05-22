@@ -12,6 +12,9 @@
 
 /* ── Instrument panels ─────────────────────────────────────── */
 .instrument-panel { background: linear-gradient(180deg, oklch(100% 0 0 / 0.025), transparent 42%), var(--bg1); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--panel-shadow); overflow: hidden; }
+.sim-grid { position: relative; overflow: visible; }
+.simulator-form-panel { position: relative; z-index: 30; overflow: visible; }
+.sim-grid .desktop-only { position: relative; z-index: 1; }
 .instrument-panel-header { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 13px 16px; border-bottom: 1px solid var(--border); background: oklch(100% 0 0 / 0.018); }
 .instrument-label { color: var(--text3); font-family: var(--mono); font-size: 11px; font-weight: 850; letter-spacing: 0.04em; text-transform: uppercase; }
 

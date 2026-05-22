@@ -12,7 +12,10 @@ import { FieldLabel, Validation, SliderWithInput } from './FormPrimitives'
 import type { ValidationMsg } from './FormPrimitives'
 
 interface SimulatorSectionProps {
-  onResults: (resultado: ResultadoSimulacao) => void
+  onResults: (resultado: ResultadoSimulacao, payload?: unknown) => void
+  submitUrl?: string
+  submitButtonLabel?: string
+  loadingLabel?: string
   /** Destino do link "Como calcula". Default aponta pra #como-calcula (home).
    *  Em contextos sem essa seção (ex: /dashboard/simular), passe null pra esconder
    *  ou outro caminho (ex: '/?from=dashboard#como-calcula'). */
@@ -38,6 +41,9 @@ const FOLHA_COMPLEMENTAR_SLIDER_MAX = 30000
 
 export function SimulatorSection({
   onResults,
+  submitUrl = '/api/simular',
+  submitButtonLabel = 'Ver resultado',
+  loadingLabel = 'Calculando...',
   calcLinkHref = '#como-calcula',
   initialValues,
   prefillSource,
@@ -130,7 +136,7 @@ export function SimulatorSection({
     setLoading(true)
     trackSimulationStart()
 
-    const response = await fetch('/api/simular', {
+    const response = await fetch(submitUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -143,24 +149,32 @@ export function SimulatorSection({
       }),
     })
 
-    const payload = await response.json().catch(() => null) as ResultadoSimulacao | { error?: string } | null
+    const payload = await response.json().catch(() => null) as
+      | ResultadoSimulacao
+      | { resultado?: ResultadoSimulacao; error?: string }
+      | null
+    const resultadoPayload = payload && 'entrada' in payload
+      ? payload
+      : payload?.resultado && 'entrada' in payload.resultado
+        ? payload.resultado
+        : null
 
-    if (!response.ok || !payload || !('entrada' in payload)) {
+    if (!response.ok || !resultadoPayload) {
       setLoading(false)
       setRequestError((payload && 'error' in payload && payload.error) || 'Não foi possível processar a simulação agora.')
       return
     }
 
     captureProductEvent('simulation_completed', {
-      cnae: payload.entrada.cnae,
-      tipoMei: payload.entrada.tipoMei,
-      anexoAtual: payload.anexoAtual,
-      hasFatorR: Boolean(payload.fatorR),
+      cnae: resultadoPayload.entrada.cnae,
+      tipoMei: resultadoPayload.entrada.tipoMei,
+      anexoAtual: resultadoPayload.anexoAtual,
+      hasFatorR: Boolean(resultadoPayload.fatorR),
       folhaMensal: folhaMensalTotal,
-      cenarioTeto: payload.alertaTeto.cenario,
+      cenarioTeto: resultadoPayload.alertaTeto.cenario,
     })
     setLoading(false)
-    onResults(payload)
+    onResults(resultadoPayload, payload)
   }
 
   return (
@@ -180,7 +194,7 @@ export function SimulatorSection({
           className="sim-grid"
         >
           {/* ── Left: form ───────────────────────────────────── */}
-          <div className="instrument-panel" data-reveal style={{ '--reveal-delay': '140', padding: 28 } as React.CSSProperties}>
+          <div className="instrument-panel simulator-form-panel" data-reveal style={{ '--reveal-delay': '140', padding: 28 } as React.CSSProperties}>
             {prefillSource === 'monitor' && (
               <div style={{
                 display: 'flex', alignItems: 'flex-start', gap: 12,
@@ -416,13 +430,13 @@ export function SimulatorSection({
                 }}
               >
                 {loading ? (
-                  <><LoadSpinner /> Calculando...</>
+                  <><LoadSpinner /> {loadingLabel}</>
                 ) : (
                   <>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                     </svg>
-                    Ver resultado
+                    {submitButtonLabel}
                   </>
                 )}
               </button>

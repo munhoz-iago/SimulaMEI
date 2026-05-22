@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentAccountantOffice, type CurrentAccountantOffice } from '@/lib/accountant/server'
@@ -151,6 +152,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
       console.error('[/api/accountant/clients/[id]/simulate] insert error:', insertResult.error?.message)
       return NextResponse.json({ error: 'Não foi possível salvar a simulação do cliente.' }, { status: 500 })
     }
+
+    revalidatePath(`/contador/clientes/${clientResult.data.id}`)
+    revalidatePath(`/contador/clientes/${clientResult.data.id}/simular`)
 
     return NextResponse.json({
       ok: true,

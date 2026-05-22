@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import type { CnaeInfo } from '@/types/tributario'
 import { buscarCnaes, getCnaesAgrupados } from '@/lib/tributario'
 import { Badge } from '@/components/ui'
@@ -115,6 +115,8 @@ function CnaeRow({
 export function CnaeAutocomplete({ value, onChange, inputId, origin }: CnaeAutocompleteProps) {
   const [query, setQuery] = useState(value?.descricao ?? '')
   const [open, setOpen] = useState(false)
+  const [menuPlacement, setMenuPlacement] = useState<'down' | 'up'>('down')
+  const [menuMaxHeight, setMenuMaxHeight] = useState(420)
   const [focused, setFocused] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -125,6 +127,24 @@ export function CnaeAutocomplete({ value, onChange, inputId, origin }: CnaeAutoc
     return buscarCnaes(query).slice(0, 10)
   }, [query])
 
+  const updateMenuLayout = useCallback(() => {
+    if (typeof window === 'undefined' || !ref.current) return
+
+    const rect = ref.current.getBoundingClientRect()
+    const spaceBelow = window.innerHeight - rect.bottom - 12
+    const spaceAbove = rect.top - 12
+    const shouldOpenUp = spaceBelow < 260 && spaceAbove > spaceBelow
+    const availableSpace = shouldOpenUp ? spaceAbove : spaceBelow
+
+    setMenuPlacement(shouldOpenUp ? 'up' : 'down')
+    setMenuMaxHeight(Math.min(420, Math.max(160, availableSpace)))
+  }, [])
+
+  const openMenu = useCallback(() => {
+    setOpen(true)
+    requestAnimationFrame(updateMenuLayout)
+  }, [updateMenuLayout])
+
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -134,6 +154,19 @@ export function CnaeAutocomplete({ value, onChange, inputId, origin }: CnaeAutoc
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  useEffect(() => {
+    if (!open) return
+
+    updateMenuLayout()
+    window.addEventListener('resize', updateMenuLayout)
+    window.addEventListener('scroll', updateMenuLayout, true)
+
+    return () => {
+      window.removeEventListener('resize', updateMenuLayout)
+      window.removeEventListener('scroll', updateMenuLayout, true)
+    }
+  }, [open, updateMenuLayout])
 
   function select(cnae: CnaeInfo) {
     setQuery(cnae.descricao)
@@ -147,7 +180,7 @@ export function CnaeAutocomplete({ value, onChange, inputId, origin }: CnaeAutoc
   }
 
   return (
-    <div ref={ref} style={{ position: 'relative', zIndex: open ? 40 : 1 }}>
+    <div className="cnae-autocomplete" ref={ref} style={{ position: 'relative', zIndex: open ? 40 : 1 }}>
       <div
         style={{
           display: 'flex', alignItems: 'center',
@@ -166,10 +199,10 @@ export function CnaeAutocomplete({ value, onChange, inputId, origin }: CnaeAutoc
           value={query}
           onChange={e => {
             setQuery(e.target.value)
-            setOpen(true)
+            openMenu()
             onChange(null)
           }}
-          onFocus={() => { setFocused(true); setOpen(true) }}
+          onFocus={() => { setFocused(true); openMenu() }}
           onBlur={() => setFocused(false)}
           placeholder="Busque atividade ou código CNAE..."
           style={{
@@ -209,12 +242,17 @@ export function CnaeAutocomplete({ value, onChange, inputId, origin }: CnaeAutoc
 
       {open && (
         <div
+          className="cnae-autocomplete-menu"
           style={{
-            position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+            position: 'absolute',
+            top: menuPlacement === 'down' ? 'calc(100% + 4px)' : undefined,
+            bottom: menuPlacement === 'up' ? 'calc(100% + 4px)' : undefined,
+            left: 0,
+            right: 0,
             background: 'var(--bg2)', border: '1px solid var(--border2)',
             borderRadius: 'var(--radius)', zIndex: 50,
             boxShadow: '0 8px 32px rgba(0,0,0,.4)',
-            maxHeight: 420,
+            maxHeight: menuMaxHeight,
             overflowY: 'auto',
             overscrollBehavior: 'contain',
             WebkitOverflowScrolling: 'touch',
