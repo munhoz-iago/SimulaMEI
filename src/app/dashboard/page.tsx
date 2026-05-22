@@ -208,7 +208,12 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
       historico: monitorSeedRows,
     })
     : null
-  const monitorEmptyReason = diagnoseMonitorEmptyReason(profile, monitorRows.length)
+  // Empty-state só se monitorSummary é nulo. Caso contrário, o widget
+  // completo já renderiza (mesmo com dados sintetizados pelo seed) e
+  // duplicar com side panel cria UX confusa (apontado pelo gemini-code-assist).
+  const monitorEmptyReason = monitorSummary
+    ? null
+    : diagnoseMonitorEmptyReason(profile, monitorRows.length)
   const monitorEmptyNode = monitorEmptyReason
     ? <MonitorEmptyState reason={monitorEmptyReason} />
     : null
