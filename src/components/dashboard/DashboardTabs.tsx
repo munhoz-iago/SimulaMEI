@@ -1,4 +1,8 @@
+'use client'
+
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useTransition } from 'react'
 
 const TABS = [
   { id: 'monitor', label: 'Monitor mensal' },
@@ -17,12 +21,34 @@ export function parseDashboardTab(raw: string | string[] | undefined): Dashboard
 
 interface Props {
   active: DashboardTab
+  /** Notifica o pai sobre transição em andamento (pra aplicar opacity no content). */
+  onPendingChange?: (pending: boolean) => void
 }
 
 /** Renderiza apenas a barra de abas. O conteúdo de cada aba é renderizado
  *  pelo chamador via conditional `activeTab === 'X' && (...)` — mantém o
- *  acoplamento baixo e evita passar JSX longo via prop record. */
-export function DashboardTabs({ active }: Props) {
+ *  acoplamento baixo e evita passar JSX longo via prop record.
+ *
+ *  Usa `useTransition` pra interceptar clicks left-only e marcar o trecho
+ *  como não-bloqueante. Ctrl/cmd/shift/middle-click continuam funcionando
+ *  via Link nativo (nova aba). */
+export function DashboardTabs({ active, onPendingChange }: Props) {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+
+  useEffect(() => {
+    onPendingChange?.(isPending)
+  }, [isPending, onPendingChange])
+
+  function handleClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
+    // Preserva modifier keys e botões não-primários — deixa o Link nativo agir.
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+    e.preventDefault()
+    startTransition(() => {
+      router.push(href)
+    })
+  }
+
   return (
     <div
       role="tablist"
@@ -37,13 +63,20 @@ export function DashboardTabs({ active }: Props) {
     >
       {TABS.map(t => {
         const isActive = active === t.id
+        const href = `?aba=${t.id}`
+        // Tab clicada (destino da navegação) recebe o estilo de loading;
+        // a ativa fica intacta (mas ganha aria-busy se for o destino).
+        const isTabPending = isPending && !isActive
         return (
           <Link
             key={t.id}
             role="tab"
             aria-selected={isActive}
-            href={`?aba=${t.id}`}
+            aria-busy={isPending && isActive}
+            data-pending={isTabPending || undefined}
+            href={href}
             scroll={false}
+            onClick={e => handleClick(e, href)}
             style={{
               padding: '10px 16px',
               fontSize: 13,
@@ -53,9 +86,14 @@ export function DashboardTabs({ active }: Props) {
               color: isActive ? 'var(--text1)' : 'var(--text3)',
               borderBottom: isActive ? '2px solid var(--lime)' : '2px solid transparent',
               marginBottom: -1,
+              opacity: isTabPending ? 0.5 : 1,
+              transition: 'opacity 120ms ease',
             }}
           >
             {t.label}
+            {isTabPending && (
+              <span aria-hidden="true" style={{ marginLeft: 6, color: 'var(--text3)' }}>·</span>
+            )}
           </Link>
         )
       })}

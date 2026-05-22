@@ -28,7 +28,8 @@ import { confidenceLevel } from '@/lib/dashboard/confidence'
 import { labelAnexoPorRegime, type RegimeAtual } from '@/lib/dashboard/labels'
 import { recomendarAcao } from '@/lib/dashboard/recomendacao'
 import { DashboardTopCards } from '@/components/dashboard/DashboardTopCards'
-import { DashboardTabs, parseDashboardTab } from '@/components/dashboard/DashboardTabs'
+import { parseDashboardTab } from '@/components/dashboard/DashboardTabs'
+import { DashboardTabsClient } from '@/components/dashboard/DashboardTabsClient'
 import { fmt, fmtPct } from '@/lib/format'
 import type { ResultadoSimulacao } from '@/types/tributario'
 
@@ -452,8 +453,10 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
 
           </section>
 
-          {/* ── Decision-first: tab bar abaixo do Row 1 ── */}
-          <DashboardTabs active={activeTab} />
+          {/* ── Decision-first: tab bar abaixo do Row 1 ──
+              <DashboardTabsClient> aplica feedback visual (opacity + skeleton
+              overlay) durante navegação client-side entre tabs. */}
+          <DashboardTabsClient active={activeTab}>
 
           {/* ── Aba: Monitor mensal ── */}
           {activeTab === 'monitor' && (
@@ -891,6 +894,8 @@ export default async function DashboardPage(props: DashboardPageProps = {}) {
             </Panel>
           </section>
           )}
+
+          </DashboardTabsClient>
 
           {/* ── Rodapé: maturidade do motor (fonte normativa + versão) ── */}
           <TaxSourceNote

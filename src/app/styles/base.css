@@ -64,6 +64,10 @@ textarea:focus-visible {
 @keyframes barGrow   { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes scoreArc  { from { stroke-dashoffset: 283; } }
 @keyframes shimmer   { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes tab-loading-bar {
+  0%   { background-position: -50% 0; }
+  100% { background-position: 150% 0; }
+}
 
 .fade-up   { animation: fadeUp .55s var(--ease-out) both; }
 .fade-up-2 { animation: fadeUp .55s 0.09s var(--ease-out) both; }
