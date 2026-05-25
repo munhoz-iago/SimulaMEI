@@ -19,17 +19,25 @@ const PAIN_POINTS: Array<{ value: TrialCheckinPainPoint; label: string; helper: 
   { value: 'outro', label: 'Outro', helper: 'Tenho uma necessidade diferente.' },
 ]
 
-async function postCheckin(payload: Record<string, unknown>) {
-  await fetch('/api/accountant/trial-checkin', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
+async function postCheckin(payload: Record<string, unknown>): Promise<boolean> {
+  try {
+    const response = await fetch('/api/accountant/trial-checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    return response.ok
+  } catch (error) {
+    // Erro de rede (offline, DNS, etc.) — não estoura, retorna falha pro caller decidir.
+    console.warn('[TrialCheckinCard] postCheckin network error:', error)
+    return false
+  }
 }
 
 export function TrialCheckinCard({ show }: TrialCheckinCardProps) {
   const [view, setView] = useState<ViewState>(show ? 'question' : 'hidden')
   const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [freeText, setFreeText] = useState('')
   const [satisfaction, setSatisfaction] = useState<TrialCheckinSatisfaction>('pain')
   const shownRef = useRef(false)
@@ -37,6 +45,7 @@ export function TrialCheckinCard({ show }: TrialCheckinCardProps) {
   useEffect(() => {
     if (!show || shownRef.current) return
     shownRef.current = true
+    // Fire-and-forget: shown é métrica, falha não bloqueia UX
     void postCheckin({ action: 'shown' })
   }, [show])
 
@@ -44,13 +53,20 @@ export function TrialCheckinCard({ show }: TrialCheckinCardProps) {
 
   async function answerSatisfied() {
     setPending(true)
-    await postCheckin({ action: 'answer', satisfaction: 'satisfied' })
+    setError(null)
+    const ok = await postCheckin({ action: 'answer', satisfaction: 'satisfied' })
     setPending(false)
+    if (!ok) {
+      setError('Não foi possível salvar. Tente de novo em alguns segundos.')
+      return
+    }
     setView('satisfied')
   }
 
   async function dismissToday() {
     setPending(true)
+    setError(null)
+    // Best effort: se falhar, ainda assim escondemos hoje (próxima sessão re-aparece se preciso)
     await postCheckin({ action: 'dismiss' })
     setPending(false)
     setView('hidden')
@@ -58,13 +74,18 @@ export function TrialCheckinCard({ show }: TrialCheckinCardProps) {
 
   async function answerPain(painPoint: TrialCheckinPainPoint) {
     setPending(true)
-    await postCheckin({
+    setError(null)
+    const ok = await postCheckin({
       action: 'answer',
       satisfaction,
       painPoint,
       freeText,
     })
     setPending(false)
+    if (!ok) {
+      setError('Não foi possível salvar sua resposta. Tente de novo.')
+      return
+    }
     setView('saved')
   }
 
@@ -121,34 +142,41 @@ export function TrialCheckinCard({ show }: TrialCheckinCardProps) {
       </div>
 
       {view === 'question' && (
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={answerSatisfied}
-            disabled={pending}
-            className="dashboard-action dashboard-primary-action"
-            style={{ padding: '9px 13px', fontSize: 12, fontWeight: 800 }}
-          >
-            Sim, está ajudando
-          </button>
-          <button
-            type="button"
-            onClick={() => openPainView('not_yet')}
-            disabled={pending}
-            className="dashboard-action dashboard-secondary-action"
-            style={{ padding: '9px 13px', fontSize: 12, fontWeight: 800 }}
-          >
-            Ainda não
-          </button>
-          <button
-            type="button"
-            onClick={() => openPainView('pain')}
-            disabled={pending}
-            className="dashboard-action dashboard-secondary-action"
-            style={{ padding: '9px 13px', fontSize: 12, fontWeight: 800 }}
-          >
-            Tenho uma dor específica
-          </button>
+        <div style={{ display: 'grid', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={answerSatisfied}
+              disabled={pending}
+              className="dashboard-action dashboard-primary-action"
+              style={{ padding: '9px 13px', fontSize: 12, fontWeight: 800 }}
+            >
+              Sim, está ajudando
+            </button>
+            <button
+              type="button"
+              onClick={() => openPainView('not_yet')}
+              disabled={pending}
+              className="dashboard-action dashboard-secondary-action"
+              style={{ padding: '9px 13px', fontSize: 12, fontWeight: 800 }}
+            >
+              Ainda não
+            </button>
+            <button
+              type="button"
+              onClick={() => openPainView('pain')}
+              disabled={pending}
+              className="dashboard-action dashboard-secondary-action"
+              style={{ padding: '9px 13px', fontSize: 12, fontWeight: 800 }}
+            >
+              Tenho uma dor específica
+            </button>
+          </div>
+          {error && (
+            <p role="alert" style={{ margin: 0, color: 'var(--red)', fontSize: 12, fontWeight: 600 }}>
+              {error}
+            </p>
+          )}
         </div>
       )}
 
@@ -196,6 +224,11 @@ export function TrialCheckinCard({ show }: TrialCheckinCardProps) {
               }}
             />
           </label>
+          {error && (
+            <p role="alert" style={{ margin: 0, color: 'var(--red)', fontSize: 12, fontWeight: 600 }}>
+              {error}
+            </p>
+          )}
         </div>
       )}
 

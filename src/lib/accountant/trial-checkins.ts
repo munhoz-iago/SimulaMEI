@@ -73,15 +73,9 @@ export const TRIAL_CHECKIN_PAIN_POINTS = [
 ] as const
 
 export function getSaoPauloDateKey(date = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: SAO_PAULO_TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date)
-
-  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find(part => part.type === type)?.value
-  return `${get('year')}-${get('month')}-${get('day')}`
+  // Locale sv-SE (Suécia) formata data como ISO 8601 YYYY-MM-DD por default.
+  // toLocaleDateString respeita timeZone, então retorna o dia local de São Paulo.
+  return date.toLocaleDateString('sv-SE', { timeZone: SAO_PAULO_TIME_ZONE })
 }
 
 function isTrialActive(office: CurrentAccountantOffice, now: Date) {

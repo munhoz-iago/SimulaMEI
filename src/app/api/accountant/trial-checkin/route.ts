@@ -50,16 +50,22 @@ function buildActionPayload(body: Record<string, unknown>, now: Date) {
 
   const nowIso = now.toISOString()
 
+  // IMPORTANTE: shown_at é setado APENAS na ação 'shown' pra preservar métrica
+  // de tempo de resposta (quanto o usuário levou pra responder/fechar). Demais
+  // ações só tocam seu próprio timestamp; o upsert com onConflict NÃO sobrescreve
+  // colunas omitidas. Default `now()` no schema cobre o caso de answer/dismiss
+  // chegar antes de shown (UI sempre dispara shown primeiro mas defesa em
+  // profundidade).
   if (action === 'shown') {
     return { shown_at: nowIso }
   }
 
   if (action === 'dismiss') {
-    return { shown_at: nowIso, dismissed_at: nowIso }
+    return { dismissed_at: nowIso }
   }
 
   if (action === 'cta_clicked') {
-    return { shown_at: nowIso, cta_clicked_at: nowIso }
+    return { cta_clicked_at: nowIso }
   }
 
   const satisfaction = body.satisfaction
@@ -69,7 +75,6 @@ function buildActionPayload(body: Record<string, unknown>, now: Date) {
   if (painPoint != null && !isTrialCheckinPainPoint(painPoint)) return null
 
   return {
-    shown_at: nowIso,
     answered_at: nowIso,
     satisfaction,
     pain_point: painPoint ?? null,
