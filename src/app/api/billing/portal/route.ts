@@ -3,7 +3,11 @@ import { getCurrentAccountantOffice } from '@/lib/accountant/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCheckoutUrl, getStripeClient, isStripeConfigured } from '@/lib/stripe'
 
-export async function POST() {
+interface PortalRequestBody {
+  flowType?: 'subscription_update'
+}
+
+export async function POST(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -29,9 +33,24 @@ export async function POST() {
     return NextResponse.json({ error: 'Stripe ainda não está configurado neste ambiente.' }, { status: 503 })
   }
 
+  const body = await request.json().catch(() => null) as PortalRequestBody | null
+  if (body?.flowType === 'subscription_update' && !office.stripe_subscription_id) {
+    return NextResponse.json({ error: 'Assinatura ativa não encontrada para alteração de plano.' }, { status: 409 })
+  }
+
   const session = await getStripeClient().billingPortal.sessions.create({
     customer: office.stripe_customer_id,
-    return_url: getCheckoutUrl('/upgrade/contador'),
+    return_url: getCheckoutUrl('/contador/assinatura'),
+    ...(body?.flowType === 'subscription_update'
+      ? {
+          flow_data: {
+            type: 'subscription_update' as const,
+            subscription_update: {
+              subscription: office.stripe_subscription_id!,
+            },
+          },
+        }
+      : {}),
   })
 
   return NextResponse.json({ url: session.url })
