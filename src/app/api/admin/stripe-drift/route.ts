@@ -74,43 +74,49 @@ export async function GET() {
   }
 
   const stripe = getStripeClient()
-  const drifts: Array<{ eventId: string; eventType: string | null; reason: string }> = []
 
-  for (const eventRow of data ?? []) {
-    if (eventRow.event_type !== 'checkout.session.completed') continue
+  // Paraleliza auditoria de cada evento (Stripe API + 2 DB queries) para evitar
+  // N+1 sequencial — com janela de 24h, eventos numerosos faziam o serverless
+  // timeout. Promise.all coleta em paralelo; cada task é independente e tem
+  // try/catch isolado para não derrubar as outras.
+  const auditTasks = (data ?? [])
+    .filter(eventRow => eventRow.event_type === 'checkout.session.completed')
+    .map(async (eventRow): Promise<{ eventId: string; eventType: string | null; reason: string } | null> => {
+      try {
+        const stripeEvent = await stripe.events.retrieve(eventRow.stripe_event_id)
+        const checkoutSessionId = getStripeObjectId(stripeEvent.data.object)
+        if (!checkoutSessionId) {
+          return {
+            eventId: eventRow.stripe_event_id,
+            eventType: eventRow.event_type,
+            reason: 'checkout.session.completed sem session id recuperavel',
+          }
+        }
 
-    try {
-      const stripeEvent = await stripe.events.retrieve(eventRow.stripe_event_id)
-      const checkoutSessionId = getStripeObjectId(stripeEvent.data.object)
-      if (!checkoutSessionId) {
-        drifts.push({
+        const [purchaseCount, subscriptionCount] = await Promise.all([
+          countBy(admin.from('purchases'), 'stripe_session_id', checkoutSessionId),
+          countBy(admin.from('office_subscriptions'), 'stripe_checkout_session_id', checkoutSessionId),
+        ])
+
+        if (purchaseCount === 0 && subscriptionCount === 0) {
+          return {
+            eventId: eventRow.stripe_event_id,
+            eventType: eventRow.event_type,
+            reason: `session ${checkoutSessionId} sem purchase ou office_subscription correspondente`,
+          }
+        }
+        return null
+      } catch (error) {
+        return {
           eventId: eventRow.stripe_event_id,
           eventType: eventRow.event_type,
-          reason: 'checkout.session.completed sem session id recuperavel',
-        })
-        continue
+          reason: error instanceof Error ? `falha ao auditar evento: ${error.message}` : 'falha ao auditar evento',
+        }
       }
+    })
 
-      const [purchaseCount, subscriptionCount] = await Promise.all([
-        countBy(admin.from('purchases'), 'stripe_session_id', checkoutSessionId),
-        countBy(admin.from('office_subscriptions'), 'stripe_checkout_session_id', checkoutSessionId),
-      ])
-
-      if (purchaseCount === 0 && subscriptionCount === 0) {
-        drifts.push({
-          eventId: eventRow.stripe_event_id,
-          eventType: eventRow.event_type,
-          reason: `session ${checkoutSessionId} sem purchase ou office_subscription correspondente`,
-        })
-      }
-    } catch (error) {
-      drifts.push({
-        eventId: eventRow.stripe_event_id,
-        eventType: eventRow.event_type,
-        reason: error instanceof Error ? `falha ao auditar evento: ${error.message}` : 'falha ao auditar evento',
-      })
-    }
-  }
+  const results = await Promise.all(auditTasks)
+  const drifts = results.filter((r): r is { eventId: string; eventType: string | null; reason: string } => r !== null)
 
   return NextResponse.json({
     windowHours: 24,

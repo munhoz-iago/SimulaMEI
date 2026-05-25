@@ -484,7 +484,16 @@ export async function listOfficeAlerts(
     return rows.map(row => ({ ...row, resolved_by_label: null }))
   }
 
-  const profilesTable = getUserProfilesTable(supabase)
+  // RLS de user_profiles é "select own" (migration 001) — só o próprio usuário
+  // lê o próprio perfil. Para resolver labels de OUTROS membros do escritório
+  // (quem resolveu o alerta), precisamos do admin client. Escopo: apenas IDs
+  // que já apareceram como `resolved_by` em alertas DESTE office (resolverIds
+  // vem do query anterior já filtrado por office_id). Dados expostos: id,
+  // email, nome — informação operacional necessária para a UI, baixa sensibilidade.
+  // Alternativa de longo prazo: policy "user_profiles: select office members"
+  // (todos do mesmo escritório se enxergam). Spec separado.
+  const admin = createAdminClient()
+  const profilesTable = getUserProfilesTable(admin)
   const profilesResult = await profilesTable
     .select('id, email, nome')
     .in('id', resolverIds)
