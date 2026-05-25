@@ -5,8 +5,10 @@ import { AccountantShell } from '@/components/accountant/AccountantShell'
 import { OfficeAlertsPanel } from '@/components/accountant/OfficeAlertsPanel'
 import { OfficeClientTable } from '@/components/accountant/OfficeClientTable'
 import { OfficeStatsCards } from '@/components/accountant/OfficeStatsCards'
+import { TrialCheckinCard } from '@/components/accountant/TrialCheckinCard'
 import { getAccountantBillingState } from '@/lib/accountant/billing-state'
-import { getCurrentAccountantOffice, getOfficeClientStats, listOfficeAlerts, listOfficeClients } from '@/lib/accountant/server'
+import { getTodayTrialCheckin, shouldShowTrialCheckin } from '@/lib/accountant/trial-checkins'
+import { getCurrentAccountantOffice, getOfficeClientStats, isAdminAccessFallbackOffice, listOfficeAlerts, listOfficeClients } from '@/lib/accountant/server'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata = {
@@ -31,11 +33,19 @@ export default async function AccountantDashboardPage() {
     redirect('/onboarding/contador')
   }
 
-  const [stats, recentClients, openAlerts, resolvedAlerts] = await Promise.all([
+  const trialCheckinPromise = office.plan === 'starter_trial' && !isAdminAccessFallbackOffice(office)
+    ? getTodayTrialCheckin(office.id, user.id).catch(error => {
+      console.error('[/contador] trial checkin query error:', error)
+      return null
+    })
+    : Promise.resolve(null)
+
+  const [stats, recentClients, openAlerts, resolvedAlerts, todayCheckin] = await Promise.all([
     getOfficeClientStats(office.id),
     listOfficeClients(office.id, { status: 'all', page: 1, pageSize: 5 }),
     listOfficeAlerts(office.id, { status: 'open', limit: 4 }),
     listOfficeAlerts(office.id, { status: 'resolved', limit: 3 }),
+    trialCheckinPromise,
   ])
   const trialEndsAt = office.trial_ends_at
     ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(office.trial_ends_at))
@@ -49,6 +59,8 @@ export default async function AccountantDashboardPage() {
           <AccountantBillingNotice state={billingState} compact />
         </div>
       ) : null}
+
+      <TrialCheckinCard show={shouldShowTrialCheckin(office, todayCheckin)} />
 
       <OfficeStatsCards stats={stats} limit={office.max_clients} trialEndsAt={trialEndsAt} />
 
