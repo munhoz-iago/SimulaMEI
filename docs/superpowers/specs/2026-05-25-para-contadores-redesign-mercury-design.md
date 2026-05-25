@@ -1,6 +1,6 @@
 # Redesign /para-contadores em Mercury aesthetic — design
 
-**Data:** 2026-05-25 · **Status:** pronto para CLI executar · **Tipo:** P1 marketing / conversion B2B
+**Data:** 2026-05-25 · **Status:** pronto para PLAN.md · **Tipo:** P1 marketing / conversion B2B
 **Origem:** brainstorm 2026-05-25 (Iago) + diagnóstico de 3 fricções na landing atual
 
 ## 1. Objetivo
@@ -11,7 +11,7 @@
 2. **Zero prova social específica de contador** — claim "18.300+ simulações" prova uso do simulador B2C, não que existe escritório pagando. Sem logos, sem depoimentos.
 3. **Sem screenshot real do painel** — só `painel-contador-preview.svg` ilustrativo. Contador quer ver a tela antes de preencher formulário.
 
-Objetivo do redesign: **uma landing B2B única, sem ambiguidade, com prova real do produto entregando.** Mata waitlist. CTA único: trial de 7 dias → onboarding → Stripe cobra no dia 8.
+Objetivo do redesign: **uma landing B2B única, sem ambiguidade, com prova real do produto entregando.** Mata waitlist. CTA único: trial de 7 dias sem cartão → onboarding → painel contador. Stripe só abre depois de clique explícito do contador em "Escolher plano"/"Assinar", nunca automaticamente no fim do onboarding.
 
 ## 2. Estado atual (verificado)
 
@@ -34,7 +34,7 @@ Captura lead em `accountant_leads` table. Aparece SÓ em `/para-contadores`. Pó
 
 ### Trial atual
 
-Atualmente texto da página fala "14 dias grátis". Backend (`AccountantShell.TrialBadge`) calcula `trial_ends_at` baseado no que foi setado em `office.trial_ends_at` no onboarding. Mudar pra 7 dias exige ajuste no backend (`/onboarding/contador` ou cálculo de `trial_ends_at`).
+Atualmente texto da página fala "14 dias grátis". O backend cria `trial_ends_at` em `src/app/api/accountant/onboarding/route.ts` com `Date.now() + 14 * 24 * 60 * 60 * 1000`. A UI também mostra progresso `trialDays/14 dias` em `src/app/contador/assinatura/page.tsx` e há copy pública em `/para-contadores`, `/upgrade/contador` e `ContadoresSection`. Mudar pra 7 dias exige ajuste em backend + copy + testes, aplicado só a novos onboardings.
 
 ## 3. Decisões (fechadas)
 
@@ -46,6 +46,8 @@ Atualmente texto da página fala "14 dias grátis". Backend (`AccountantShell.Tr
 - **Mata o intent dual** (`?intent=enterprise`). Plano Enterprise vira CTA "Falar com vendas" → `mailto:contato@simulamei.com.br` com subject pre-fillado.
 - **CTA único primário** em todos os pontos: "Avaliar grátis" (ou "Comece grátis 7 dias" no hero). Endpoint: `/onboarding/contador`.
 - **CTA secundário** apenas no hero: "Ver planos e preços" → âncora `#pricing` na mesma página (smooth scroll), NÃO link pra `/upgrade/contador`.
+- **Sem auto-checkout no onboarding**. `?plan=starter|pro` continua permitido como intenção de plano, mas NÃO deve redirecionar para `/upgrade/contador?autocheckout=...` ao final do onboarding. Após criar o escritório, o fluxo deve ir para `/contador?trial_started=1&intended_plan={plan}` ou `/contador` quando não houver plano. Checkout Stripe só pode abrir a partir de clique explícito em `/contador/assinatura` ou `/upgrade/contador`.
+- **Analytics substitui lead form**. Como o formulário será removido, CTAs precisam registrar eventos de clique (`accountant_landing_cta_clicked`, `accountant_enterprise_mailto_clicked`) para não zerar o funil de marketing.
 
 ### Direção visual (Mercury / Ramp editorial)
 
@@ -85,7 +87,7 @@ Referências: mercury.com, ramp.com, brex.com.
 **Não-objetivos** (excluídos deste spec, podem virar specs separados):
 
 - Criar `/escritorios` ou subdomínio
-- Rebuilds de `/onboarding/contador`, `/contador/*`, `/upgrade/contador`
+- Rebuilds amplos de `/onboarding/contador`, `/contador/*`, `/upgrade/contador`. Ajustes cirúrgicos de trial 7d, copy e remoção de auto-checkout pós-onboarding fazem parte deste spec.
 - Refazer `AccountantLeadForm` para um novo propósito
 - Tradução i18n
 - A/B test entre variantes
@@ -115,7 +117,7 @@ Referências: mercury.com, ramp.com, brex.com.
           <a href="#pricing" className="mercury-cta-secondary">Ver planos e preços</a>
         </div>
         <p style={{ fontSize: 12, color: '#56616f', marginTop: 14 }}>
-          Sem cartão de crédito · Cancele quando quiser · LGPD + consentimento explícito
+          Sem cartão de crédito · Cancele quando quiser · Privacidade e autorização do escritório
         </p>
       </div>
       <PainelPreviewCard />  {/* mini-card mostrando 3 linhas do painel: João 93%, Maria 62%, Pedro ULTRAPASSOU */}
@@ -220,18 +222,26 @@ CSS:
 **Subtarefas:**
 
 1. **Seed data script** (`scripts/seed-painel-screenshot.ts`):
-   - Cria 1 office "Munhoz & Associados", plan='pro', trial_ends_at=now+5d
+   - Roda somente quando `SCREENSHOT_SEED_ENABLED=1`.
+   - Ambiente padrão: Supabase local/staging isolado. Não usar banco de produção.
+   - Credenciais admin: ler `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` apenas de variáveis de ambiente já carregadas no shell. Não carregar `.env`/`.env.local` de pasta sincronizada pelo OneDrive.
+   - Cria usuário auth `screenshot-contador+2026-05@simulamei.local` com senha vinda de `SCREENSHOT_TEST_PASSWORD` (gerada no shell antes do seed). Não commitar senha.
+   - Cria 1 office "Munhoz & Associados", `plan='pro'`, `trial_ends_at=now+5d`, vinculado ao usuário acima como owner em `office_members`
    - 28 office_clients: 23 ativos (5 cadastrados nas últimas 24h pra "Clientes recentes"), 2 pausados manual, 3 pausados-plan
    - 4 alertas abertos: 1 danger (Pedro 103% teto), 2 warn (João 93% teto, Carlos Fator R), 1 info (DAS vence 5d)
    - 3 alertas resolvidos recentemente (pra mostrar collapsible)
-   - CNPJs com checksum mod-11 válido (helper já existe em `src/lib/validators/cnpj.ts`?)
+   - CNPJs: usar lista fixa de CNPJs sintéticos com checksum válido dentro do script. Não depender de `src/lib/validators/cnpj.ts` porque esse helper não existe hoje.
+   - Idempotência: antes de inserir, remover dados com prefixo `screenshot-contador+2026-05@simulamei.local` / office name "Munhoz & Associados" no ambiente alvo. Nunca apagar dados fora desse marcador.
+   - Output local: `output/painel-screenshot-auth.json` com `{ "email": "...", "passwordEnv": "SCREENSHOT_TEST_PASSWORD" }` para orientar capture sem gravar senha.
 
 2. **Capture script** (`scripts/capture-painel-screenshot.ts`):
    - Roda Playwright em headless mode
-   - Visita `localhost:3000/contador` autenticado
+   - Requer app local rodando em `http://localhost:3000` (`npm run dev`) contra o mesmo Supabase usado no seed
+   - Autentica via UI pública: abre `/auth/login?next=/contador`, preenche o e-mail seedado e `process.env.SCREENSHOT_TEST_PASSWORD`, submete, aguarda `/contador`
+   - Não usa cookies manuais nem service role no Playwright
    - Set viewport 1280x1024
    - `page.screenshot({ path: 'public/images/painel-contador-real-2026-05.png', fullPage: true })`
-   - Otimiza PNG com `sharp` (max 200kb)
+   - Otimiza com `sharp`; alvo inicial ≤350kb. Se ficar acima disso, gerar WebP em `public/images/painel-contador-real-2026-05.webp` e usar `next/image` com WebP. Critério visual > tamanho absoluto: texto precisa continuar legível.
 
 3. **Componente** `src/components/landing/PainelScreenshot.tsx`:
 
@@ -285,7 +295,7 @@ const CALLOUTS = [
   { n: 1, title: 'Barra de carteira', body: <><strong>23 / 30</strong> com barra colorida adaptativa (lime &lt;80%, amarelo 80-95%, vermelho ≥95%). Calcula sozinho. Você sabe na primeira olhada se cabe mais cliente.</> },
   { n: 2, title: 'Alertas com severidade', body: <>Sistema dispara alertas quando simulação passa de <strong>70/80/95/100%</strong> do teto, vira anexo por Fator R ou DAS está pra vencer. Cores: azul info, amarelo atenção, vermelho crítico. Resolver inline.</> },
   { n: 3, title: 'Pausados por plano', body: <>Quando carteira cresce além do limite, sistema pausa o último cadastrado e mostra quantos ficaram de fora. Link direto pra upgrade. Sem perder o cliente, só pausa.</> },
-  { n: 4, title: 'Trial badge persistente', body: <>Pill com "X dias de trial · Escolher plano →" presente em todas as abas. Cor pulsa de lime &gt;14d para vermelho ≤3d. Conversão sem ser invasiva.</> },
+  { n: 4, title: 'Trial badge persistente', body: <>Pill com "X dias de trial · Escolher plano →" presente em todas as abas. Cor muda de lime para amarelo e vermelho quando faltam ≤3d. Conversão sem auto-checkout.</> },
 ]
 ```
 
@@ -350,7 +360,7 @@ const PLANS = [
 
 Renderiza grid 3 colunas (`repeat(auto-fit, minmax(min(100%, 280px), 1fr))` no mobile vira coluna). Pro com border navy 2px + badge "Mais escolhido" + CTA lime.
 
-CTAs Starter/Pro vão pra `/onboarding/contador?plan={key}` (mantém context do plano escolhido pra UI de billing pós-trial sugerir o certo). Enterprise vai pra mailto.
+CTAs Starter/Pro vão pra `/onboarding/contador?plan={key}` (mantém intenção do plano escolhido para UI de billing pós-trial sugerir o certo). O onboarding deve preservar o plano como intenção, mas depois de criar o escritório deve ir para `/contador?trial_started=1&intended_plan={key}` e NÃO para `/upgrade/contador?autocheckout={key}`. Enterprise vai pra mailto e dispara evento de analytics antes de abrir o cliente de e-mail.
 
 #### FAQ
 
@@ -358,12 +368,12 @@ CTAs Starter/Pro vão pra `/onboarding/contador?plan={key}` (mantém context do 
 
 ```tsx
 const FAQS = [
-  { q: 'Como funciona o trial de 7 dias?', a: 'Você cria a conta sem cartão, cadastra até 30 MEIs, usa todas as features do Pro durante 7 dias. No dia 8, escolhe um plano e paga via Stripe. Se não escolher, a conta entra em modo leitura — você não perde dados, mas não cadastra novos clientes nem dispara alertas.', open: true },
-  { q: 'O cliente MEI final vê o painel?', a: 'Não. O painel é só do escritório. O cliente MEI recebe apenas o que você manda (PDF de relatório, alerta por e-mail se você ativar). Os dados ficam isolados por escritório via RLS no Supabase — outros contadores não veem sua carteira.' },
-  { q: 'Posso importar minha lista atual de MEIs?', a: 'Plano Starter: cadastro um a um (formulário rápido com CNPJ → preenche CNAE, nome, UF automaticamente). Plano Pro: importação CSV em lote + API REST se você quiser sincronizar com outro sistema (ex: planilha do Google Sheets que já mantém).' },
-  { q: 'Como funcionam os alertas?', a: 'Quando uma simulação registra que o cliente passou de 70%, 80%, 95% ou 100% do teto MEI, ou cruzou a fronteira de Fator R (0.28), ou está perto do vencimento do DAS, o sistema cria um alerta no painel (badge vermelho/amarelo/azul por severidade). Você pode resolver inline. No plano Pro, alertas também viram webhook pra integração externa.' },
-  { q: 'Posso cancelar quando quiser?', a: 'Sim, sem fidelidade. Cancelamento na própria aba "Assinatura" → Stripe Customer Portal → cancelar. Mantém acesso até o fim do ciclo cobrado. Dados ficam disponíveis pra exportação por 30 dias após cancelar.' },
-  { q: 'E sobre LGPD e os dados dos meus clientes?', a: 'Coleta consentida (você confirma ao cadastrar cada cliente que tem autorização). Multi-tenancy por RLS (escritório A não acessa cliente do escritório B). Logs com IP pseudonimizado por HMAC-SHA256. Dados em Supabase com criptografia at-rest. Solicitações LGPD (consulta, exclusão, portabilidade) atendidas em até 15 dias pelo escritório owner.' },
+  { q: 'Como funciona o trial de 7 dias?', a: 'Você cria a conta sem cartão, configura o escritório e testa o painel por 7 dias. Não há cobrança automática no cadastro. Para continuar em um plano pago, o owner precisa clicar explicitamente em Escolher plano ou Assinar e concluir o Stripe Checkout.', open: true },
+  { q: 'O cliente MEI final vê o painel?', a: 'Não. O painel é do escritório. O cliente MEI recebe apenas o que você decidir enviar, como PDF de relatório ou orientação de acompanhamento.' },
+  { q: 'Posso importar minha lista atual de MEIs?', a: 'No MVP, o cadastro é feito pelo painel do contador. Importação CSV, API e webhook aparecem como recursos do plano Pro apenas se já estiverem implementados no branch de execução; caso contrário, manter copy como recurso planejado e não como promessa ativa.' },
+  { q: 'Como funcionam os alertas?', a: 'O painel prioriza clientes próximos do teto MEI, mudanças de cenário por Fator R e situações que exigem revisão. A copy final deve espelhar exatamente os alertas existentes em OfficeAlertsPanel para não vender um gatilho que ainda não existe.' },
+  { q: 'Posso cancelar quando quiser?', a: 'Sim, sem fidelidade. O cancelamento acontece pelo Stripe Customer Portal quando a assinatura existe. A copy final não deve prometer retenção/exportação por 30 dias até existir política e implementação confirmadas.' },
+  { q: 'E sobre LGPD e os dados dos meus clientes?', a: 'O cadastro deve pressupor autorização do escritório para tratar dados dos clientes. Usar apenas claims já sustentados por código/políticas vigentes: consentimento, privacidade publicada e isolamento de acesso revisado. Não afirmar SLA LGPD, retenção ou controles técnicos específicos sem auditoria aplicada no branch alvo.' },
 ]
 ```
 
@@ -398,7 +408,16 @@ const FAQS = [
 
 - **Deletar** `AccountantLeadForm` da page `/para-contadores`. Verificar se componente é consumido em outro lugar (`grep -r "AccountantLeadForm"`). Se não, deletar componente + test file. Se sim, deprecar (`@deprecated` JSDoc) + manter compilável.
 - **Deletar** lógica de `intent={'waitlist'|'enterprise'}` na page.
-- **Atualizar** trial padrão de 14 → 7 dias. Localizar via `grep -rn "14" src/lib/accountant/ src/app/onboarding/contador/ src/app/api/onboarding/` por constantes/literais. Suspeitos prováveis: constante `TRIAL_DAYS` ou `TRIAL_DURATION_DAYS` em `src/lib/accountant/billing.ts`, ou cálculo inline em `/api/onboarding/contador/route.ts`. Mudança aplica SÓ a novos onboardings — trials em andamento mantêm prazo original (não tocar em rows existentes de `accountant_offices.trial_ends_at`).
+- **Remover auto-checkout pós-onboarding**. Hoje `src/components/onboarding/AccountantOnboardingWizard.tsx` direciona o usuário com plano selecionado para upgrade com auto-checkout. Trocar para `/contador?trial_started=1&intended_plan=${plan}` via `buildOnboardingSuccessUrl(plan)`. Atualizar `src/app/onboarding/contador/redirect-urls.test.ts` para garantir que `autocheckout` não aparece no fluxo de trial sem cartão.
+- **Atualizar** trial padrão de 14 → 7 dias. Alvos verificados:
+  - `src/app/api/accountant/onboarding/route.ts`: trocar cálculo inline `14 * 24 * 60 * 60 * 1000` por constante `ACCOUNTANT_TRIAL_DAYS = 7` exportada/testável ou constante local.
+  - `src/app/api/accountant/onboarding/route.test.ts`: congelar tempo e validar que `trial_ends_at` é `now + 7d`.
+  - `src/app/contador/assinatura/page.tsx`: trocar progresso `trialDays/14 dias` e fórmula `((14 - trialDays) / 14)` para constante `ACCOUNTANT_TRIAL_DAYS`.
+  - `src/app/para-contadores/page.tsx`, `src/app/upgrade/contador/page.tsx`, `src/components/layout/ContadoresSection.tsx`: trocar copy pública "14 dias" → "7 dias".
+  Mudança aplica SÓ a novos onboardings — trials em andamento mantêm prazo original (não tocar em rows existentes de `accountant_offices.trial_ends_at`).
+- **Adicionar analytics leve** nos CTAs da landing para substituir o form:
+  - CTA hero/pricing Starter/Pro: `accountant_landing_cta_clicked` com `{ source, plan }`
+  - CTA Enterprise mailto: `accountant_enterprise_mailto_clicked` com `{ source: 'pricing' }`
 - **Adicionar comentário** `// SCREENSHOT-AFFECT: re-capture painel-contador` em:
   - `src/components/accountant/AccountantShell.tsx`
   - `src/components/accountant/OfficeStatsCards.tsx`
@@ -411,13 +430,15 @@ const FAQS = [
 - [ ] `/para-contadores` redesignada em Mercury aesthetic (off-white, navy, serif Georgia)
 - [ ] `AccountantLeadForm` removido da page; `intent={waitlist|enterprise}` deletado
 - [ ] Trial em 7 dias (não mais 14) — backend + copy alinhados
+- [ ] Fluxo `?plan=starter|pro` não dispara auto-checkout; onboarding termina no painel/trial e Stripe só abre por clique explícito
+- [ ] CTAs principais e Enterprise disparam eventos de analytics substitutos do lead form
 - [ ] Hero com CTA único primário "Comece grátis 7 dias" + secundário "#pricing"
 - [ ] 4 pares Problem → Solution exatos (lista em PROBLEMS array)
-- [ ] Screenshot real de `/contador` capturado via Playwright com seed (23 MEIs, 4 alertas) → `/public/images/painel-contador-real-2026-05.png` ≤200kb
+- [ ] Screenshot real de `/contador` capturado via Playwright com seed (23 MEIs, 4 alertas) → `/public/images/painel-contador-real-2026-05.png` ≤350kb ou `.webp` equivalente se PNG ficar grande
 - [ ] 4 callouts numerados ao lado do screenshot (laranja border-left)
 - [ ] Seção depoimento renderiza condicionalmente (vazio = não aparece)
 - [ ] Pricing 3 colunas (Pro destacado com badge "Mais escolhido" + border 2px navy + CTA lime)
-- [ ] FAQ 6 perguntas com `<details>` nativo, primeira aberta
+- [ ] FAQ 6 perguntas com `<details>` nativo, primeira aberta, sem promessa de cobrança automática, retenção 30d, SLA LGPD ou recurso técnico não verificado
 - [ ] Footer navy com link map 4 colunas + CTA final + meta com `TAX_RULE_VERSION` e `SIMULATION_COUNT_DISPLAY`
 - [ ] CNPJ NÃO inventado (uso "Operado por SimulaMEI" até ter real)
 - [ ] Comentários `SCREENSHOT-AFFECT` nos 4 componentes do painel
@@ -431,7 +452,7 @@ const FAQS = [
 ## 7. Não-objetivos
 
 - ❌ Criar `/escritorios` ou subdomínio separado
-- ❌ Reescrever `/onboarding/contador`, `/upgrade/contador`, ou rotas `/contador/*`
+- ❌ Reescrever amplamente `/onboarding/contador`, `/upgrade/contador`, ou rotas `/contador/*` (ajustes pontuais de trial, copy e redirect sem auto-checkout estão dentro do escopo)
 - ❌ Mudanças no backend de `office_subscriptions`, `office_clients`, `office_alerts`
 - ❌ Refazer `AccountantLeadForm` para novo propósito (deletar/depreciar simplesmente)
 - ❌ A/B test entre Mercury e direção alternativa
@@ -444,6 +465,9 @@ const FAQS = [
 - **Depoimento vazio no launch** — seção INTEIRA não renderiza, página fica mais curta. Owner precisa entregar 1-3 depoimentos REAIS antes do soft launch (ex: pedir pra colega contador). Bloqueia "completude visual" mas não a página em si.
 - **Screenshot envelhece** — quando UI de `/contador` mudar visualmente, screenshot vira mentira. Mitigação: comentários `SCREENSHOT-AFFECT` nos 4 componentes + checklist no PR template "re-capture screenshot se mexeu em [componentes]".
 - **Trial 7 dias quebra accounts em trial atual** — se há contadores ativos com `trial_ends_at` setado pra +14 dias, mudar lógica afeta retroativamente? Verificar: a mudança deve ser SÓ pra novos onboardings (`now + 7 days` em vez de `now + 14 days`), trials em andamento mantêm prazo original. Backend check obrigatório.
+- **Funil "sem cartão" entra em conflito com auto-checkout existente** — o fluxo atual com `?plan=` chama `/upgrade/contador?autocheckout=...` após onboarding. Mitigação: remover esse auto-checkout do pós-onboarding e testar que nenhuma URL com `autocheckout` é gerada por `/onboarding/contador?plan=...`.
+- **FAQ promete mais que o produto entrega** — LGPD, RLS, HMAC, retenção pós-cancelamento, API/CSV/webhook e modo leitura precisam ser verdade no branch alvo antes de aparecerem como promessa. Mitigação: copy conservadora no MVP + checklist de claims antes do publish.
+- **Seed de screenshot usa service role** — risco de apontar para produção ou chave em OneDrive. Mitigação: `SCREENSHOT_SEED_ENABLED=1`, ambiente local/staging explícito, marcador idempotente, sem leitura automática de `.env` sincronizado, e cleanup limitado ao usuário/office de screenshot.
 - **`AccountantLeadForm` deletado mas test file fica órfão** — execução deve incluir delete de `AccountantLeadForm.test.ts` e remover dependências do `vitest.config.ts` se houver.
 - **PostHog events do form de lead deixam de disparar** — pode quebrar dashboards/funis. Verificar `grep -r "accountant_lead"` em código + PostHog. Se houver dashboard de leads, depreciar com comunicação.
 - **SEO impact** — URL não muda, mas conteúdo sim. Google pode re-indexar e oscilar ranking temporariamente. Aceitável (página atual não rankeia bem mesmo).
@@ -455,17 +479,17 @@ const FAQS = [
 - W2 Problem → Solution: 30min
 - W3 Screenshot (seed + capture + componente): 2h (1h seed script + 30min Playwright + 30min componente)
 - W4 Depoimento + Pricing + FAQ + Footer: 1.5h
-- W5 Cleanup (AccountantLeadForm delete, trial 14→7d, comments): 1h
+- W5 Cleanup (AccountantLeadForm delete, trial 14→7d, remover auto-checkout, analytics, comments): 1.5h
 - Responsive + a11y polish: 1h
-- **Total**: ~7h de subagent + review
+- **Total**: ~7.5h de subagent + review
 
 ## 10. Dependências
 
-- **Bloqueia**: nada — pode rodar em paralelo com qualquer outro spec
-- **Bloqueado por**: nada — UI source (`/contador`) já existe e foi auditada (commits da branch `fix/audit-2026-05-25-p0-security`)
+- **Bloqueia**: nada — pode rodar em paralelo com outros specs de docs, mas execução de código deve partir de branch que contenha os fixes de auditoria necessários.
+- **Bloqueado por**: nenhuma dependência de produto para redesenhar a landing; claims de segurança/compliance no FAQ ficam bloqueados até os audit-fixes estarem no branch alvo ou a copy ser mantida conservadora.
 - **Sinergias**:
   - Spec #1 (rotação secrets) deve ser executado antes de capturar screenshot em Vercel preview com dados reais
-  - Specs #2/#3/#4/#5 (já implementados em `fix/audit-2026-05-25-p0-security`) viabilizam claims de segurança no FAQ
+  - Specs #2/#3/#4/#5 viabilizam claims mais fortes de segurança no FAQ, mas só podem ser citados depois de estarem merged/aplicados no branch de execução
 
 ## 11. Decisões pendentes (owner)
 
@@ -495,4 +519,8 @@ Essas decisões NÃO bloqueiam execução do spec — são slots/fallbacks docum
 - `scripts/seed-painel-screenshot.ts` (novo)
 - `scripts/capture-painel-screenshot.ts` (novo)
 - `public/images/painel-contador-real-2026-05.png` (novo, capturado via script)
-- `/api/accountant-leads/route.ts` ou `/onboarding/contador` — ajustar trial 14→7 dias
+- `src/app/api/accountant/onboarding/route.ts` — ajustar trial 14→7 dias
+- `src/app/api/accountant/onboarding/route.test.ts` — validar trial +7d
+- `src/components/onboarding/AccountantOnboardingWizard.tsx` — remover auto-checkout pós-onboarding
+- `src/app/contador/assinatura/page.tsx` — ajustar progresso/copy de trial 7d
+- `src/app/upgrade/contador/page.tsx` e `src/components/layout/ContadoresSection.tsx` — ajustar copy "14 dias" → "7 dias"
