@@ -142,6 +142,29 @@ export function getSubscriptionCurrentPeriodEnd(subscription: Stripe.Subscriptio
   return stripeTimestampToIso(timestamp)
 }
 
+export async function isStripeEventProcessed(
+  admin: SupabaseAdminLike,
+  eventId: string,
+) {
+  const table = admin.from('processed_stripe_events') as {
+    select(columns: string): {
+      eq(column: string, value: string): {
+        maybeSingle(): Promise<QueryResult<{ stripe_event_id: string } | null>>
+      }
+    }
+  }
+  const { data, error } = await table
+    .select('stripe_event_id')
+    .eq('stripe_event_id', eventId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return Boolean(data)
+}
+
 export async function markStripeEventProcessed(
   admin: SupabaseAdminLike,
   eventId: string,

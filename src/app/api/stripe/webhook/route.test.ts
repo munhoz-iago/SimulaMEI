@@ -7,6 +7,7 @@ const {
   headersMock,
   isStripeConfiguredMock,
   processedInsertMock,
+  processedSelectMock,
   subscriptionRetrieveMock,
   subscriptionSelectMock,
   subscriptionUpsertMock,
@@ -22,6 +23,7 @@ const {
   headersMock: vi.fn(),
   isStripeConfiguredMock: vi.fn(),
   processedInsertMock: vi.fn(),
+  processedSelectMock: vi.fn(),
   subscriptionRetrieveMock: vi.fn(),
   subscriptionSelectMock: vi.fn(),
   subscriptionUpsertMock: vi.fn(),
@@ -110,7 +112,10 @@ function makeAdminClient(options?: {
 
   const fromMock = vi.fn((table: string) => {
     if (table === 'processed_stripe_events') {
-      return { insert: processedInsertMock }
+      return {
+        insert: processedInsertMock,
+        select: processedSelectMock,
+      }
     }
 
     if (table === 'office_subscriptions') {
@@ -154,6 +159,7 @@ describe('/api/stripe/webhook POST', () => {
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test'
     headersMock.mockResolvedValue(new Headers({ 'stripe-signature': 'sig_test' }))
     isStripeConfiguredMock.mockReturnValue(true)
+    processedSelectMock.mockReturnValue(makeSelectChain([]))
     processedInsertMock.mockResolvedValue({ error: null })
     subscriptionUpsertMock.mockResolvedValue({ error: null })
     subscriptionUpdateMock.mockReturnValue(makePromiseChain())
@@ -178,9 +184,7 @@ describe('/api/stripe/webhook POST', () => {
   })
 
   it('short-circuits duplicate Stripe events before mutating subscriptions', async () => {
-    processedInsertMock.mockResolvedValueOnce({
-      error: { code: '23505', message: 'duplicate key value violates unique constraint' },
-    })
+    processedSelectMock.mockReturnValueOnce(makeSelectChain([{ stripe_event_id: 'evt_duplicate' }]))
     constructEventMock.mockReturnValue({
       id: 'evt_duplicate',
       type: 'checkout.session.completed',
@@ -199,8 +203,32 @@ describe('/api/stripe/webhook POST', () => {
 
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toEqual({ received: true, duplicate: true })
+    expect(processedInsertMock).not.toHaveBeenCalled()
     expect(subscriptionUpsertMock).not.toHaveBeenCalled()
     expect(officesUpdateMock).not.toHaveBeenCalled()
+  })
+
+  it('does not mark a Stripe event as processed when the handler fails', async () => {
+    subscriptionRetrieveMock.mockRejectedValueOnce(new Error('stripe unavailable'))
+    constructEventMock.mockReturnValue({
+      id: 'evt_handler_fails',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_1',
+          customer: 'cus_1',
+          subscription: 'sub_1',
+          client_reference_id: 'office-1',
+          metadata: { produto: 'accountant_pro', plan: 'pro', office_id: 'office-1' },
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(500)
+    expect(processedInsertMock).not.toHaveBeenCalled()
+    expect(subscriptionUpsertMock).not.toHaveBeenCalled()
   })
 
   it('activates the accountant office plan after checkout.session.completed', async () => {

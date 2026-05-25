@@ -1,12 +1,98 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { createBrandedCheckoutSession, isStripeConfigured } from '@/lib/stripe'
-import { getCurrentAccountantOffice } from './server'
+import { createBrandedCheckoutSession, getCheckoutUrl, getStripeClient, isStripeConfigured } from '@/lib/stripe'
+import { getCurrentAccountantOffice, type CurrentAccountantOffice } from './server'
 import {
   getAccountantStripeProduct,
   type AccountantPaidPlan,
 } from './billing'
+
+interface DbError {
+  message: string
+}
+
+interface OfficeSubscriptionRow {
+  id: string
+  plan: AccountantPaidPlan
+  status: string
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+}
+
+interface OfficeSubscriptionsTable {
+  select(columns: string): {
+    eq(column: string, value: string): {
+      maybeSingle(): Promise<{ data: OfficeSubscriptionRow | null; error: DbError | null }>
+    }
+  }
+  update(payload: Record<string, unknown>): {
+    eq(column: string, value: string): Promise<{ error: DbError | null }>
+  }
+  insert(payload: Record<string, unknown>): Promise<{ error: DbError | null }>
+}
+
+const LIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing', 'past_due'])
+
+function getOfficeLiveSubscription(
+  office: CurrentAccountantOffice,
+  stored: OfficeSubscriptionRow | null,
+): OfficeSubscriptionRow | null {
+  const candidate = stored ?? (
+    office.stripe_customer_id && office.stripe_subscription_id && (office.plan === 'starter' || office.plan === 'pro')
+      ? {
+          id: office.id,
+          plan: office.plan,
+          status: office.stripe_subscription_status ?? 'active',
+          stripe_customer_id: office.stripe_customer_id,
+          stripe_subscription_id: office.stripe_subscription_id,
+        }
+      : null
+  )
+
+  if (!candidate?.stripe_customer_id || !candidate.stripe_subscription_id) return null
+  return LIVE_SUBSCRIPTION_STATUSES.has(candidate.status) ? candidate : null
+}
+
+async function getStoredSubscription(table: OfficeSubscriptionsTable, officeId: string) {
+  const { data, error } = await table
+    .select('id, plan, status, stripe_customer_id, stripe_subscription_id')
+    .eq('office_id', officeId)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  return data
+}
+
+async function markPendingSubscription(
+  table: OfficeSubscriptionsTable,
+  officeId: string,
+  plan: AccountantPaidPlan,
+  sessionId: string,
+) {
+  const existing = await getStoredSubscription(table, officeId)
+  if (existing) {
+    const { error } = await table
+      .update({
+        status: 'pending',
+        plan,
+        stripe_checkout_session_id: sessionId,
+      })
+      .eq('office_id', officeId)
+
+    if (error) throw new Error(error.message)
+    return
+  }
+
+  const { error } = await table.insert({
+    office_id: officeId,
+    status: 'pending',
+    plan,
+    stripe_checkout_session_id: sessionId,
+  })
+
+  if (error) throw new Error(error.message)
+}
 
 export async function createAccountantCheckout(plan: AccountantPaidPlan) {
   const supabase = await createClient()
@@ -50,6 +136,50 @@ export async function createAccountantCheckout(plan: AccountantPaidPlan) {
     )
   }
 
+  const admin = createAdminClient()
+  const subscriptions = admin.from('office_subscriptions') as unknown as OfficeSubscriptionsTable
+  let storedSubscription: OfficeSubscriptionRow | null
+  try {
+    storedSubscription = await getStoredSubscription(subscriptions, office.id)
+  } catch (error) {
+    console.error('[/api/checkout/accountant] subscription lookup error:', error)
+    return NextResponse.json(
+      { error: 'Não foi possível carregar a assinatura atual do escritório.' },
+      { status: 500 },
+    )
+  }
+
+  const liveSubscription = getOfficeLiveSubscription(office, storedSubscription)
+  if (liveSubscription?.plan === plan) {
+    return NextResponse.json({
+      url: getCheckoutUrl(`/contador/assinatura?already=${plan}`),
+    })
+  }
+
+  if (liveSubscription) {
+    const stripeCustomerId = liveSubscription.stripe_customer_id
+    const stripeSubscriptionId = liveSubscription.stripe_subscription_id
+    if (!stripeCustomerId || !stripeSubscriptionId) {
+      return NextResponse.json(
+        { error: 'Assinatura Stripe incompleta para alteração de plano.' },
+        { status: 409 },
+      )
+    }
+
+    const session = await getStripeClient().billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: getCheckoutUrl(`/contador/assinatura?changed=${plan}`),
+      flow_data: {
+        type: 'subscription_update',
+        subscription_update: {
+          subscription: stripeSubscriptionId,
+        },
+      },
+    })
+
+    return NextResponse.json({ url: session.url })
+  }
+
   const session = await createBrandedCheckoutSession({
     product: plan === 'pro' ? 'accountant_pro' : 'accountant_starter',
     userId: user.id,
@@ -68,22 +198,10 @@ export async function createAccountantCheckout(plan: AccountantPaidPlan) {
     )
   }
 
-  const admin = createAdminClient()
-  const subscriptions = admin.from('office_subscriptions') as unknown as {
-    upsert(
-      payload: Record<string, unknown>,
-      options: { onConflict: string },
-    ): Promise<{ error: { message: string } | null }>
-  }
-  const { error: subscriptionError } = await subscriptions.upsert({
-    office_id: office.id,
-    status: 'pending',
-    plan,
-    stripe_checkout_session_id: session.id,
-  }, { onConflict: 'office_id' })
-
-  if (subscriptionError) {
-    console.error('[/api/checkout/accountant] pending subscription error:', subscriptionError.message)
+  try {
+    await markPendingSubscription(subscriptions, office.id, plan, session.id)
+  } catch (error) {
+    console.error('[/api/checkout/accountant] pending subscription error:', error)
     return NextResponse.json(
       { error: 'Checkout criado, mas não foi possível registrar a assinatura pendente.' },
       { status: 500 },

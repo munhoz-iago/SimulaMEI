@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import ExcelJS from 'exceljs'
-import { canAccessAdminLeads, getProfileAccess } from '@/lib/auth/profile-access'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { isAdminEmail } from '@/lib/auth/admin-access'
+import { applyRateLimitHeaders, consumeRateLimit } from '@/lib/security/rate-limit'
+import { sanitizeXlsxCell } from '@/lib/security/xlsx-injection'
 import { createClient } from '@/lib/supabase/server'
 
 interface AccountantLeadExportRow {
@@ -15,6 +16,7 @@ interface AccountantLeadExportRow {
 }
 
 const EXPORT_ROW_LIMIT = 1000
+const EXPORT_RATE_LIMIT = 10
 
 export async function GET() {
   const supabase = await createClient()
@@ -24,13 +26,26 @@ export async function GET() {
     return NextResponse.json({ error: 'Autenticação obrigatória.' }, { status: 401 })
   }
 
-  const access = await getProfileAccess(supabase, user)
-  if (!canAccessAdminLeads(access.profile, user)) {
+  if (!isAdminEmail(user.email)) {
     return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
   }
 
-  const admin = createAdminClient()
-  const { data, error } = await admin
+  const rateLimit = await consumeRateLimit({
+    namespace: 'leads_export',
+    subjectHash: user.id,
+    limit: EXPORT_RATE_LIMIT,
+    windowSeconds: 60 * 60,
+  })
+
+  if (!rateLimit.allowed) {
+    return applyRateLimitHeaders(
+      NextResponse.json({ error: 'Limite de exportações atingido.' }, { status: 429 }),
+      rateLimit,
+      EXPORT_RATE_LIMIT,
+    )
+  }
+
+  const { data, error } = await supabase
     .from('accountant_leads')
     .select('nome_escritorio,email,telefone,carteira_range,ferramenta_atual,status,created_at')
     .order('created_at', { ascending: false })
@@ -42,15 +57,15 @@ export async function GET() {
   }
 
   const rows = ((data ?? []) as AccountantLeadExportRow[]).map(lead => ({
-    nome: lead.nome_escritorio ?? '',
+    nome: sanitizeXlsxCell(lead.nome_escritorio ?? ''),
     CNPJ: '',
-    email: lead.email ?? '',
+    email: sanitizeXlsxCell(lead.email ?? ''),
     regime: '',
     faturamento_mensal: '',
-    telefone: lead.telefone ?? '',
-    carteira_range: lead.carteira_range ?? '',
-    ferramenta_atual: lead.ferramenta_atual ?? '',
-    status: lead.status ?? '',
+    telefone: sanitizeXlsxCell(lead.telefone ?? ''),
+    carteira_range: sanitizeXlsxCell(lead.carteira_range ?? ''),
+    ferramenta_atual: sanitizeXlsxCell(lead.ferramenta_atual ?? ''),
+    status: sanitizeXlsxCell(lead.status ?? ''),
     criado_em: lead.created_at ?? '',
   }))
 
@@ -71,10 +86,10 @@ export async function GET() {
   worksheet.addRows(rows.length > 0 ? rows : [{}])
   const buffer = await workbook.xlsx.writeBuffer()
 
-  return new NextResponse(new Uint8Array(buffer as ArrayBuffer), {
+  return applyRateLimitHeaders(new NextResponse(new Uint8Array(buffer as ArrayBuffer), {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': 'attachment; filename="simulamei-leads.xlsx"',
     },
-  })
+  }), rateLimit, EXPORT_RATE_LIMIT)
 }

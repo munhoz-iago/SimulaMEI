@@ -6,15 +6,21 @@ const {
   createAdminClientMock,
   getCurrentAccountantOfficeMock,
   createBrandedCheckoutSessionMock,
+  portalCreateMock,
   isStripeConfiguredMock,
-  upsertSubscriptionMock,
+  subscriptionInsertMock,
+  subscriptionSelectMock,
+  subscriptionUpdateMock,
 } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
   createAdminClientMock: vi.fn(),
   getCurrentAccountantOfficeMock: vi.fn(),
   createBrandedCheckoutSessionMock: vi.fn(),
+  portalCreateMock: vi.fn(),
   isStripeConfiguredMock: vi.fn(),
-  upsertSubscriptionMock: vi.fn(),
+  subscriptionInsertMock: vi.fn(),
+  subscriptionSelectMock: vi.fn(),
+  subscriptionUpdateMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -48,6 +54,13 @@ vi.mock('@/lib/stripe', () => ({
   },
   getCheckoutUrl: (path: string) => `http://localhost:3000${path}`,
   createBrandedCheckoutSession: createBrandedCheckoutSessionMock,
+  getStripeClient: () => ({
+    billingPortal: {
+      sessions: {
+        create: portalCreateMock,
+      },
+    },
+  }),
   isStripeConfigured: isStripeConfiguredMock,
 }))
 
@@ -60,6 +73,10 @@ const OFFICE = {
   max_clients: 30,
   trial_ends_at: null,
   role: 'owner',
+  stripe_customer_id: null,
+  stripe_subscription_id: null,
+  stripe_subscription_status: null,
+  current_period_end: null,
 }
 
 function makeServerClient(user: { id: string; email?: string } | null = { id: 'user-1', email: 'ana@contabil.com' }) {
@@ -70,18 +87,28 @@ function makeServerClient(user: { id: string; email?: string } | null = { id: 'u
   }
 }
 
-function makeAdminClient() {
+function makeAdminClient(storedSubscription: Record<string, unknown> | null = null) {
+  const selectChain = {
+    eq: vi.fn(() => ({
+      maybeSingle: vi.fn().mockResolvedValue({ data: storedSubscription, error: null }),
+    })),
+  }
+  const updateChain = {
+    eq: vi.fn().mockResolvedValue({ error: null }),
+  }
   const fromMock = vi.fn((table: string) => {
     if (table !== 'office_subscriptions') {
       throw new Error(`Unexpected table: ${table}`)
     }
 
     return {
-      upsert: upsertSubscriptionMock,
+      select: subscriptionSelectMock.mockReturnValue(selectChain),
+      update: subscriptionUpdateMock.mockReturnValue(updateChain),
+      insert: subscriptionInsertMock,
     }
   })
 
-  return { from: fromMock }
+  return { from: fromMock, selectChain, updateChain }
 }
 
 function makeRequest() {
@@ -101,7 +128,8 @@ describe('/api/checkout/accountant-starter POST', () => {
       id: 'cs_starter_1',
       url: 'https://checkout.stripe.com/cs_starter_1',
     })
-    upsertSubscriptionMock.mockResolvedValue({ error: null })
+    portalCreateMock.mockResolvedValue({ url: 'https://billing.stripe.com/session' })
+    subscriptionInsertMock.mockResolvedValue({ error: null })
   })
 
   it('requires authentication', async () => {
@@ -147,11 +175,59 @@ describe('/api/checkout/accountant-starter POST', () => {
       }),
     }))
 
-    expect(upsertSubscriptionMock).toHaveBeenCalledWith(expect.objectContaining({
+    expect(subscriptionInsertMock).toHaveBeenCalledWith(expect.objectContaining({
       office_id: 'office-1',
       status: 'pending',
       plan: 'starter',
       stripe_checkout_session_id: 'cs_starter_1',
-    }), { onConflict: 'office_id' })
+    }))
+  })
+
+  it('preserves live Stripe fields when recording a new pending checkout over an existing inactive row', async () => {
+    const admin = makeAdminClient({
+      id: 'sub-row-1',
+      office_id: 'office-1',
+      status: 'canceled',
+      plan: 'pro',
+      stripe_customer_id: 'cus_old',
+      stripe_subscription_id: 'sub_old',
+    })
+    createAdminClientMock.mockReturnValue(admin)
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    expect(subscriptionUpdateMock).toHaveBeenCalledWith({
+      status: 'pending',
+      plan: 'starter',
+      stripe_checkout_session_id: 'cs_starter_1',
+    })
+    expect(admin.updateChain.eq).toHaveBeenCalledWith('office_id', 'office-1')
+    expect(subscriptionInsertMock).not.toHaveBeenCalled()
+  })
+
+  it('sends active plan changes to Stripe Customer Portal instead of creating a second checkout', async () => {
+    createAdminClientMock.mockReturnValue(makeAdminClient({
+      id: 'sub-row-1',
+      status: 'active',
+      plan: 'pro',
+      stripe_customer_id: 'cus_1',
+      stripe_subscription_id: 'sub_1',
+    }))
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      url: 'https://billing.stripe.com/session',
+    })
+    expect(createBrandedCheckoutSessionMock).not.toHaveBeenCalled()
+    expect(portalCreateMock).toHaveBeenCalledWith(expect.objectContaining({
+      customer: 'cus_1',
+      flow_data: {
+        type: 'subscription_update',
+        subscription_update: { subscription: 'sub_1' },
+      },
+    }))
   })
 })

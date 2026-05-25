@@ -313,20 +313,22 @@ export async function getCurrentAccountantOffice(
   }
 }
 
-function getOfficeClientsTable() {
-  return createAdminClient().from('office_clients') as unknown as OfficeClientsTable
+async function getOfficeClientsTable() {
+  const supabase = await createClient()
+  return supabase.from('office_clients') as unknown as OfficeClientsTable
 }
 
-function getOfficeSimulationsTable() {
-  return createAdminClient().from('office_simulations') as unknown as OfficeSimulationsTable
+async function getOfficeSimulationsTable() {
+  const supabase = await createClient()
+  return supabase.from('office_simulations') as unknown as OfficeSimulationsTable
 }
 
-function getOfficeAlertsTable(admin = createAdminClient()) {
-  return admin.from('office_alerts') as unknown as OfficeAlertsTable
+function getOfficeAlertsTable(supabase: SupabaseServerClient) {
+  return supabase.from('office_alerts') as unknown as OfficeAlertsTable
 }
 
-function getUserProfilesTable(admin = createAdminClient()) {
-  return admin.from('user_profiles') as unknown as UserProfilesTable
+function getUserProfilesTable(supabase: SupabaseServerClient) {
+  return supabase.from('user_profiles') as unknown as UserProfilesTable
 }
 
 function applyStatusFilter<T>(
@@ -346,7 +348,7 @@ async function countOfficeClients(
 ) {
   if (officeId.startsWith(ADMIN_FALLBACK_OFFICE_ID_PREFIX)) return 0
 
-  const table = getOfficeClientsTable()
+  const table = await getOfficeClientsTable()
   let query = table
     .select<null>('id', { count: 'exact', head: true })
     .eq('office_id', officeId)
@@ -393,7 +395,7 @@ export async function listOfficeClients(
 
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
-  const table = getOfficeClientsTable()
+  const table = await getOfficeClientsTable()
   const query = applyStatusFilter(
     table
       .select<OfficeClientRecord[]>(OFFICE_CLIENT_COLUMNS, { count: 'exact' })
@@ -418,7 +420,7 @@ export async function listOfficeClients(
 export async function getOfficeClientById(officeId: string, clientId: string) {
   if (officeId.startsWith(ADMIN_FALLBACK_OFFICE_ID_PREFIX)) return null
 
-  const table = getOfficeClientsTable()
+  const table = await getOfficeClientsTable()
   const { data, error } = await table
     .select<OfficeClientRecord>(OFFICE_CLIENT_COLUMNS)
     .eq('office_id', officeId)
@@ -436,7 +438,7 @@ export async function listOfficeClientSimulations(
 ) {
   if (officeId.startsWith(ADMIN_FALLBACK_OFFICE_ID_PREFIX)) return []
 
-  const table = getOfficeSimulationsTable()
+  const table = await getOfficeSimulationsTable()
   const { data, error } = await table
     .select<OfficeSimulationRecord[]>(OFFICE_SIMULATION_COLUMNS)
     .eq('office_id', officeId)
@@ -454,10 +456,10 @@ export async function listOfficeAlerts(
 ) {
   if (officeId.startsWith(ADMIN_FALLBACK_OFFICE_ID_PREFIX)) return []
 
-  const admin = createAdminClient()
   const status = options?.status ?? 'open'
   const limit = options?.limit ?? 6
-  const table = getOfficeAlertsTable(admin)
+  const supabase = await createClient()
+  const table = getOfficeAlertsTable(supabase)
   let query = table
     .select<OfficeAlertRecord[]>(OFFICE_ALERT_COLUMNS)
     .eq('office_id', officeId)
@@ -482,6 +484,15 @@ export async function listOfficeAlerts(
     return rows.map(row => ({ ...row, resolved_by_label: null }))
   }
 
+  // RLS de user_profiles é "select own" (migration 001) — só o próprio usuário
+  // lê o próprio perfil. Para resolver labels de OUTROS membros do escritório
+  // (quem resolveu o alerta), precisamos do admin client. Escopo: apenas IDs
+  // que já apareceram como `resolved_by` em alertas DESTE office (resolverIds
+  // vem do query anterior já filtrado por office_id). Dados expostos: id,
+  // email, nome — informação operacional necessária para a UI, baixa sensibilidade.
+  // Alternativa de longo prazo: policy "user_profiles: select office members"
+  // (todos do mesmo escritório se enxergam). Spec separado.
+  const admin = createAdminClient()
   const profilesTable = getUserProfilesTable(admin)
   const profilesResult = await profilesTable
     .select('id, email, nome')

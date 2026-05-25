@@ -6,6 +6,7 @@ import {
   getStripeObjectId,
   getSubscriptionCurrentPeriodEnd,
   getSubscriptionPrimaryPriceId,
+  isStripeEventProcessed,
   markAccountantCheckoutExpired,
   markStripeEventProcessed,
   normalizeAccountantSubscriptionStatus,
@@ -164,14 +165,19 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient()
-  const idempotency = await markStripeEventProcessed(admin, event.id, event.type)
-  if (idempotency.error) {
-    console.error('[stripe-webhook] idempotency error:', idempotency.error)
-    return NextResponse.json({ error: 'Não foi possível registrar o evento Stripe.' }, { status: 500 })
-  }
 
-  if (idempotency.duplicate) {
-    return NextResponse.json({ received: true, duplicate: true })
+  try {
+    const isDuplicate = await isStripeEventProcessed(admin, event.id)
+    if (isDuplicate) {
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+  } catch (error) {
+    console.error('[stripe-webhook] idempotency read error:', {
+      eventId: event.id,
+      eventType: event.type,
+      error,
+    })
+    return NextResponse.json({ error: 'Não foi possível validar o evento Stripe.' }, { status: 500 })
   }
 
   try {
@@ -196,8 +202,21 @@ export async function POST(request: Request) {
       await handleCheckoutExpired(admin, event.data.object as Stripe.Checkout.Session)
     }
   } catch (error) {
-    console.error('[stripe-webhook] handler error:', error)
+    console.error('[stripe-webhook] handler error:', {
+      eventId: event.id,
+      eventType: event.type,
+      error,
+    })
     return NextResponse.json({ error: 'Erro ao processar evento Stripe.' }, { status: 500 })
+  }
+
+  const idempotency = await markStripeEventProcessed(admin, event.id, event.type)
+  if (idempotency.error) {
+    console.warn('[stripe-webhook] idempotency write error after handler success:', {
+      eventId: event.id,
+      eventType: event.type,
+      error: idempotency.error,
+    })
   }
 
   return NextResponse.json({ received: true })
