@@ -43,7 +43,7 @@ export default function PrivacidadePage() {
           operada por Iago Munhoz. Não somos um escritório de contabilidade nem prestamos consultoria fiscal —
           as simulações têm caráter exclusivamente informativo.
         </P>
-        <P>Contato: <a href="mailto:privacidade@simulamei.com.br" style={{ color: 'var(--lime)' }}>privacidade@simulamei.com.br</a></P>
+        <P>Contato: <a href="mailto:iagomunhoz48@gmail.com" style={{ color: 'var(--lime)' }}>iagomunhoz48@gmail.com</a></P>
       </Section>
 
       <Section title="2. Dados que coletamos">
@@ -91,8 +91,8 @@ export default function PrivacidadePage() {
         ]} />
         <P>
           Para exercer qualquer direito, envie um e-mail para{' '}
-          <a href="mailto:privacidade@simulamei.com.br" style={{ color: 'var(--lime)' }}>
-            privacidade@simulamei.com.br
+          <a href="mailto:iagomunhoz48@gmail.com" style={{ color: 'var(--lime)' }}>
+            iagomunhoz48@gmail.com
           </a>
           {' '}com o assunto &quot;LGPD — [tipo de solicitação]&quot;. Respondemos em até 15 dias úteis.
         </P>
