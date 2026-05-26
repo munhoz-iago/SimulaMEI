@@ -43,7 +43,7 @@ Atualmente texto da página fala "14 dias grátis". O backend cria `trial_ends_a
 - **URL mantida**: `/para-contadores`. Sem redirect, sem subdomínio, sem `/escritorios`.
 - **Trial encurtado de 14 → 7 dias** (decisão estratégica do owner — mais agressivo no funil, alinhado com práticas atuais de SaaS B2B).
 - **Mata o waitlist**. `AccountantLeadForm` removido da página (DELETE da component se nenhum outro consumer; senão deprecar marcadamente). Endpoint `/api/accountant-leads` mantido por enquanto (legado), mas spec separado avalia remoção.
-- **Mata o intent dual** (`?intent=enterprise`). Plano Enterprise vira CTA "Falar com vendas" → `mailto:contato@simulamei.com.br` com subject pre-fillado.
+- **Mata o intent dual** (`?intent=enterprise`). Plano Enterprise vira CTA "Falar com vendas" → `mailto:iagomunhoz48@gmail.com` com subject pre-fillado.
 - **CTA único primário** em todos os pontos: "Avaliar grátis" (ou "Comece grátis 7 dias" no hero). Endpoint: `/onboarding/contador`.
 - **CTA secundário** apenas no hero: "Ver planos e preços" → âncora `#pricing` na mesma página (smooth scroll), NÃO link pra `/upgrade/contador`.
 - **Sem auto-checkout no onboarding**. `?plan=starter|pro` continua permitido como intenção de plano, mas NÃO deve redirecionar para `/upgrade/contador?autocheckout=...` ao final do onboarding. Após criar o escritório, o fluxo deve ir para `/contador?trial_started=1&intended_plan={plan}` ou `/contador` quando não houver plano. Checkout Stripe só pode abrir a partir de clique explícito em `/contador/assinatura` ou `/upgrade/contador`.
@@ -354,7 +354,7 @@ export function AccountantTestimonial({ testimonials }: { testimonials: Testimon
 const PLANS = [
   { key: 'starter', name: 'Starter', price: 'R$ 97', priceSuffix: '/mês', desc: 'Para escritórios começando carteira MEI.', features: ['Até 30 clientes MEI ativos', 'Painel com alertas + Fator R + anexo', 'Relatório PDF por cliente', '1 owner + 1 colaborador'], excluded: ['Sem API, sem CSV exportação'], cta: 'Avaliar Starter grátis', highlight: false },
   { key: 'pro', name: 'Pro', price: 'R$ 247', priceSuffix: '/mês', desc: 'Para carteiras crescendo + integração técnica.', features: ['Até 150 clientes MEI ativos', 'Tudo do Starter +', 'API REST + webhook de alertas', 'CSV mensal exportação', 'PDF com marca do escritório', 'Histórico mensal (rolling-12)'], cta: 'Avaliar Pro grátis', highlight: true, badge: 'Mais escolhido' },
-  { key: 'enterprise', name: 'Enterprise', price: 'Sob consulta', priceSuffix: '', desc: 'Para escritórios > 150 clientes ou exigências de contrato.', features: ['Carteira sem limite', 'Tudo do Pro +', 'Multi-seat (vários colaboradores)', 'White-label completo', 'SLA + integrações sob contrato', 'Suporte prioritário'], cta: 'Falar com vendas', highlight: false, ctaHref: 'mailto:contato@simulamei.com.br?subject=Plano%20Enterprise' },
+  { key: 'enterprise', name: 'Enterprise', price: 'Sob consulta', priceSuffix: '', desc: 'Para escritórios > 150 clientes ou exigências de contrato.', features: ['Carteira sem limite', 'Tudo do Pro +', 'Multi-seat (vários colaboradores)', 'White-label completo', 'SLA + integrações sob contrato', 'Suporte prioritário'], cta: 'Falar com vendas', highlight: false, ctaHref: 'mailto:iagomunhoz48@gmail.com?subject=Plano%20Enterprise' },
 ]
 ```
 
@@ -390,8 +390,8 @@ const FAQS = [
     <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: '1.4fr repeat(3, 1fr)', gap: 32 }}>
       <BrandColumn />
       <LinkColumn title="Produto" links={[['/para-contadores', 'Para contadores'], ['/', 'Simulador (B2C)'], ['/api-docs', 'API e integrações'], ['/metodologia', 'Metodologia fiscal']]} />
-      <LinkColumn title="Recursos" links={[['/aprenda', 'Aprenda'], ['/cnae', 'CNAEs MEI'], ['mailto:contato@simulamei.com.br', 'Suporte']]} />
-      <LinkColumn title="Legal" links={[['/termos', 'Termos'], ['/privacidade', 'Privacidade & LGPD'], ['mailto:contato@simulamei.com.br', 'Contato comercial']]} />
+      <LinkColumn title="Recursos" links={[['/aprenda', 'Aprenda'], ['/cnae', 'CNAEs MEI'], ['mailto:iagomunhoz48@gmail.com', 'Suporte']]} />
+      <LinkColumn title="Legal" links={[['/termos', 'Termos'], ['/privacidade', 'Privacidade & LGPD'], ['mailto:iagomunhoz48@gmail.com', 'Contato comercial']]} />
     </div>
     <div style={{ maxWidth: 1000, margin: '24px auto 0', paddingTop: 18, borderTop: '1px solid #2d4263', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, color: '#6c7a8d', flexWrap: 'wrap', gap: 12 }}>
       <div>© 2026 SimulaMEI · Operado por SimulaMEI</div>
