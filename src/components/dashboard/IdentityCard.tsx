@@ -95,7 +95,7 @@ export function IdentityCard({ profile, email }: IdentityCardProps) {
       </div>
       <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.6 }}>
         E-mail (<strong style={{ color: 'var(--text2)' }}>{email}</strong>) só pode ser alterado
-        pelo suporte — escreva pra contato@simulamei.com.br.
+        pelo suporte — escreva pra iagomunhoz48@gmail.com.
       </div>
     </div>
   )

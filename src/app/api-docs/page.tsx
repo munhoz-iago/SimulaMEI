@@ -305,7 +305,7 @@ const resultado = await client.simular({ faturamentoAcumulado: 54000, mesAtual: 
       }}>
         A API pública ainda está em <strong style={{ color: 'var(--yellow)' }}>beta privado</strong>.
         Para solicitar acesso antecipado, envie um e-mail para{' '}
-        <a href="mailto:api@simulamei.com.br" style={{ color: 'var(--lime)' }}>api@simulamei.com.br</a>
+        <a href="mailto:iagomunhoz48@gmail.com" style={{ color: 'var(--lime)' }}>iagomunhoz48@gmail.com</a>
         {' '}com seu caso de uso.
       </div>
     </StaticPageLayout>
