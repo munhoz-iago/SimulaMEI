@@ -105,8 +105,8 @@ export default function TermosPage() {
         <P>
           Você é responsável pela confidencialidade da sua senha e por todas as atividades realizadas
           na sua conta. Notifique imediatamente sobre uso não autorizado em{' '}
-          <a href="mailto:iagomunhoz48@gmail.com" style={{ color: 'var(--lime)' }}>
-            iagomunhoz48@gmail.com
+          <a href="mailto:seguranca@simulamei.com.br" style={{ color: 'var(--lime)' }}>
+            seguranca@simulamei.com.br
           </a>.
         </P>
       </Section>
@@ -129,8 +129,8 @@ export default function TermosPage() {
       <Section title="11. Contato">
         <P>
           Dúvidas sobre estes termos:{' '}
-          <a href="mailto:iagomunhoz48@gmail.com" style={{ color: 'var(--lime)' }}>
-            iagomunhoz48@gmail.com
+          <a href="mailto:legal@simulamei.com.br" style={{ color: 'var(--lime)' }}>
+            legal@simulamei.com.br
           </a>
         </P>
       </Section>

@@ -45,8 +45,8 @@ export default function GithubPage() {
         </h2>
         <p>
           Para auditoria, parceria ou acesso antecipado ao repositório, escreva para{' '}
-          <a href="mailto:iagomunhoz48@gmail.com" style={{ color: 'var(--lime)' }}>
-            iagomunhoz48@gmail.com
+          <a href="mailto:dev@simulamei.com.br" style={{ color: 'var(--lime)' }}>
+            dev@simulamei.com.br
           </a>.
         </p>
       </section>

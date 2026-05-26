@@ -419,7 +419,7 @@ export default async function ParaContadoresPage({
               Pode escrever direto pra gente — a caixa cai no mesmo time comercial.
             </p>
             <a
-              href={`mailto:iagomunhoz48@gmail.com?subject=${mailtoSubject}`}
+              href={`mailto:contato@simulamei.com.br?subject=${mailtoSubject}`}
               style={{
                 display: 'inline-block',
                 color: 'var(--lime)',
@@ -429,7 +429,7 @@ export default async function ParaContadoresPage({
                 textDecoration: 'underline',
               }}
             >
-              iagomunhoz48@gmail.com
+              contato@simulamei.com.br
             </a>
             <p style={{ color: 'var(--text3)', fontSize: 12, lineHeight: 1.5, margin: '12px 0 0' }}>
               Respondemos em até 1 dia útil.

@@ -390,7 +390,7 @@ export function IdentityCard({ profile, email }: IdentityCardProps) {
       <LabeledInput ref={negocioRef} label="Nome do negócio" defaultValue={profile?.nome_negocio ?? ''} />
       <LabeledInput ref={telefoneRef} label="Telefone" defaultValue={profile?.telefone ?? ''} />
       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
-        E-mail ({email}) só pode ser alterado pelo suporte — escreva pra iagomunhoz48@gmail.com.
+        E-mail ({email}) só pode ser alterado pelo suporte — escreva pra contato@simulamei.com.br.
       </div>
     </div>
   )

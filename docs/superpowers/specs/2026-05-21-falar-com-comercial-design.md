@@ -79,7 +79,7 @@ Verificado por leitura (`AccountantLeadForm.tsx`):
   - Pré-define `carteiraRange = '150+'` (faixa Enterprise).
 - **Os 3 CTAs "Falar com comercial" passam a apontar para `/para-contadores#contato`** com `?intent=enterprise` para o form saber que veio do Enterprise. Implementação: server component lê `searchParams.intent`, passa `intent="enterprise"` ao componente.
 - **O CTA "Entrar na lista →" passa a apontar para `#contato` (sem intent)** — mesma âncora interna, mas mantém o `intent` default `'waitlist'`. Cumpre a promessa literal da copy ("Entrar na lista") porque agora o form **é** o destino real.
-- **Fallback mailto explícito** ao lado do form: link visível para `iagomunhoz48@gmail.com` com assunto pré-preenchido (`?subject=Plano Enterprise — Contato comercial`). Para quem não quer formulário.
+- **Fallback mailto explícito** ao lado do form: link visível para `contato@simulamei.com.br` com assunto pré-preenchido (`?subject=Plano Enterprise — Contato comercial`). Para quem não quer formulário.
 - **Remover a copy mentirosa** (`:246`) ou — preferível — **realinhá-la** ao formulário recém-plugado, mantendo a promessa cumprida.
 - **NÃO** criar `/contato` separado, **NÃO** criar Calendly link (não está no stack), **NÃO** introduzir WhatsApp clickable (o telefone do form já cobre).
 
@@ -157,14 +157,14 @@ Dentro da `section#contato`, ao lado/abaixo do form (depende do breakpoint), adi
 ```tsx
 <div className="contato-fallback">
   <div>Prefere e-mail?</div>
-  <a href="mailto:iagomunhoz48@gmail.com?subject=Plano%20Enterprise%20%E2%80%94%20Contato%20comercial">
-    iagomunhoz48@gmail.com
+  <a href="mailto:contato@simulamei.com.br?subject=Plano%20Enterprise%20%E2%80%94%20Contato%20comercial">
+    contato@simulamei.com.br
   </a>
   <span>Respondemos em até 1 dia útil.</span>
 </div>
 ```
 
-**Verificação:** confirmar se `iagomunhoz48@gmail.com` existe e está roteado. Se não, usar `comercial@simulamei.com.br` ou o e-mail já documentado em outras superfícies. Verificar `/privacidade`, `/termos`, `/api-docs` — todos têm mailto, definir qual usar.
+**Verificação:** confirmar se `contato@simulamei.com.br` existe e está roteado. Se não, usar `comercial@simulamei.com.br` ou o e-mail já documentado em outras superfícies. Verificar `/privacidade`, `/termos`, `/api-docs` — todos têm mailto, definir qual usar.
 
 ### W5 — Realinhar a copy mentirosa
 
@@ -229,7 +229,7 @@ captureProductEvent('enterprise_mailto_clicked', { source })
 - [ ] O CTA "Entrar na lista →" (`/para-contadores:188`) leva a `#contato` (sem intent) e cumpre a promessa de waitlist.
 - [ ] Form renderizado com CTA "Falar com nosso comercial" e carteira pré-selecionada em `150+`.
 - [ ] POST `/api/accountant-leads` aceita o payload e retorna 200; lead aparece em `accountant_leads` com flag `intent=enterprise` (se a tabela já tem coluna `intent`; senão, propriedade vai no PostHog).
-- [ ] Mailto `iagomunhoz48@gmail.com` visível ao lado/abaixo do form.
+- [ ] Mailto `contato@simulamei.com.br` visível ao lado/abaixo do form.
 - [ ] Copy `:246` realinhada à realidade.
 - [ ] `npm test -- --run` continua verde.
 - [ ] PostHog: `enterprise_lead_form_viewed` dispara ao chegar com `?intent=enterprise`.
