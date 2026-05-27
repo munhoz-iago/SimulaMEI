@@ -7,6 +7,7 @@ export type AccountantBillingKind =
   | 'trial_expired'
   | 'pending'
   | 'past_due'
+  | 'paused'
   | 'unpaid'
   | 'canceled'
   | 'incomplete'
@@ -44,6 +45,7 @@ const STATUS_LABELS: Record<AccountantBillingKind, string> = {
   trial_expired: 'Trial encerrado',
   pending: 'Checkout pendente',
   past_due: 'Pagamento pendente',
+  paused: 'Assinatura pausada',
   unpaid: 'Pagamento vencido',
   canceled: 'Cancelada',
   incomplete: 'Pagamento incompleto',
@@ -61,6 +63,7 @@ function normalizeStatus(status: string | null): AccountantBillingKind {
   if (status === 'active') return 'active'
   if (status === 'trialing') return 'trialing'
   if (status === 'past_due') return 'past_due'
+  if (status === 'paused') return 'paused'
   if (status === 'unpaid') return 'unpaid'
   if (status === 'canceled') return 'canceled'
   if (status === 'incomplete' || status === 'incomplete_expired') return 'incomplete'
@@ -115,6 +118,7 @@ export function getAccountantBillingState(
 
   const kind = normalizeStatus(office.stripe_subscription_status)
   const restricted = kind === 'past_due'
+    || kind === 'paused'
     || kind === 'unpaid'
     || kind === 'canceled'
     || kind === 'incomplete'

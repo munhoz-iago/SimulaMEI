@@ -212,3 +212,161 @@ export async function sendOfficeAlertEmail({
     html,
   })
 }
+
+export async function sendPaymentFailedNotification({
+  to,
+  officeName,
+}: {
+  to: string
+  officeName: string
+}) {
+  if (!isResendConfigured()) return { ok: false, skipped: true }
+
+  const html = `
+    <div style="font-family:${EMAIL_FONT_STACK};line-height:1.6;color:#111;max-width:520px">
+      <h1 style="font-size:20px;margin-bottom:8px">Falha na cobrança — SimulaMEI</h1>
+      <p>Olá, <strong>${escapeHtml(officeName)}</strong>.</p>
+      <p>
+        Não conseguimos cobrar sua assinatura recorrente. O escritório foi marcado como
+        <strong>pagamento pendente</strong> e novas simulações podem ser bloqueadas até a regularização.
+      </p>
+      <p>
+        <a href="${getSiteUrl()}/contador/assinatura" style="color:#4b9eff">
+          Atualizar forma de pagamento →
+        </a>
+      </p>
+      <hr style="border:none;border-top:1px solid #eee;margin:24px 0" />
+      <p style="font-size:12px;color:#888">
+        Se já regularizou o pagamento, este aviso será limpo automaticamente na próxima cobrança bem-sucedida.
+      </p>
+    </div>
+  `
+
+  return getResendClient().emails.send({
+    from: process.env.RESEND_FROM_EMAIL!,
+    to,
+    subject: 'Falha na cobrança da sua assinatura — SimulaMEI',
+    html,
+  })
+}
+
+export async function sendSubscriptionPausedNotification({
+  to,
+  officeName,
+}: {
+  to: string
+  officeName: string
+}) {
+  if (!isResendConfigured()) return { ok: false, skipped: true }
+
+  const html = `
+    <div style="font-family:${EMAIL_FONT_STACK};line-height:1.6;color:#111;max-width:520px">
+      <h1 style="font-size:20px;margin-bottom:8px">Assinatura pausada — SimulaMEI</h1>
+      <p>Olá, <strong>${escapeHtml(officeName)}</strong>.</p>
+      <p>
+        Sua assinatura foi pausada. Clientes acima do limite do plano Starter podem ter sido desativados.
+        Reative o pagamento para retomar a carteira completa.
+      </p>
+      <p>
+        <a href="${getSiteUrl()}/contador/assinatura" style="color:#4b9eff">
+          Reativar assinatura →
+        </a>
+      </p>
+    </div>
+  `
+
+  return getResendClient().emails.send({
+    from: process.env.RESEND_FROM_EMAIL!,
+    to,
+    subject: 'Sua assinatura foi pausada — SimulaMEI',
+    html,
+  })
+}
+
+export async function sendRefundNotification({
+  to,
+  officeName,
+}: {
+  to: string
+  officeName: string
+}) {
+  if (!isResendConfigured()) return { ok: false, skipped: true }
+
+  const html = `
+    <div style="font-family:${EMAIL_FONT_STACK};line-height:1.6;color:#111;max-width:520px">
+      <h1 style="font-size:20px;margin-bottom:8px">Reembolso processado — SimulaMEI</h1>
+      <p>Olá, <strong>${escapeHtml(officeName)}</strong>.</p>
+      <p>
+        Confirmamos um reembolso da sua última cobrança. O escritório foi rebaixado para o plano Starter
+        e clientes acima do novo limite foram desativados.
+      </p>
+      <p>
+        Caso queira reassinar o plano Pro, basta acessar o portal de cobrança:
+      </p>
+      <p>
+        <a href="${getSiteUrl()}/upgrade/contador" style="color:#4b9eff">
+          Ver planos disponíveis →
+        </a>
+      </p>
+    </div>
+  `
+
+  return getResendClient().emails.send({
+    from: process.env.RESEND_FROM_EMAIL!,
+    to,
+    subject: 'Reembolso processado — SimulaMEI',
+    html,
+  })
+}
+
+/**
+ * Notifica admin (ADMIN_EMAIL) quando um chargeback eh aberto. Inclui dados
+ * minimos da dispute pro time agir no Dashboard Stripe.
+ */
+export async function sendDisputeNotification({
+  adminEmail,
+  officeName,
+  disputeId,
+  reason,
+  amountCents,
+  currency,
+}: {
+  adminEmail: string
+  officeName: string
+  disputeId: string
+  reason: string | null
+  amountCents: number
+  currency: string
+}) {
+  if (!isResendConfigured()) return { ok: false, skipped: true }
+
+  const amountBrl = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+  }).format(amountCents / 100)
+
+  const html = `
+    <div style="font-family:${EMAIL_FONT_STACK};line-height:1.6;color:#111;max-width:560px">
+      <h1 style="font-size:20px;margin-bottom:8px">Chargeback aberto — ação necessária</h1>
+      <p>O cliente <strong>${escapeHtml(officeName)}</strong> abriu uma dispute na Stripe.</p>
+      <ul>
+        <li><strong>Dispute ID:</strong> ${escapeHtml(disputeId)}</li>
+        <li><strong>Motivo:</strong> ${escapeHtml(reason ?? 'não informado')}</li>
+        <li><strong>Valor:</strong> ${escapeHtml(amountBrl)}</li>
+      </ul>
+      <p>
+        O escritório foi marcado com <code>disputed_at</code>. Acompanhe e responda no
+        <a href="https://dashboard.stripe.com/disputes/${encodeURIComponent(disputeId)}" style="color:#4b9eff">
+          Dashboard Stripe →
+        </a>
+      </p>
+    </div>
+  `
+
+  return getResendClient().emails.send({
+    from: process.env.RESEND_FROM_EMAIL!,
+    to: adminEmail,
+    subject: `Chargeback aberto: ${officeName} — SimulaMEI`,
+    html,
+  })
+}

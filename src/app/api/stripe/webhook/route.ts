@@ -8,12 +8,22 @@ import {
   getSubscriptionPrimaryPriceId,
   isStripeEventProcessed,
   markAccountantCheckoutExpired,
+  markOfficeDisputed,
   markStripeEventProcessed,
   normalizeAccountantSubscriptionStatus,
   resolveAccountantPlanFromMetadata,
   resolveAccountantPlanFromPriceId,
+  revertOfficeOnRefund,
   syncAccountantBilling,
+  updateOfficeSubscriptionStatus,
 } from '@/lib/accountant/billing'
+import { getConfiguredAdminEmails } from '@/lib/auth/admin-access'
+import {
+  sendDisputeNotification,
+  sendPaymentFailedNotification,
+  sendRefundNotification,
+  sendSubscriptionPausedNotification,
+} from '@/lib/resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripeClient, isStripeConfigured } from '@/lib/stripe'
 
@@ -155,6 +165,197 @@ async function handleCheckoutExpired(admin: SupabaseAdminLike, session: Stripe.C
   await markAccountantCheckoutExpired(admin, session.id)
 }
 
+/**
+ * invoice.payment_failed: Stripe falhou em cobrar a fatura recorrente.
+ * Office vira past_due e owner recebe notificacao com link pro portal.
+ */
+async function handleInvoicePaymentFailed(admin: SupabaseAdminLike, invoice: Stripe.Invoice) {
+  // Stripe v22: invoice.subscription pode estar em invoice.parent.subscription_details
+  const subscriptionId = extractSubscriptionIdFromInvoice(invoice)
+  if (!subscriptionId) {
+    console.warn('[stripe-webhook] invoice.payment_failed sem subscription:', invoice.id)
+    return
+  }
+
+  const context = await updateOfficeSubscriptionStatus(admin, subscriptionId, 'past_due')
+  if (!context) {
+    console.warn('[stripe-webhook] invoice.payment_failed sem office vinculado:', subscriptionId)
+    return
+  }
+
+  if (context.ownerEmail) {
+    try {
+      await sendPaymentFailedNotification({
+        to: context.ownerEmail,
+        officeName: context.officeName,
+      })
+    } catch (error) {
+      console.warn('[stripe-webhook] email payment_failed falhou:', error)
+    }
+  }
+}
+
+/**
+ * customer.subscription.paused: Stripe pausou a subscription (ex: trial sem
+ * payment method depois do bypass). Office vira paused, plan limits aplicam
+ * imediato via syncAccountantBilling com plan='starter'.
+ */
+async function handleSubscriptionPaused(admin: SupabaseAdminLike, sub: Stripe.Subscription) {
+  const context = await updateOfficeSubscriptionStatus(admin, sub.id, 'paused')
+  if (!context) {
+    console.warn('[stripe-webhook] subscription.paused sem office vinculado:', sub.id)
+    return
+  }
+
+  // Pausa efetiva: rebaixa pra starter pra aplicar limites de cliente imediatamente.
+  // O office mantem stripe_subscription_id e pode ser retomado via resumed event.
+  try {
+    await syncAccountantBilling(admin, {
+      officeId: context.officeId,
+      plan: 'starter',
+      status: 'paused',
+      stripeCustomerId: getStripeObjectId(sub.customer),
+      stripeSubscriptionId: sub.id,
+      currentPeriodEnd: getSubscriptionCurrentPeriodEnd(sub),
+    })
+  } catch (error) {
+    console.warn('[stripe-webhook] subscription.paused plan downgrade falhou:', error)
+  }
+
+  if (context.ownerEmail) {
+    try {
+      await sendSubscriptionPausedNotification({
+        to: context.ownerEmail,
+        officeName: context.officeName,
+      })
+    } catch (error) {
+      console.warn('[stripe-webhook] email subscription.paused falhou:', error)
+    }
+  }
+}
+
+/**
+ * charge.refunded: admin emitiu refund no Dashboard Stripe. Reverter office
+ * pra starter+canceled e desativar clientes excedentes via syncAccountantBilling.
+ */
+async function handleChargeRefunded(
+  admin: SupabaseAdminLike,
+  stripe: Stripe,
+  charge: Stripe.Charge,
+) {
+  const invoiceId = getStripeObjectId(getChargeInvoice(charge))
+  if (!invoiceId) {
+    // Refund de pagamento single (relatorio), nao subscription. Sem acao no contador.
+    return
+  }
+
+  let subscriptionId: string | null = null
+  try {
+    const invoice = await stripe.invoices.retrieve(invoiceId)
+    subscriptionId = extractSubscriptionIdFromInvoice(invoice)
+  } catch (error) {
+    console.warn('[stripe-webhook] charge.refunded invoice retrieve falhou:', error)
+    return
+  }
+
+  if (!subscriptionId) {
+    console.warn('[stripe-webhook] charge.refunded invoice sem subscription:', invoiceId)
+    return
+  }
+
+  const context = await revertOfficeOnRefund(admin, subscriptionId)
+  if (!context) {
+    console.warn('[stripe-webhook] charge.refunded sem office vinculado:', subscriptionId)
+    return
+  }
+
+  if (context.ownerEmail) {
+    try {
+      await sendRefundNotification({
+        to: context.ownerEmail,
+        officeName: context.officeName,
+      })
+    } catch (error) {
+      console.warn('[stripe-webhook] email refund falhou:', error)
+    }
+  }
+}
+
+/**
+ * charge.dispute.created: chargeback aberto. Office nao bloqueia (dispute pode
+ * resolver a favor), mas flagga disputed_at e notifica admin via email.
+ */
+async function handleChargeDisputeCreated(
+  admin: SupabaseAdminLike,
+  stripe: Stripe,
+  dispute: Stripe.Dispute,
+) {
+  // Dispute -> Charge -> Invoice -> Subscription -> Office
+  let subscriptionId: string | null = null
+  let customerId: string | null = null
+
+  const chargeId = getStripeObjectId(dispute.charge)
+  if (chargeId) {
+    try {
+      const charge = await stripe.charges.retrieve(chargeId)
+      customerId = getStripeObjectId(charge.customer)
+      const invoiceId = getStripeObjectId(getChargeInvoice(charge))
+      if (invoiceId) {
+        const invoice = await stripe.invoices.retrieve(invoiceId)
+        subscriptionId = extractSubscriptionIdFromInvoice(invoice)
+      }
+    } catch (error) {
+      console.warn('[stripe-webhook] dispute.created charge retrieve falhou:', error)
+    }
+  }
+
+  const context = await markOfficeDisputed(admin, subscriptionId, customerId)
+  if (!context) {
+    console.warn('[stripe-webhook] dispute.created sem office vinculado:', dispute.id)
+    return
+  }
+
+  const adminEmail = getConfiguredAdminEmails()[0]
+  if (adminEmail) {
+    try {
+      await sendDisputeNotification({
+        adminEmail,
+        officeName: context.officeName,
+        disputeId: dispute.id,
+        reason: dispute.reason ?? null,
+        amountCents: dispute.amount ?? 0,
+        currency: dispute.currency ?? 'brl',
+      })
+    } catch (error) {
+      console.warn('[stripe-webhook] email dispute falhou:', error)
+    }
+  }
+}
+
+/**
+ * Stripe v22+: Charge.invoice nao esta no tipo publico (precisa expand),
+ * mas o payload do webhook sempre traz como string. Acessa via cast.
+ */
+function getChargeInvoice(charge: Stripe.Charge): string | { id?: string } | null {
+  return (charge as unknown as { invoice?: string | { id?: string } | null }).invoice ?? null
+}
+
+/**
+ * Stripe v22+: invoice.subscription foi descontinuado em favor de
+ * invoice.parent.subscription_details.subscription. Aceita ambos.
+ */
+function extractSubscriptionIdFromInvoice(invoice: Stripe.Invoice): string | null {
+  const direct = getStripeObjectId(
+    (invoice as unknown as { subscription?: string | { id?: string } | null }).subscription,
+  )
+  if (direct) return direct
+
+  const parent = (invoice as unknown as {
+    parent?: { subscription_details?: { subscription?: string | { id?: string } | null } | null } | null
+  }).parent
+  return getStripeObjectId(parent?.subscription_details?.subscription)
+}
+
 export async function POST(request: Request) {
   if (!isStripeConfigured() || !process.env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json({ error: 'Stripe webhook não configurado.' }, { status: 503 })
@@ -216,6 +417,22 @@ export async function POST(request: Request) {
 
     if (event.type === 'checkout.session.expired') {
       await handleCheckoutExpired(admin, event.data.object as Stripe.Checkout.Session)
+    }
+
+    if (event.type === 'invoice.payment_failed') {
+      await handleInvoicePaymentFailed(admin, event.data.object as Stripe.Invoice)
+    }
+
+    if (event.type === 'customer.subscription.paused') {
+      await handleSubscriptionPaused(admin, event.data.object as Stripe.Subscription)
+    }
+
+    if (event.type === 'charge.refunded') {
+      await handleChargeRefunded(admin, stripe, event.data.object as Stripe.Charge)
+    }
+
+    if (event.type === 'charge.dispute.created') {
+      await handleChargeDisputeCreated(admin, stripe, event.data.object as Stripe.Dispute)
     }
   } catch (error) {
     console.error('[stripe-webhook] handler error:', {

@@ -11,6 +11,7 @@ export type AccountantSubscriptionStatus =
   | 'trialing'
   | 'active'
   | 'past_due'
+  | 'paused'
   | 'canceled'
   | 'incomplete'
   | 'unpaid'
@@ -40,6 +41,7 @@ const ACCOUNTANT_SUBSCRIPTION_STATUSES = new Set<AccountantSubscriptionStatus>([
   'trialing',
   'active',
   'past_due',
+  'paused',
   'canceled',
   'incomplete',
   'unpaid',
@@ -92,7 +94,6 @@ export function normalizeAccountantSubscriptionStatus(
   status: string | null | undefined,
 ): AccountantSubscriptionStatus {
   if (status === 'incomplete_expired') return 'canceled'
-  if (status === 'paused') return 'past_due'
   if (status && ACCOUNTANT_SUBSCRIPTION_STATUSES.has(status as AccountantSubscriptionStatus)) {
     return status as AccountantSubscriptionStatus
   }
@@ -376,5 +377,196 @@ export async function markAccountantCheckoutExpired(
 
   if (error) {
     throw new Error(error.message)
+  }
+}
+
+interface OfficeContext {
+  officeId: string
+  ownerEmail: string | null
+  officeName: string
+}
+
+interface OfficeSubscriptionContextRow {
+  office_id: string
+  accountant_offices: {
+    id: string
+    name: string
+    owner_user_id: string
+  } | null
+}
+
+/**
+ * Atualiza office_subscriptions.status + accountant_offices.stripe_subscription_status
+ * por stripe_subscription_id. Usado pelos handlers de webhook que so precisam
+ * mudar status (payment_failed, paused, refunded) sem mexer em plan/items.
+ */
+export async function updateOfficeSubscriptionStatus(
+  admin: SupabaseAdminLike,
+  stripeSubscriptionId: string,
+  status: AccountantSubscriptionStatus,
+): Promise<OfficeContext | null> {
+  const subTable = admin.from('office_subscriptions') as {
+    select(columns: string): {
+      eq(column: string, value: string): {
+        maybeSingle(): Promise<QueryResult<OfficeSubscriptionContextRow | null>>
+      }
+    }
+    update(payload: Record<string, unknown>): {
+      eq(column: string, value: string): Promise<QueryResult>
+    }
+  }
+
+  const { data: subRow, error: lookupError } = await subTable
+    .select('office_id, accountant_offices!inner(id, name, owner_user_id)')
+    .eq('stripe_subscription_id', stripeSubscriptionId)
+    .maybeSingle()
+
+  if (lookupError) throw new Error(lookupError.message)
+  if (!subRow?.office_id) return null
+
+  const subUpdate = await subTable
+    .update({ status })
+    .eq('stripe_subscription_id', stripeSubscriptionId)
+
+  if (subUpdate.error) throw new Error(subUpdate.error.message)
+
+  const officesTable = admin.from('accountant_offices') as {
+    update(payload: Record<string, unknown>): {
+      eq(column: string, value: string): Promise<QueryResult>
+    }
+  }
+  const officeUpdate = await officesTable
+    .update({ stripe_subscription_status: status })
+    .eq('stripe_subscription_id', stripeSubscriptionId)
+
+  if (officeUpdate.error) throw new Error(officeUpdate.error.message)
+
+  const office = subRow.accountant_offices ?? null
+  if (!office) {
+    return { officeId: subRow.office_id, ownerEmail: null, officeName: '' }
+  }
+
+  const ownerEmail = await getUserEmailById(admin, office.owner_user_id)
+  return {
+    officeId: office.id,
+    ownerEmail,
+    officeName: office.name,
+  }
+}
+
+/**
+ * Reverter office para 'starter' apos refund integral. Mantem o office
+ * acessivel mas com max_clients reduzido. Reuso de syncAccountantBilling
+ * com plan='starter' + status='canceled' garante que applyAccountantPlanLimit
+ * desativa clientes excedentes.
+ */
+export async function revertOfficeOnRefund(
+  admin: SupabaseAdminLike,
+  stripeSubscriptionId: string,
+): Promise<OfficeContext | null> {
+  const officeId = await getOfficeIdByStripeSubscription(admin, stripeSubscriptionId)
+  if (!officeId) return null
+
+  await syncAccountantBilling(admin, {
+    officeId,
+    plan: 'starter',
+    status: 'canceled',
+    stripeCustomerId: null,
+    stripeSubscriptionId,
+    currentPeriodEnd: null,
+  })
+
+  // Carrega contexto pra retorno (opcional pra email)
+  const officesTable = admin.from('accountant_offices') as {
+    select(columns: string): {
+      eq(column: string, value: string): {
+        maybeSingle(): Promise<QueryResult<{ id: string; name: string; owner_user_id: string } | null>>
+      }
+    }
+  }
+  const { data } = await officesTable
+    .select('id, name, owner_user_id')
+    .eq('id', officeId)
+    .maybeSingle()
+
+  if (!data) return { officeId, ownerEmail: null, officeName: '' }
+  const ownerEmail = await getUserEmailById(admin, data.owner_user_id)
+  return { officeId: data.id, ownerEmail, officeName: data.name }
+}
+
+/**
+ * Marca office como disputado (chargeback). Nao bloqueia uso imediato — disputa
+ * pode ser resolvida — mas exige tracking e notificacao admin.
+ */
+export async function markOfficeDisputed(
+  admin: SupabaseAdminLike,
+  stripeSubscriptionId: string | null,
+  stripeCustomerId: string | null,
+): Promise<OfficeContext | null> {
+  if (!stripeSubscriptionId && !stripeCustomerId) return null
+
+  const officesTable = admin.from('accountant_offices') as {
+    select(columns: string): {
+      eq(column: string, value: string): {
+        maybeSingle(): Promise<QueryResult<{ id: string; name: string; owner_user_id: string } | null>>
+      }
+    }
+    update(payload: Record<string, unknown>): {
+      eq(column: string, value: string): Promise<QueryResult>
+    }
+  }
+
+  let officeRow: { id: string; name: string; owner_user_id: string } | null = null
+
+  if (stripeSubscriptionId) {
+    const { data, error } = await officesTable
+      .select('id, name, owner_user_id')
+      .eq('stripe_subscription_id', stripeSubscriptionId)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    officeRow = data ?? null
+  }
+
+  if (!officeRow && stripeCustomerId) {
+    const { data, error } = await officesTable
+      .select('id, name, owner_user_id')
+      .eq('stripe_customer_id', stripeCustomerId)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    officeRow = data ?? null
+  }
+
+  if (!officeRow) return null
+
+  const disputedAt = new Date().toISOString()
+  const { error: updateError } = await officesTable
+    .update({ disputed_at: disputedAt })
+    .eq('id', officeRow.id)
+
+  if (updateError) throw new Error(updateError.message)
+
+  const ownerEmail = await getUserEmailById(admin, officeRow.owner_user_id)
+  return {
+    officeId: officeRow.id,
+    ownerEmail,
+    officeName: officeRow.name,
+  }
+}
+
+/**
+ * Resolve email do owner via auth.admin.getUserById quando disponivel.
+ * Retorna null em ambientes onde o admin client nao expoe auth.admin.
+ */
+async function getUserEmailById(admin: SupabaseAdminLike, userId: string): Promise<string | null> {
+  const adminAny = admin as unknown as {
+    auth?: { admin?: { getUserById?: (id: string) => Promise<{ data?: { user?: { email?: string | null } | null } | null }> } }
+  }
+  const getter = adminAny.auth?.admin?.getUserById
+  if (typeof getter !== 'function') return null
+  try {
+    const result = await getter(userId)
+    return result?.data?.user?.email ?? null
+  } catch {
+    return null
   }
 }
