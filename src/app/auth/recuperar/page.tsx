@@ -6,13 +6,13 @@ import { useSearchParams } from 'next/navigation'
 import { AuthAlert, AuthCard, AuthPage } from '@/components/auth/AuthScaffold'
 import { createClient } from '@/lib/supabase/client'
 import { getAuthCallbackOrigin } from '@/lib/auth/origin'
+import { sanitizeNextParam } from '@/lib/auth/safe-redirect'
 
 type ResetState = 'idle' | 'loading' | 'sent' | 'error'
 
 function RecuperarSenhaForm() {
   const searchParams = useSearchParams()
-  const nextParam = searchParams.get('next') ?? '/dashboard'
-  const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/dashboard'
+  const next = sanitizeNextParam(searchParams.get('next'), '/dashboard')
   const [email, setEmail] = useState('')
   const [state, setState] = useState<ResetState>('idle')
   const [errorMessage, setErrorMessage] = useState('')

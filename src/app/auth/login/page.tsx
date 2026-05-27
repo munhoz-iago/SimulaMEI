@@ -13,14 +13,14 @@ import {
 } from '@/lib/auth/messages'
 import { getLoginContextCopy } from '@/lib/auth/contextual-copy'
 import { getAuthCallbackOrigin } from '@/lib/auth/origin'
+import { sanitizeNextParam } from '@/lib/auth/safe-redirect'
 
 type AuthStep = 'idle' | 'loading' | 'error' | 'success'
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const nextParam = searchParams.get('next') ?? '/dashboard'
-  const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/'
+  const next = sanitizeNextParam(searchParams.get('next'), '/')
   const queryErrorMessage = getLoginQueryFeedback(searchParams.get('error'))
   const queryReasonMessage = getLoginReasonFeedback(searchParams.get('reason'))
   const contextCopy = getLoginContextCopy(next)
