@@ -147,7 +147,14 @@ export function AutoLogoutProvider({ children }: { children: ReactNode }) {
       }
 
       signingOutRef.current = true
-      window.location.assign('/auth/logout?reason=inactive')
+      // POST via formulário invisível: `/auth/logout` aceita apenas POST
+      // para evitar CSRF (audit security 2026-05-26 P1.1).
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/auth/logout?reason=inactive'
+      form.style.display = 'none'
+      document.body.appendChild(form)
+      form.submit()
     }
 
     const checkIdle = () => {
