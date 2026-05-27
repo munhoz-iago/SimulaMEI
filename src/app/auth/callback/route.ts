@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getProfileAccess } from '@/lib/auth/profile-access'
+import { sanitizeNextParam } from '@/lib/auth/safe-redirect'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const nextParam = searchParams.get('next') ?? '/dashboard'
-  const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/'
+  const next = sanitizeNextParam(searchParams.get('next'), '/')
 
   if (code) {
     const supabase = await createClient()

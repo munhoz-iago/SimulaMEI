@@ -5,14 +5,14 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { AuthAlert, AuthCard, AuthPage } from '@/components/auth/AuthScaffold'
 import { createClient } from '@/lib/supabase/client'
+import { sanitizeNextParam } from '@/lib/auth/safe-redirect'
 
 type UpdateState = 'checking' | 'idle' | 'loading' | 'success' | 'error'
 
 function AtualizarSenhaForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const nextParam = searchParams.get('next') ?? '/dashboard'
-  const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/dashboard'
+  const next = sanitizeNextParam(searchParams.get('next'), '/dashboard')
   const [senha, setSenha] = useState('')
   const [confirmacao, setConfirmacao] = useState('')
   const [state, setState] = useState<UpdateState>('checking')

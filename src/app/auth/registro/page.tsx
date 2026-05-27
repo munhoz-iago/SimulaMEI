@@ -7,14 +7,14 @@ import { AuthAlert, AuthCard, AuthDivider, AuthPage, GoogleIcon } from '@/compon
 import { createClient } from '@/lib/supabase/client'
 import { getOAuthErrorMessage, getSignupSubmissionFeedback } from '@/lib/auth/messages'
 import { getAuthCallbackOrigin } from '@/lib/auth/origin'
+import { sanitizeNextParam } from '@/lib/auth/safe-redirect'
 
 type AuthStep = 'idle' | 'loading' | 'error' | 'success'
 
 function RegistroForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const nextParam = searchParams.get('next') ?? '/dashboard'
-  const next = nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/'
+  const next = sanitizeNextParam(searchParams.get('next'), '/')
 
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
