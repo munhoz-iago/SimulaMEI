@@ -21,8 +21,10 @@ export function getProfileRole(profile: AccessProfile | null | undefined, user: 
 }
 
 export function canAccessAdminLeads(profile: AccessProfile | null | undefined, user: User | null) {
+  // P1 audit 2026-05-27: contador NAO acessa /admin/leads (pipeline comercial e admin-only).
+  // Contadores tem seu proprio dashboard em /contador; /admin/* e reservado a admins.
   const role = getProfileRole(profile, user)
-  return role === 'admin' || role === 'contador'
+  return role === 'admin'
 }
 
 export function hasCompletedRequiredProfile(profile: AccessProfile | null | undefined, user: User | null) {
