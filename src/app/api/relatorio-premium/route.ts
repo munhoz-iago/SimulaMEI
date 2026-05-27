@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { hasReportAccess } from '@/lib/auth/report-access'
 import { isResultadoVazio, RELATORIO_VAZIO_MSG } from '@/lib/reports/reportEligibility'
 import { reportFingerprint } from '@/lib/reports/reportFingerprint'
+import { applyRateLimitHeaders, consumeRateLimit } from '@/lib/security/rate-limit'
 import { gerarOportunidadesFiscais } from '@/lib/tributario'
 import { SimulationReportDocument } from '@/lib/reports/SimulationReportDocument'
 import type { ResultadoSimulacao } from '@/types/tributario'
@@ -13,6 +14,11 @@ import type { ResultadoSimulacao } from '@/types/tributario'
 interface SimulationRow {
   resultado: ResultadoSimulacao
 }
+
+// P2: gera PDF (CPU pesado + lê fonte do disco). 20/h cobre uso real
+// (re-download depois de ajuste, share via Vercel preview) sem permitir
+// fuzz scripts que esgotam CPU em loop.
+const PREMIUM_RATE_LIMIT = 20
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -25,6 +31,21 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({})) as { user_id?: string }
   if (body.user_id && body.user_id !== user.id) {
     return NextResponse.json({ error: 'user_id não pertence à sessão atual.' }, { status: 403 })
+  }
+
+  const rateLimit = await consumeRateLimit({
+    namespace: 'relatorio_premium',
+    subjectHash: user.id,
+    limit: PREMIUM_RATE_LIMIT,
+    windowSeconds: 60 * 60,
+  })
+
+  if (!rateLimit.allowed) {
+    return applyRateLimitHeaders(
+      NextResponse.json({ error: 'Limite de geração de relatórios atingido. Tente novamente mais tarde.' }, { status: 429 }),
+      rateLimit,
+      PREMIUM_RATE_LIMIT,
+    )
   }
 
   const [{ data: profile }, { data: purchases }, { data: simulations }] = await Promise.all([

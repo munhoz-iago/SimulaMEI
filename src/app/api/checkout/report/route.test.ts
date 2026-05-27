@@ -94,7 +94,9 @@ describe('/api/checkout/report POST', () => {
     }))
   })
 
-  it('returns 502 with the Stripe error message instead of throwing unhandled', async () => {
+  it('returns 500 with a sanitized error (no Stripe details leaked) on stripe failure', async () => {
+    // P2: Stripe error messages podem conter price IDs / acct_* / paths internos.
+    // O endpoint deve logar o erro server-side mas NUNCA expor pro cliente.
     createClientMock.mockResolvedValue(makeServerClient(
       { id: 'user-1', email: 'user@example.com' },
       { simulations: [{ resultado: { entrada: { faturamentoAcumulado: 60000 }, alertaTeto: { projecaoAnual: 1 } } }] },
@@ -105,9 +107,13 @@ describe('/api/checkout/report POST', () => {
 
     const response = await POST()
 
-    expect(response.status).toBe(502)
+    expect(response.status).toBe(500)
     const payload = await response.json()
-    expect(payload.error).toContain('No such price')
+    // Mensagem genérica — não contém os detalhes do Stripe.
+    expect(payload.error).not.toContain('No such price')
+    expect(payload.error).not.toContain('price_x')
+    expect(payload.error).not.toContain('live mode')
+    expect(payload.error).toMatch(/Não foi possível iniciar o checkout/)
     expect(insertMock).not.toHaveBeenCalled()
   })
 

@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { ACCOUNTANT_PLAN_LIMITS, normalizeAccountantOfficeOnboarding } from '@/lib/accountant/office'
+import { applyRateLimitHeaders, consumeRateLimit } from '@/lib/security/rate-limit'
+
+// P2: criar escritório é operação rara (1x na vida do user). 3/h cobre
+// 2 tentativas legítimas (erro de digitação, retry após network blip) e
+// trava bot que tenta criar offices em loop pra fuzz CNPJ.
+const ONBOARDING_RATE_LIMIT = 3
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,6 +16,21 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Autenticação obrigatória.' }, { status: 401 })
+    }
+
+    const rateLimit = await consumeRateLimit({
+      namespace: 'accountant_onboarding',
+      subjectHash: user.id,
+      limit: ONBOARDING_RATE_LIMIT,
+      windowSeconds: 60 * 60,
+    })
+
+    if (!rateLimit.allowed) {
+      return applyRateLimitHeaders(
+        NextResponse.json({ error: 'Limite de tentativas de onboarding atingido. Tente novamente em uma hora.' }, { status: 429 }),
+        rateLimit,
+        ONBOARDING_RATE_LIMIT,
+      )
     }
 
     const body = await request.json()

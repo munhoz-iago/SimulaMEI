@@ -35,6 +35,22 @@ async function handleConsumerCheckoutCompleted(
 ) {
   const userId = session.metadata?.user_id
   const produto = session.metadata?.produto
+  const clientRef = session.client_reference_id
+
+  // P2 cross-check: atacante poderia criar checkout passando metadata.user_id=victim_id
+  // (metadata é controlada pelo client em alguns paths) e fazer o handler gravar
+  // purchase/plano no perfil da vítima. Se client_reference_id estiver presente
+  // E não bater com metadata.user_id, rejeita o evento.
+  // Retorna sem erro (200) pra Stripe não retentar — log no servidor pra auditoria.
+  if (clientRef && userId && clientRef !== userId) {
+    console.error('[stripe-webhook] consumer checkout user_id mismatch:', {
+      metadataUserId: userId,
+      clientRef,
+      sessionId: session.id,
+    })
+    return
+  }
+
   const purchasesTable = admin.from('purchases') as {
     update(payload: Record<string, unknown>): UpdateQuery
   }

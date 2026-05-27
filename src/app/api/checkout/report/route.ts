@@ -49,16 +49,13 @@ export async function POST() {
 
     return NextResponse.json({ url: session.url })
   } catch (err) {
-    // Sem isto, qualquer falha do Stripe (ex.: price de modo/conta errados)
-    // virava 500 não tratado → o CheckoutButton só mostrava o fallback
-    // genérico "Checkout indisponível neste ambiente". Agora retorna o
-    // motivo real (mensagem do Stripe é descritiva e não expõe segredos)
-    // e loga no runtime pra diagnóstico.
-    const detail = err instanceof Error ? err.message : String(err)
-    console.error('[checkout/report] falha ao criar sessão Stripe:', detail)
+    // P2: Stripe error messages podem conter acct_*, price IDs, ou paths do
+    // catálogo. NÃO exibir pro cliente — log completo server-side, mensagem
+    // genérica pro cliente.
+    console.error('[checkout/report] stripe error:', err)
     return NextResponse.json(
-      { error: `Falha ao iniciar o checkout: ${detail}` },
-      { status: 502 },
+      { error: 'Não foi possível iniciar o checkout. Tente novamente em alguns minutos.' },
+      { status: 500 },
     )
   }
 }

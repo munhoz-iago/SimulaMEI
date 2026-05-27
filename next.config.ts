@@ -28,6 +28,9 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // P2: remove "X-Powered-By: Next.js" — fingerprint desnecessário para o cliente
+  // e útil para atacantes mapearem versão do framework (atalho para CVE matching).
+  poweredByHeader: false,
   // A TTF do relatório vive em src/ e é lida via readFileSync(process.cwd()+...).
   // O NFT não rastreia paths construídos em runtime, então sem isto o arquivo
   // some do bundle serverless (Vercel) e o PDF cai pra Helvetica silenciosamente.
