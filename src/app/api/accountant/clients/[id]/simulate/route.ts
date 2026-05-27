@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentAccountantOffice, type CurrentAccountantOffice } from '@/lib/accountant/server'
 import {
@@ -9,6 +8,8 @@ import {
 } from '@/lib/accountant/billing-state'
 import { normalizeOfficeClientSimulation } from '@/lib/accountant/simulations'
 import { simular } from '@/lib/tributario'
+
+type SupabaseLike = Awaited<ReturnType<typeof createClient>>
 
 interface DbError {
   message: string
@@ -57,11 +58,10 @@ interface RouteContext {
   params: Promise<{ id: string }> | { id: string }
 }
 
-function getAdminTables() {
-  const admin = createAdminClient()
+function getTables(supabase: SupabaseLike) {
   return {
-    clients: admin.from('office_clients') as unknown as OfficeClientsTable,
-    simulations: admin.from('office_simulations') as unknown as OfficeSimulationsTable,
+    clients: supabase.from('office_clients') as unknown as OfficeClientsTable,
+    simulations: supabase.from('office_simulations') as unknown as OfficeSimulationsTable,
   }
 }
 
@@ -71,7 +71,7 @@ async function getClientId(context: RouteContext) {
 }
 
 async function getAuthenticatedOffice(): Promise<
-  | { ok: true; office: CurrentAccountantOffice; user: User }
+  | { ok: true; office: CurrentAccountantOffice; user: User; supabase: SupabaseLike }
   | { ok: false; response: NextResponse }
 > {
   const supabase = await createClient()
@@ -91,13 +91,21 @@ async function getAuthenticatedOffice(): Promise<
     return { ok: false, response: NextResponse.json({ error: 'Escritório contador não configurado.' }, { status: 403 }) }
   }
 
-  return { ok: true, office, user }
+  return { ok: true, office, user, supabase }
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const auth = await getAuthenticatedOffice()
     if (!auth.ok) return auth.response
+
+    // P1.3: simulação consome quota faturada → exige role=owner.
+    if (auth.office.role !== 'owner') {
+      return NextResponse.json({
+        error: 'Apenas o owner do escritório pode executar simulações.',
+      }, { status: 403 })
+    }
+
     const billing = getAccountantBillingState(auth.office)
     if (isAccountantBillingRestricted(billing)) {
       return NextResponse.json({
@@ -107,7 +115,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const clientId = await getClientId(context)
-    const { clients, simulations } = getAdminTables()
+    // P1.6: read/write em office_clients e office_simulations via cliente SSR
+    // (RLS-enforced via is_office_member). .eq('office_id') como defesa em profundidade.
+    const { clients, simulations } = getTables(auth.supabase)
     const clientResult = await clients
       .select<OfficeClientRow>('id, name, cnae, tipo_mei, ativo')
       .eq('office_id', auth.office.id)

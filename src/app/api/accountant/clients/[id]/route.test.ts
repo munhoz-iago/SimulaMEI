@@ -1,18 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { createClientMock, createAdminClientMock, getCurrentAccountantOfficeMock } = vi.hoisted(() => ({
+const { createClientMock, getCurrentAccountantOfficeMock } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
-  createAdminClientMock: vi.fn(),
   getCurrentAccountantOfficeMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: createClientMock,
-}))
-
-vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: createAdminClientMock,
 }))
 
 vi.mock('@/lib/accountant/server', () => ({
@@ -30,9 +25,9 @@ const OFFICE = {
   role: 'owner',
 }
 
-function makeRequest(body?: unknown) {
+function makeRequest(body?: unknown, method: 'GET' | 'PATCH' | 'DELETE' = 'GET') {
   return new NextRequest('http://localhost/api/accountant/clients/client-1', {
-    method: body ? 'PATCH' : 'GET',
+    method: body ? 'PATCH' : method,
     headers: body ? { 'content-type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   })
@@ -40,14 +35,6 @@ function makeRequest(body?: unknown) {
 
 function makeContext(id = 'client-1') {
   return { params: Promise.resolve({ id }) }
-}
-
-function makeServerClient(user: { id: string } | null = { id: 'user-1' }) {
-  return {
-    auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user } }),
-    },
-  }
 }
 
 function makeQuery<T>(result: T) {
@@ -62,18 +49,21 @@ function makeQuery<T>(result: T) {
   return query
 }
 
-function makeAdminClient(options?: {
+function makeServerClient(opts?: {
+  user?: { id: string } | null
   detailRow?: Record<string, unknown> | null
   activeCount?: number
   updateRow?: Record<string, unknown>
 }) {
-  const detailRow = options && 'detailRow' in options
-    ? options.detailRow
+  const user = opts && 'user' in opts ? opts.user : { id: 'user-1' }
+  const detailRow = opts && 'detailRow' in opts
+    ? opts.detailRow
     : { id: 'client-1', name: 'Loja Modelo' }
+
   const detailQuery = makeQuery({ data: detailRow, error: null })
-  const countQuery = makeQuery({ data: null, error: null, count: options?.activeCount ?? 0 })
+  const countQuery = makeQuery({ data: null, error: null, count: opts?.activeCount ?? 0 })
   const updateQuery = makeQuery({
-    data: options?.updateRow ?? { id: 'client-1', name: 'Loja Modelo', ativo: false, inactive_reason: 'manual' },
+    data: opts?.updateRow ?? { id: 'client-1', name: 'Loja Modelo', ativo: false, inactive_reason: 'manual' },
     error: null,
   })
 
@@ -85,15 +75,14 @@ function makeAdminClient(options?: {
     if (table !== 'office_clients') {
       throw new Error(`Unexpected table: ${table}`)
     }
-
-    return {
-      select: selectMock,
-      update: updateMock,
-    }
+    return { select: selectMock, update: updateMock }
   })
 
   return {
-    client: { from: fromMock },
+    client: {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
+      from: fromMock,
+    },
     detailQuery,
     countQuery,
     updateQuery,
@@ -104,27 +93,84 @@ function makeAdminClient(options?: {
 describe('/api/accountant/clients/[id]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    createClientMock.mockResolvedValue(makeServerClient())
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
     getCurrentAccountantOfficeMock.mockResolvedValue({ office: OFFICE, error: null })
   })
 
   it('returns 404 when the client is not in the current office', async () => {
-    const admin = makeAdminClient({ detailRow: null })
-    createAdminClientMock.mockReturnValue(admin.client)
+    const ctx = makeServerClient({ detailRow: null })
+    createClientMock.mockResolvedValue(ctx.client)
 
     const response = await GET(makeRequest(), makeContext())
 
     expect(response.status).toBe(404)
     await expect(response.json()).resolves.toEqual({ error: 'Cliente não encontrado.' })
-    expect(admin.detailQuery.eq).toHaveBeenCalledWith('office_id', 'office-1')
-    expect(admin.detailQuery.eq).toHaveBeenCalledWith('id', 'client-1')
+    expect(ctx.detailQuery.eq).toHaveBeenCalledWith('office_id', 'office-1')
+    expect(ctx.detailQuery.eq).toHaveBeenCalledWith('id', 'client-1')
+  })
+
+  it('P1.3: blocks PATCH when role=member', async () => {
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
+    getCurrentAccountantOfficeMock.mockResolvedValue({
+      office: { ...OFFICE, role: 'member' },
+      error: null,
+    })
+
+    const response = await PATCH(makeRequest({
+      nome: 'Atualizado',
+      cnae: '4712-1/00',
+      tipoMei: 'geral',
+    }), makeContext())
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toEqual({
+      error: 'Apenas o owner do escritório pode editar clientes.',
+    })
+    expect(ctx.updateMock).not.toHaveBeenCalled()
+  })
+
+  it('P1.3: blocks DELETE when role=member', async () => {
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
+    getCurrentAccountantOfficeMock.mockResolvedValue({
+      office: { ...OFFICE, role: 'member' },
+      error: null,
+    })
+
+    const response = await DELETE(makeRequest(undefined, 'DELETE'), makeContext())
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toEqual({
+      error: 'Apenas o owner do escritório pode pausar clientes.',
+    })
+    expect(ctx.updateMock).not.toHaveBeenCalled()
+  })
+
+  it('P1.3: allows GET when role=member (read-only)', async () => {
+    const ctx = makeServerClient({
+      detailRow: { id: 'client-1', name: 'Loja Modelo', ativo: true },
+    })
+    createClientMock.mockResolvedValue(ctx.client)
+    getCurrentAccountantOfficeMock.mockResolvedValue({
+      office: { ...OFFICE, role: 'member' },
+      error: null,
+    })
+
+    const response = await GET(makeRequest(), makeContext())
+
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.ok).toBe(true)
+    expect(body.client.id).toBe('client-1')
   })
 
   it('updates a client scoped to the current office', async () => {
-    const admin = makeAdminClient({
+    const ctx = makeServerClient({
       updateRow: { id: 'client-1', name: 'Cliente Atualizado', ativo: true },
     })
-    createAdminClientMock.mockReturnValue(admin.client)
+    createClientMock.mockResolvedValue(ctx.client)
 
     const response = await PATCH(makeRequest({
       nome: 'Cliente Atualizado',
@@ -137,26 +183,26 @@ describe('/api/accountant/clients/[id]', () => {
       ok: true,
       client: { id: 'client-1', name: 'Cliente Atualizado', ativo: true },
     })
-    expect(admin.updateMock).toHaveBeenCalledWith(expect.objectContaining({
+    expect(ctx.updateMock).toHaveBeenCalledWith(expect.objectContaining({
       name: 'Cliente Atualizado',
       cnae: '4712-1/00',
       tipo_mei: 'geral',
     }))
-    expect(admin.updateQuery.eq).toHaveBeenCalledWith('office_id', 'office-1')
+    expect(ctx.updateQuery.eq).toHaveBeenCalledWith('office_id', 'office-1')
   })
 
   it('soft deletes a client with manual inactive reason', async () => {
-    const admin = makeAdminClient()
-    createAdminClientMock.mockReturnValue(admin.client)
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
 
-    const response = await DELETE(makeRequest(), makeContext())
+    const response = await DELETE(makeRequest(undefined, 'DELETE'), makeContext())
 
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toEqual({
       ok: true,
       client: { id: 'client-1', name: 'Loja Modelo', ativo: false, inactive_reason: 'manual' },
     })
-    expect(admin.updateMock).toHaveBeenCalledWith(expect.objectContaining({
+    expect(ctx.updateMock).toHaveBeenCalledWith(expect.objectContaining({
       ativo: false,
       inactive_reason: 'manual',
       disabled_by_plan_limit_at: null,

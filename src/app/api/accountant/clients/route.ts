@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentAccountantOffice, isAdminAccessFallbackOffice, type CurrentAccountantOffice } from '@/lib/accountant/server'
 import {
@@ -13,6 +12,8 @@ import {
   normalizeOfficeClientCreate,
   type OfficeClientStatusFilter,
 } from '@/lib/accountant/clients'
+
+type SupabaseLike = Awaited<ReturnType<typeof createClient>>
 
 interface DbError {
   message: string
@@ -60,12 +61,12 @@ interface OfficeClientsTable {
   insert(payload: Record<string, unknown>): SupabaseMutationQuery<OfficeClientRow>
 }
 
-function getOfficeClientsTable() {
-  return createAdminClient().from('office_clients') as unknown as OfficeClientsTable
+function getOfficeClientsTable(supabase: SupabaseLike) {
+  return supabase.from('office_clients') as unknown as OfficeClientsTable
 }
 
 async function getAuthenticatedOffice(): Promise<
-  | { ok: true; office: CurrentAccountantOffice }
+  | { ok: true; office: CurrentAccountantOffice; supabase: SupabaseLike }
   | { ok: false; response: NextResponse }
 > {
   const supabase = await createClient()
@@ -85,7 +86,7 @@ async function getAuthenticatedOffice(): Promise<
     return { ok: false, response: NextResponse.json({ error: 'Escritório contador não configurado.' }, { status: 403 }) }
   }
 
-  return { ok: true, office }
+  return { ok: true, office, supabase }
 }
 
 function toPositivePage(value: string | null) {
@@ -128,7 +129,10 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const table = getOfficeClientsTable()
+    // P1.6: lê com cliente SSR (RLS-enforced via is_office_member). O .eq('office_id')
+    // segue como defesa em profundidade. Member tem read autorizado pela policy
+    // "office_clients: all member".
+    const table = getOfficeClientsTable(auth.supabase)
     const query = applyStatusFilter(
       table
         .select('id, name, email, cnae, tipo_mei, uf, municipio, ativo, inactive_reason, created_at, updated_at', { count: 'exact' })
@@ -161,6 +165,13 @@ export async function POST(request: NextRequest) {
     const auth = await getAuthenticatedOffice()
     if (!auth.ok) return auth.response
 
+    // P1.3: write em escritório exige role=owner. Member tem read-only via GET.
+    if (auth.office.role !== 'owner') {
+      return NextResponse.json({
+        error: 'Apenas o owner do escritório pode cadastrar clientes.',
+      }, { status: 403 })
+    }
+
     if (isAdminAccessFallbackOffice(auth.office)) {
       return NextResponse.json({
         error: 'Configure SUPABASE_SERVICE_ROLE_KEY para cadastrar clientes reais no modo contador.',
@@ -181,7 +192,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error }, { status: 400 })
     }
 
-    const table = getOfficeClientsTable()
+    // P1.6: insert com cliente SSR. A policy "office_clients: all member"
+    // permite insert quando is_office_member(office_id) — RLS aplica check.
+    // .eq defensivo no count + office_id explícito no insert.
+    const table = getOfficeClientsTable(auth.supabase)
     const activeCountResult = await table
       .select<null>('id', { count: 'exact', head: true })
       .eq('office_id', auth.office.id)

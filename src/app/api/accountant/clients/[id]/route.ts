@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentAccountantOffice, type CurrentAccountantOffice } from '@/lib/accountant/server'
 import { normalizeOfficeClientUpdate, type NormalizedOfficeClientUpdate } from '@/lib/accountant/clients'
+
+type SupabaseLike = Awaited<ReturnType<typeof createClient>>
 
 interface DbError {
   message: string
@@ -48,8 +49,8 @@ interface RouteContext {
 
 const CLIENT_COLUMNS = 'id, name, email, cnae, tipo_mei, uf, municipio, observacoes, ativo, inactive_reason, disabled_by_plan_limit_at, created_at, updated_at'
 
-function getOfficeClientsTable() {
-  return createAdminClient().from('office_clients') as unknown as OfficeClientsTable
+function getOfficeClientsTable(supabase: SupabaseLike) {
+  return supabase.from('office_clients') as unknown as OfficeClientsTable
 }
 
 async function getClientId(context: RouteContext) {
@@ -58,7 +59,7 @@ async function getClientId(context: RouteContext) {
 }
 
 async function getAuthenticatedOffice(): Promise<
-  | { ok: true; office: CurrentAccountantOffice }
+  | { ok: true; office: CurrentAccountantOffice; supabase: SupabaseLike }
   | { ok: false; response: NextResponse }
 > {
   const supabase = await createClient()
@@ -78,7 +79,7 @@ async function getAuthenticatedOffice(): Promise<
     return { ok: false, response: NextResponse.json({ error: 'Escritório contador não configurado.' }, { status: 403 }) }
   }
 
-  return { ok: true, office }
+  return { ok: true, office, supabase }
 }
 
 async function getClient(table: OfficeClientsTable, officeId: string, clientId: string) {
@@ -121,7 +122,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     if (!auth.ok) return auth.response
 
     const clientId = await getClientId(context)
-    const table = getOfficeClientsTable()
+    // P1.6: read com cliente SSR (RLS-enforced via is_office_member). Member pode ler.
+    const table = getOfficeClientsTable(auth.supabase)
     const { data, error } = await getClient(table, auth.office.id, clientId)
 
     if (error) {
@@ -145,6 +147,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const auth = await getAuthenticatedOffice()
     if (!auth.ok) return auth.response
 
+    // P1.3: edição exige role=owner. Member não altera carteira.
+    if (auth.office.role !== 'owner') {
+      return NextResponse.json({
+        error: 'Apenas o owner do escritório pode editar clientes.',
+      }, { status: 403 })
+    }
+
     const clientId = await getClientId(context)
     const body = await request.json()
     const parsed = normalizeOfficeClientUpdate(body)
@@ -152,7 +161,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: parsed.error }, { status: 400 })
     }
 
-    const table = getOfficeClientsTable()
+    // P1.6: write com cliente SSR (RLS-enforced).
+    const table = getOfficeClientsTable(auth.supabase)
     if (parsed.value.ativo === true) {
       const current = await getClient(table, auth.office.id, clientId)
       if (current.error) {
@@ -206,8 +216,16 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     const auth = await getAuthenticatedOffice()
     if (!auth.ok) return auth.response
 
+    // P1.3: delete (soft, via pause) exige role=owner.
+    if (auth.office.role !== 'owner') {
+      return NextResponse.json({
+        error: 'Apenas o owner do escritório pode pausar clientes.',
+      }, { status: 403 })
+    }
+
     const clientId = await getClientId(context)
-    const table = getOfficeClientsTable()
+    // P1.6: write com cliente SSR (RLS-enforced).
+    const table = getOfficeClientsTable(auth.supabase)
     const updateResult = await table
       .update({
         ativo: false,

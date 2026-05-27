@@ -1,18 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { createClientMock, createAdminClientMock, getCurrentAccountantOfficeMock } = vi.hoisted(() => ({
+const { createClientMock, getCurrentAccountantOfficeMock } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
-  createAdminClientMock: vi.fn(),
   getCurrentAccountantOfficeMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: createClientMock,
-}))
-
-vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: createAdminClientMock,
 }))
 
 vi.mock('@/lib/accountant/server', () => ({
@@ -62,14 +57,6 @@ function validPayload() {
   }
 }
 
-function makeServerClient(user: { id: string } | null = { id: 'user-1' }) {
-  return {
-    auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user } }),
-    },
-  }
-}
-
 function makeQuery<T>(result: T) {
   const query = {
     eq: vi.fn(() => query),
@@ -82,14 +69,17 @@ function makeQuery<T>(result: T) {
   return query
 }
 
-function makeAdminClient(options?: {
+function makeServerClient(opts?: {
+  user?: { id: string } | null
   clientRow?: Record<string, unknown> | null
   simulationInsertError?: { message: string } | null
 }) {
-  const clientRow = options && 'clientRow' in options ? options.clientRow : CLIENT
+  const user = opts && 'user' in opts ? opts.user : { id: 'user-1' }
+  const clientRow = opts && 'clientRow' in opts ? opts.clientRow : CLIENT
+
   const clientQuery = makeQuery({ data: clientRow, error: null })
   const simulationQuery = makeQuery({
-    data: options?.simulationInsertError
+    data: opts?.simulationInsertError
       ? null
       : {
           id: 'simulation-1',
@@ -97,7 +87,7 @@ function makeAdminClient(options?: {
           office_id: 'office-1',
           created_at: '2026-04-30T12:00:00.000Z',
         },
-    error: options?.simulationInsertError ?? null,
+    error: opts?.simulationInsertError ?? null,
   })
 
   const insertMock = vi.fn(() => simulationQuery)
@@ -112,7 +102,10 @@ function makeAdminClient(options?: {
   })
 
   return {
-    client: { from: fromMock },
+    client: {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
+      from: fromMock,
+    },
     clientQuery,
     simulationQuery,
     insertMock,
@@ -122,34 +115,54 @@ function makeAdminClient(options?: {
 describe('/api/accountant/clients/[id]/simulate POST', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    createClientMock.mockResolvedValue(makeServerClient())
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
     getCurrentAccountantOfficeMock.mockResolvedValue({ office: OFFICE, error: null })
   })
 
   it('requires authentication', async () => {
-    createClientMock.mockResolvedValue(makeServerClient(null))
+    const ctx = makeServerClient({ user: null })
+    createClientMock.mockResolvedValue(ctx.client)
 
     const response = await POST(makeRequest(validPayload()), makeContext())
 
     expect(response.status).toBe(401)
     await expect(response.json()).resolves.toEqual({ error: 'Autenticação obrigatória.' })
-    expect(createAdminClientMock).not.toHaveBeenCalled()
+  })
+
+  it('P1.3: blocks simulation when role=member', async () => {
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
+    getCurrentAccountantOfficeMock.mockResolvedValue({
+      office: { ...OFFICE, role: 'member' },
+      error: null,
+    })
+
+    const response = await POST(makeRequest(validPayload()), makeContext())
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toEqual({
+      error: 'Apenas o owner do escritório pode executar simulações.',
+    })
+    expect(ctx.insertMock).not.toHaveBeenCalled()
   })
 
   it('returns 404 when the client is not in the current office', async () => {
-    const admin = makeAdminClient({ clientRow: null })
-    createAdminClientMock.mockReturnValue(admin.client)
+    const ctx = makeServerClient({ clientRow: null })
+    createClientMock.mockResolvedValue(ctx.client)
 
     const response = await POST(makeRequest(validPayload()), makeContext())
 
     expect(response.status).toBe(404)
     await expect(response.json()).resolves.toEqual({ error: 'Cliente não encontrado.' })
-    expect(admin.clientQuery.eq).toHaveBeenCalledWith('office_id', 'office-1')
-    expect(admin.clientQuery.eq).toHaveBeenCalledWith('id', 'client-1')
-    expect(admin.insertMock).not.toHaveBeenCalled()
+    expect(ctx.clientQuery.eq).toHaveBeenCalledWith('office_id', 'office-1')
+    expect(ctx.clientQuery.eq).toHaveBeenCalledWith('id', 'client-1')
+    expect(ctx.insertMock).not.toHaveBeenCalled()
   })
 
   it('blocks simulations when billing is restricted', async () => {
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
     getCurrentAccountantOfficeMock.mockResolvedValue({
       office: {
         ...OFFICE,
@@ -172,12 +185,11 @@ describe('/api/accountant/clients/[id]/simulate POST', () => {
         restricted: true,
       }),
     })
-    expect(createAdminClientMock).not.toHaveBeenCalled()
   })
 
   it('persists a simulation scoped to current office and client', async () => {
-    const admin = makeAdminClient()
-    createAdminClientMock.mockReturnValue(admin.client)
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
 
     const response = await POST(makeRequest(validPayload()), makeContext())
 
@@ -192,7 +204,7 @@ describe('/api/accountant/clients/[id]/simulate POST', () => {
       cnae: '4712-1/00',
       tipoMei: 'geral',
     })
-    expect(admin.insertMock).toHaveBeenCalledWith(expect.objectContaining({
+    expect(ctx.insertMock).toHaveBeenCalledWith(expect.objectContaining({
       office_id: 'office-1',
       client_id: 'client-1',
       performed_by: 'user-1',

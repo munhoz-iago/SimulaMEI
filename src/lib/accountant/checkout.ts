@@ -166,13 +166,50 @@ export async function createAccountantCheckout(plan: AccountantPaidPlan) {
       )
     }
 
-    const session = await getStripeClient().billingPortal.sessions.create({
+    // P1.7: amarra o flow do Portal ao plano alvo. SEM `items[].price` o Portal
+    // mostraria todos os preços expostos na Portal Configuration (ex: Monitor
+    // R$ 19), permitindo ao owner pular de Pro → Monitor pela UI do Stripe.
+    // Com `subscription_update_confirm` + items[{ id, price }] o Portal exibe
+    // apenas o preço alvo e confirma a troca — fluxo determinístico server-side.
+    const stripe = getStripeClient()
+    let existingSubscriptionItemId: string | null = null
+    try {
+      const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId)
+      existingSubscriptionItemId = subscription.items?.data?.[0]?.id ?? null
+    } catch (err) {
+      console.error('[/api/checkout/accountant] subscription retrieve error:', err)
+      return NextResponse.json(
+        { error: 'Não foi possível carregar a assinatura no Stripe.' },
+        { status: 502 },
+      )
+    }
+
+    if (!existingSubscriptionItemId) {
+      return NextResponse.json(
+        { error: 'Assinatura Stripe sem item para atualizar.' },
+        { status: 409 },
+      )
+    }
+
+    if (!product.priceId) {
+      return NextResponse.json(
+        { error: 'Price ID do plano alvo não configurado neste ambiente.' },
+        { status: 503 },
+      )
+    }
+
+    const session = await stripe.billingPortal.sessions.create({
       customer: stripeCustomerId,
       return_url: getCheckoutUrl(`/contador/assinatura?changed=${plan}`),
       flow_data: {
-        type: 'subscription_update',
-        subscription_update: {
+        type: 'subscription_update_confirm',
+        subscription_update_confirm: {
           subscription: stripeSubscriptionId,
+          items: [{
+            id: existingSubscriptionItemId,
+            price: product.priceId,
+            quantity: 1,
+          }],
         },
       },
     })

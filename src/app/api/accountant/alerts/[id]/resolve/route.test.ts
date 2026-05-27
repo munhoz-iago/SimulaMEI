@@ -1,18 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { createClientMock, createAdminClientMock, getCurrentAccountantOfficeMock } = vi.hoisted(() => ({
+const { createClientMock, getCurrentAccountantOfficeMock } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
-  createAdminClientMock: vi.fn(),
   getCurrentAccountantOfficeMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: createClientMock,
-}))
-
-vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: createAdminClientMock,
 }))
 
 vi.mock('@/lib/accountant/server', () => ({
@@ -44,14 +39,6 @@ function makeContext(id = 'alert-1') {
   return { params: Promise.resolve({ id }) }
 }
 
-function makeServerClient(user: { id: string } | null = { id: 'user-1' }) {
-  return {
-    auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user } }),
-    },
-  }
-}
-
 function makeMutationQuery(result: Record<string, unknown>) {
   const query = {
     eq: vi.fn(() => query),
@@ -62,7 +49,8 @@ function makeMutationQuery(result: Record<string, unknown>) {
   return query
 }
 
-function makeAdminClient() {
+function makeServerClient(opts?: { user?: { id: string } | null }) {
+  const user = opts && 'user' in opts ? opts.user : { id: 'user-1' }
   const updateQuery = makeMutationQuery({
     data: {
       id: 'alert-1',
@@ -77,12 +65,14 @@ function makeAdminClient() {
     if (table !== 'office_alerts') {
       throw new Error(`Unexpected table: ${table}`)
     }
-
     return { update: updateMock }
   })
 
   return {
-    client: { from: fromMock },
+    client: {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
+      from: fromMock,
+    },
     updateMock,
     updateQuery,
   }
@@ -91,23 +81,38 @@ function makeAdminClient() {
 describe('/api/accountant/alerts/[id]/resolve PATCH', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    createClientMock.mockResolvedValue(makeServerClient())
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
     getCurrentAccountantOfficeMock.mockResolvedValue({ office: OFFICE, error: null })
   })
 
   it('requires authentication', async () => {
-    createClientMock.mockResolvedValue(makeServerClient(null))
+    const ctx = makeServerClient({ user: null })
+    createClientMock.mockResolvedValue(ctx.client)
 
     const response = await PATCH(makeRequest(), makeContext())
 
     expect(response.status).toBe(401)
     await expect(response.json()).resolves.toEqual({ error: 'Autenticação obrigatória.' })
-    expect(createAdminClientMock).not.toHaveBeenCalled()
+  })
+
+  it('P1.3: allows member to resolve alerts (not destructive of billing)', async () => {
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
+    getCurrentAccountantOfficeMock.mockResolvedValue({
+      office: { ...OFFICE, role: 'member' },
+      error: null,
+    })
+
+    const response = await PATCH(makeRequest(), makeContext())
+
+    expect(response.status).toBe(200)
+    expect(ctx.updateMock).toHaveBeenCalled()
   })
 
   it('resolves an alert scoped to the current office and records the resolver', async () => {
-    const admin = makeAdminClient()
-    createAdminClientMock.mockReturnValue(admin.client)
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
 
     const response = await PATCH(makeRequest(), makeContext())
 
@@ -121,12 +126,12 @@ describe('/api/accountant/alerts/[id]/resolve PATCH', () => {
         resolved_at: '2026-05-01T12:00:00.000Z',
       },
     })
-    expect(admin.updateMock).toHaveBeenCalledWith({
+    expect(ctx.updateMock).toHaveBeenCalledWith({
       resolved_at: expect.any(String),
       resolved_by: 'user-1',
     })
-    expect(admin.updateQuery.eq).toHaveBeenCalledWith('id', 'alert-1')
-    expect(admin.updateQuery.eq).toHaveBeenCalledWith('office_id', 'office-1')
-    expect(admin.updateQuery.is).toHaveBeenCalledWith('resolved_at', null)
+    expect(ctx.updateQuery.eq).toHaveBeenCalledWith('id', 'alert-1')
+    expect(ctx.updateQuery.eq).toHaveBeenCalledWith('office_id', 'office-1')
+    expect(ctx.updateQuery.is).toHaveBeenCalledWith('resolved_at', null)
   })
 })

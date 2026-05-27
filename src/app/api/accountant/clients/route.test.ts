@@ -1,19 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { createClientMock, createAdminClientMock, getCurrentAccountantOfficeMock, isAdminAccessFallbackOfficeMock } = vi.hoisted(() => ({
+const { createClientMock, getCurrentAccountantOfficeMock, isAdminAccessFallbackOfficeMock } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
-  createAdminClientMock: vi.fn(),
   getCurrentAccountantOfficeMock: vi.fn(),
   isAdminAccessFallbackOfficeMock: vi.fn((office: { id: string }) => office.id.startsWith('admin-fallback:')),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: createClientMock,
-}))
-
-vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: createAdminClientMock,
 }))
 
 vi.mock('@/lib/accountant/server', () => ({
@@ -44,14 +39,6 @@ function makeRequest(url: string, body?: unknown) {
   })
 }
 
-function makeServerClient(user: { id: string } | null = { id: 'user-1' }) {
-  return {
-    auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user } }),
-    },
-  }
-}
-
 function makeQuery<T>(result: T) {
   const query = {
     eq: vi.fn(() => query),
@@ -65,19 +52,22 @@ function makeQuery<T>(result: T) {
   return query
 }
 
-function makeAdminClient(options?: {
+function makeServerClient(opts?: {
+  user?: { id: string } | null
   activeCount?: number
   listRows?: Array<Record<string, unknown>>
   insertRow?: Record<string, unknown>
 }) {
-  const countQuery = makeQuery({ data: null, error: null, count: options?.activeCount ?? 0 })
+  const user = opts && 'user' in opts ? opts.user : { id: 'user-1' }
+
+  const countQuery = makeQuery({ data: null, error: null, count: opts?.activeCount ?? 0 })
   const listQuery = makeQuery({
-    data: options?.listRows ?? [],
+    data: opts?.listRows ?? [],
     error: null,
-    count: options?.listRows?.length ?? 0,
+    count: opts?.listRows?.length ?? 0,
   })
   const insertQuery = makeQuery({
-    data: options?.insertRow ?? { id: 'client-1', name: 'Loja Modelo' },
+    data: opts?.insertRow ?? { id: 'client-1', name: 'Loja Modelo' },
     error: null,
   })
 
@@ -89,15 +79,14 @@ function makeAdminClient(options?: {
     if (table !== 'office_clients') {
       throw new Error(`Unexpected table: ${table}`)
     }
-
-    return {
-      select: selectMock,
-      insert: insertMock,
-    }
+    return { select: selectMock, insert: insertMock }
   })
 
   return {
-    client: { from: fromMock },
+    client: {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
+      from: fromMock,
+    },
     countQuery,
     listQuery,
     insertQuery,
@@ -109,12 +98,14 @@ function makeAdminClient(options?: {
 describe('/api/accountant/clients', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    createClientMock.mockResolvedValue(makeServerClient())
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
     getCurrentAccountantOfficeMock.mockResolvedValue({ office: OFFICE, error: null })
   })
 
   it('requires authentication on create', async () => {
-    createClientMock.mockResolvedValue(makeServerClient(null))
+    const ctx = makeServerClient({ user: null })
+    createClientMock.mockResolvedValue(ctx.client)
 
     const response = await POST(makeRequest('http://localhost/api/accountant/clients', {
       nome: 'Cliente',
@@ -124,12 +115,68 @@ describe('/api/accountant/clients', () => {
 
     expect(response.status).toBe(401)
     await expect(response.json()).resolves.toEqual({ error: 'Autenticação obrigatória.' })
-    expect(createAdminClientMock).not.toHaveBeenCalled()
+  })
+
+  it('P1.3: blocks POST when role=member', async () => {
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
+    getCurrentAccountantOfficeMock.mockResolvedValue({
+      office: { ...OFFICE, role: 'member' },
+      error: null,
+    })
+
+    const response = await POST(makeRequest('http://localhost/api/accountant/clients', {
+      nome: 'Cliente',
+      cnae: '4712-1/00',
+      tipoMei: 'geral',
+    }))
+
+    expect(response.status).toBe(403)
+    await expect(response.json()).resolves.toEqual({
+      error: 'Apenas o owner do escritório pode cadastrar clientes.',
+    })
+    expect(ctx.insertMock).not.toHaveBeenCalled()
+  })
+
+  it('P1.3: blocks POST when role=admin (member-equivalent for write)', async () => {
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
+    getCurrentAccountantOfficeMock.mockResolvedValue({
+      office: { ...OFFICE, role: 'admin' },
+      error: null,
+    })
+
+    const response = await POST(makeRequest('http://localhost/api/accountant/clients', {
+      nome: 'Cliente',
+      cnae: '4712-1/00',
+      tipoMei: 'geral',
+    }))
+
+    expect(response.status).toBe(403)
+    expect(ctx.insertMock).not.toHaveBeenCalled()
+  })
+
+  it('P1.3: allows GET when role=member (read-only)', async () => {
+    const ctx = makeServerClient({
+      listRows: [{ id: 'client-1', name: 'Loja Modelo', ativo: true }],
+    })
+    createClientMock.mockResolvedValue(ctx.client)
+    getCurrentAccountantOfficeMock.mockResolvedValue({
+      office: { ...OFFICE, role: 'member' },
+      error: null,
+    })
+
+    const response = await GET(makeRequest('http://localhost/api/accountant/clients?status=active&page=1'))
+
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.ok).toBe(true)
+    expect(body.clients).toHaveLength(1)
   })
 
   it('blocks creation when the plan active client limit is reached', async () => {
-    const admin = makeAdminClient({ activeCount: 30 })
-    createAdminClientMock.mockReturnValue(admin.client)
+    const ctx = makeServerClient({ activeCount: 30 })
+    createClientMock.mockResolvedValue(ctx.client)
 
     const response = await POST(makeRequest('http://localhost/api/accountant/clients', {
       nome: 'Cliente',
@@ -141,10 +188,12 @@ describe('/api/accountant/clients', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Limite de 30 clientes ativos atingido para o plano atual.',
     })
-    expect(admin.insertMock).not.toHaveBeenCalled()
+    expect(ctx.insertMock).not.toHaveBeenCalled()
   })
 
   it('blocks creation when billing is restricted', async () => {
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
     getCurrentAccountantOfficeMock.mockResolvedValue({
       office: {
         ...OFFICE,
@@ -171,10 +220,12 @@ describe('/api/accountant/clients', () => {
         restricted: true,
       }),
     })
-    expect(createAdminClientMock).not.toHaveBeenCalled()
+    expect(ctx.insertMock).not.toHaveBeenCalled()
   })
 
   it('keeps fallback admin office read-only when Supabase admin is unavailable', async () => {
+    const ctx = makeServerClient()
+    createClientMock.mockResolvedValue(ctx.client)
     getCurrentAccountantOfficeMock.mockResolvedValue({
       office: {
         ...OFFICE,
@@ -202,12 +253,11 @@ describe('/api/accountant/clients', () => {
     await expect(createResponse.json()).resolves.toEqual({
       error: 'Configure SUPABASE_SERVICE_ROLE_KEY para cadastrar clientes reais no modo contador.',
     })
-    expect(createAdminClientMock).not.toHaveBeenCalled()
   })
 
   it('creates a client scoped to the current office', async () => {
-    const admin = makeAdminClient({ activeCount: 2 })
-    createAdminClientMock.mockReturnValue(admin.client)
+    const ctx = makeServerClient({ activeCount: 2 })
+    createClientMock.mockResolvedValue(ctx.client)
 
     const response = await POST(makeRequest('http://localhost/api/accountant/clients', {
       nome: 'Loja Modelo',
@@ -223,7 +273,7 @@ describe('/api/accountant/clients', () => {
       ok: true,
       client: { id: 'client-1', name: 'Loja Modelo' },
     })
-    expect(admin.insertMock).toHaveBeenCalledWith(expect.objectContaining({
+    expect(ctx.insertMock).toHaveBeenCalledWith(expect.objectContaining({
       office_id: 'office-1',
       name: 'Loja Modelo',
       email: 'cliente@example.com',
@@ -237,10 +287,10 @@ describe('/api/accountant/clients', () => {
   })
 
   it('lists clients scoped to the current office and requested status', async () => {
-    const admin = makeAdminClient({
+    const ctx = makeServerClient({
       listRows: [{ id: 'client-1', name: 'Loja Modelo', ativo: true }],
     })
-    createAdminClientMock.mockReturnValue(admin.client)
+    createClientMock.mockResolvedValue(ctx.client)
 
     const response = await GET(makeRequest('http://localhost/api/accountant/clients?status=active&page=1'))
 
@@ -250,7 +300,7 @@ describe('/api/accountant/clients', () => {
       clients: [{ id: 'client-1', name: 'Loja Modelo', ativo: true }],
       pagination: { page: 1, pageSize: 20, total: 1 },
     })
-    expect(admin.listQuery.eq).toHaveBeenCalledWith('office_id', 'office-1')
-    expect(admin.listQuery.eq).toHaveBeenCalledWith('ativo', true)
+    expect(ctx.listQuery.eq).toHaveBeenCalledWith('office_id', 'office-1')
+    expect(ctx.listQuery.eq).toHaveBeenCalledWith('ativo', true)
   })
 })
