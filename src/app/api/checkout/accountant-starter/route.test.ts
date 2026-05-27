@@ -7,6 +7,7 @@ const {
   getCurrentAccountantOfficeMock,
   createBrandedCheckoutSessionMock,
   portalCreateMock,
+  subscriptionRetrieveMock,
   isStripeConfiguredMock,
   subscriptionInsertMock,
   subscriptionSelectMock,
@@ -17,6 +18,7 @@ const {
   getCurrentAccountantOfficeMock: vi.fn(),
   createBrandedCheckoutSessionMock: vi.fn(),
   portalCreateMock: vi.fn(),
+  subscriptionRetrieveMock: vi.fn(),
   isStripeConfiguredMock: vi.fn(),
   subscriptionInsertMock: vi.fn(),
   subscriptionSelectMock: vi.fn(),
@@ -59,6 +61,9 @@ vi.mock('@/lib/stripe', () => ({
       sessions: {
         create: portalCreateMock,
       },
+    },
+    subscriptions: {
+      retrieve: subscriptionRetrieveMock,
     },
   }),
   isStripeConfigured: isStripeConfiguredMock,
@@ -129,6 +134,9 @@ describe('/api/checkout/accountant-starter POST', () => {
       url: 'https://checkout.stripe.com/cs_starter_1',
     })
     portalCreateMock.mockResolvedValue({ url: 'https://billing.stripe.com/session' })
+    subscriptionRetrieveMock.mockResolvedValue({
+      items: { data: [{ id: 'si_existing_1' }] },
+    })
     subscriptionInsertMock.mockResolvedValue({ error: null })
   })
 
@@ -206,7 +214,7 @@ describe('/api/checkout/accountant-starter POST', () => {
     expect(subscriptionInsertMock).not.toHaveBeenCalled()
   })
 
-  it('sends active plan changes to Stripe Customer Portal instead of creating a second checkout', async () => {
+  it('P1.7: sends active plan changes to Stripe Customer Portal with items[].price locked to target plan', async () => {
     createAdminClientMock.mockReturnValue(makeAdminClient({
       id: 'sub-row-1',
       status: 'active',
@@ -222,11 +230,21 @@ describe('/api/checkout/accountant-starter POST', () => {
       url: 'https://billing.stripe.com/session',
     })
     expect(createBrandedCheckoutSessionMock).not.toHaveBeenCalled()
+    // Fetch do subscription item ID antes da criação do Portal session
+    expect(subscriptionRetrieveMock).toHaveBeenCalledWith('sub_1')
+    // Portal abre em subscription_update_confirm com items amarrados ao plano alvo (starter).
     expect(portalCreateMock).toHaveBeenCalledWith(expect.objectContaining({
       customer: 'cus_1',
       flow_data: {
-        type: 'subscription_update',
-        subscription_update: { subscription: 'sub_1' },
+        type: 'subscription_update_confirm',
+        subscription_update_confirm: {
+          subscription: 'sub_1',
+          items: [{
+            id: 'si_existing_1',
+            price: 'price_starter',
+            quantity: 1,
+          }],
+        },
       },
     }))
   })

@@ -18,6 +18,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error }, { status: 400 })
     }
 
+    // P1.6 (justificado): este endpoint MANTÉM createAdminClient porque o usuário
+    // ainda NÃO é membro de nenhum escritório no momento do onboarding. As policies
+    // de accountant_offices/office_members usam is_office_member/is_office_admin,
+    // que só passam quando a row em office_members JÁ existe — e ainda não existe.
+    // Como o onboarding cria simultaneamente o office E a membership owner,
+    // precisamos do admin client para furar a RLS no insert inicial.
+    // Segurança preservada por:
+    //   1) owner_user_id = user.id (extraído do JWT validado, NÃO do payload do cliente)
+    //   2) unique(owner_user_id) em accountant_offices impede duplicação
+    //   3) plan='starter_trial' e max_clients hardcoded no servidor (não vem do body)
+    //   4) role='owner' fixo no servidor para o membership inicial
     const admin = createAdminClient()
     const officesTable = admin.from('accountant_offices') as unknown as {
       select: (columns: string) => {

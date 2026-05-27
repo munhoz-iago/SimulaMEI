@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentAccountantOffice } from '@/lib/accountant/server'
 
@@ -50,8 +49,10 @@ export async function PATCH(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'Escritório contador não configurado.' }, { status: 403 })
   }
 
+  // P1.3: resolver alerta NÃO é destrutivo de billing/carteira — qualquer member pode marcar como visto.
+  // P1.6: usa cliente SSR. Policy "office_alerts: all member" autoriza update por membros.
   const alertId = await getAlertId(context)
-  const table = createAdminClient().from('office_alerts') as unknown as OfficeAlertsTable
+  const table = supabase.from('office_alerts') as unknown as OfficeAlertsTable
   const result = await table
     .update({
       resolved_at: new Date().toISOString(),
