@@ -177,6 +177,7 @@ export async function createAccountantCheckout(plan: AccountantPaidPlan) {
       const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId)
       existingSubscriptionItemId = subscription.items?.data?.[0]?.id ?? null
     } catch (err) {
+      // P2: log completo server-side, mensagem genérica pro cliente.
       console.error('[/api/checkout/accountant] subscription retrieve error:', err)
       return NextResponse.json(
         { error: 'Não foi possível carregar a assinatura no Stripe.' },
@@ -198,35 +199,54 @@ export async function createAccountantCheckout(plan: AccountantPaidPlan) {
       )
     }
 
-    const session = await stripe.billingPortal.sessions.create({
-      customer: stripeCustomerId,
-      return_url: getCheckoutUrl(`/contador/assinatura?changed=${plan}`),
-      flow_data: {
-        type: 'subscription_update_confirm',
-        subscription_update_confirm: {
-          subscription: stripeSubscriptionId,
-          items: [{
-            id: existingSubscriptionItemId,
-            price: product.priceId,
-            quantity: 1,
-          }],
+    try {
+      const session = await stripe.billingPortal.sessions.create({
+        customer: stripeCustomerId,
+        return_url: getCheckoutUrl(`/contador/assinatura?changed=${plan}`),
+        flow_data: {
+          type: 'subscription_update_confirm',
+          subscription_update_confirm: {
+            subscription: stripeSubscriptionId,
+            items: [{
+              id: existingSubscriptionItemId,
+              price: product.priceId,
+              quantity: 1,
+            }],
+          },
         },
-      },
-    })
+      })
 
-    return NextResponse.json({ url: session.url })
+      return NextResponse.json({ url: session.url })
+    } catch (err) {
+      // P2: erro do Stripe Portal pode vazar customer/price IDs e config interna.
+      console.error('[/api/checkout/accountant] portal session error:', err)
+      return NextResponse.json(
+        { error: 'Não foi possível abrir o portal de assinatura. Tente novamente em alguns minutos.' },
+        { status: 500 },
+      )
+    }
   }
 
-  const session = await createBrandedCheckoutSession({
-    product: plan === 'pro' ? 'accountant_pro' : 'accountant_starter',
-    userId: user.id,
-    userEmail: user.email,
-    mode: 'subscription',
-    extraMetadata: {
-      office_id: office.id,
-      plan,
-    },
-  })
+  let session: Awaited<ReturnType<typeof createBrandedCheckoutSession>>
+  try {
+    session = await createBrandedCheckoutSession({
+      product: plan === 'pro' ? 'accountant_pro' : 'accountant_starter',
+      userId: user.id,
+      userEmail: user.email,
+      mode: 'subscription',
+      extraMetadata: {
+        office_id: office.id,
+        plan,
+      },
+    })
+  } catch (err) {
+    // P2: Stripe error messages podem conter acct_*, price IDs, paths do catálogo.
+    console.error('[/api/checkout/accountant] checkout session error:', err)
+    return NextResponse.json(
+      { error: 'Não foi possível iniciar o checkout. Tente novamente em alguns minutos.' },
+      { status: 500 },
+    )
+  }
 
   if (!session.url) {
     return NextResponse.json(

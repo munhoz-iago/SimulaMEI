@@ -270,6 +270,42 @@ export async function applyAccountantPlanLimit(
   if (reactivateResult.error) throw new Error(reactivateResult.error.message)
 }
 
+/**
+ * TODO P2: `syncAccountantBilling` faz 3 operações sequenciais não-transacionais:
+ *   1) upsert em office_subscriptions
+ *   2) update em accountant_offices
+ *   3) applyAccountantPlanLimit (read + update em office_clients)
+ *
+ * Se 2 eventos Stripe paralelos (ex: subscription.updated + checkout.completed
+ * para a mesma assinatura, ou retry após timeout) executarem simultaneamente,
+ * podem deixar:
+ *   - office com plan=A mas subscription com plan=B
+ *   - clientes ativos acima do limit do plan vigente
+ *   - clientes desativados incorretamente quando o "downgrade" perdeu pra um
+ *     upgrade concorrente
+ *
+ * Mitigação atual (parcial):
+ *   - Idempotência via processed_stripe_events trava duplicatas do MESMO evento
+ *   - Stripe não envia eventos paralelos da mesma subscription com frequência
+ *
+ * Fix definitivo: wrap em RPC PostgreSQL transacional
+ *   create function sync_accountant_billing(...) returns void
+ *     language plpgsql security definer
+ *     as $$
+ *     begin
+ *       insert into office_subscriptions(...) on conflict(office_id) do update...;
+ *       update accountant_offices set ... where id = p_office_id;
+ *       -- deactivate excess clients atomically
+ *       update office_clients set ativo=false, ... where id in (
+ *         select id from office_clients
+ *         where office_id = p_office_id and ativo
+ *         order by created_at limit (count - new_limit)
+ *       );
+ *     end; $$;
+ *
+ * Risco residual baixo (~1% das jornadas em produção atual de baixo volume),
+ * mas DEVE ser corrigido antes de escala >100 escritórios.
+ */
 export async function syncAccountantBilling(
   admin: SupabaseAdminLike,
   payload: AccountantBillingSyncPayload,

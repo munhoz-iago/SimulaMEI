@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { hasReportAccess } from '@/lib/auth/report-access'
 import { isResultadoVazio, RELATORIO_VAZIO_MSG } from '@/lib/reports/reportEligibility'
 import { reportFingerprint } from '@/lib/reports/reportFingerprint'
+import { applyRateLimitHeaders, consumeRateLimit } from '@/lib/security/rate-limit'
 import { gerarOportunidadesFiscais } from '@/lib/tributario'
 import { SimulationReportDocument } from '@/lib/reports/SimulationReportDocument'
 import type { ResultadoSimulacao } from '@/types/tributario'
@@ -22,12 +23,31 @@ interface PurchaseRow {
   simulation_id: string | null
 }
 
+// P2: PDF render é CPU pesado. 30/h cobre uso real (free preview + paid re-download
+// + share via Vercel) sem permitir scripts que esgotam CPU em loop.
+const GERAR_RATE_LIMIT = 30
+
 export async function GET(req: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.json({ error: 'Autenticação obrigatória para gerar o relatório.' }, { status: 401 })
+  }
+
+  const rateLimit = await consumeRateLimit({
+    namespace: 'relatorio_gerar',
+    subjectHash: user.id,
+    limit: GERAR_RATE_LIMIT,
+    windowSeconds: 60 * 60,
+  })
+
+  if (!rateLimit.allowed) {
+    return applyRateLimitHeaders(
+      NextResponse.json({ error: 'Limite de geração de relatórios atingido. Tente novamente mais tarde.' }, { status: 429 }),
+      rateLimit,
+      GERAR_RATE_LIMIT,
+    )
   }
 
   const url = new URL(req.url)

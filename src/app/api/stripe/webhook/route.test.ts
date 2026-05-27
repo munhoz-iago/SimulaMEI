@@ -348,4 +348,86 @@ describe('/api/stripe/webhook POST', () => {
       simulation_id: 'sim-1',
     }))
   })
+
+  it('refuses to credit consumer purchase when client_reference_id does not match metadata.user_id (P2 cross-check)', async () => {
+    constructEventMock.mockReturnValue({
+      id: 'evt_attack',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_attack',
+          payment_intent: 'pi_attack',
+          customer: 'cus_attack',
+          client_reference_id: 'attacker-id',
+          metadata: {
+            user_id: 'victim-id',
+            produto: 'monitor_mensal',
+          },
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    // Returns success to Stripe (so it doesn't retry), but does NOT mutate DB.
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ received: true })
+    expect(purchasesUpdateMock).not.toHaveBeenCalled()
+    expect(profilesUpdateMock).not.toHaveBeenCalled()
+    // Event is still marked processed (don't reprocess a known-bad session).
+    expect(processedInsertMock).toHaveBeenCalledWith({
+      stripe_event_id: 'evt_attack',
+      event_type: 'checkout.session.completed',
+    })
+  })
+
+  it('accepts consumer purchase when client_reference_id matches metadata.user_id', async () => {
+    constructEventMock.mockReturnValue({
+      id: 'evt_ok',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_ok',
+          payment_intent: 'pi_ok',
+          customer: 'cus_ok',
+          client_reference_id: 'user-1',
+          metadata: {
+            user_id: 'user-1',
+            produto: 'monitor_mensal',
+          },
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    expect(purchasesUpdateMock).toHaveBeenCalled()
+    expect(profilesUpdateMock).toHaveBeenCalledWith(expect.objectContaining({ plano: 'pro' }))
+  })
+
+  it('accepts consumer purchase when client_reference_id is absent (legacy clients)', async () => {
+    constructEventMock.mockReturnValue({
+      id: 'evt_legacy',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_legacy',
+          payment_intent: 'pi_legacy',
+          customer: 'cus_legacy',
+          client_reference_id: null,
+          metadata: {
+            user_id: 'user-1',
+            produto: 'monitor_mensal',
+          },
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    expect(purchasesUpdateMock).toHaveBeenCalled()
+    expect(profilesUpdateMock).toHaveBeenCalledWith(expect.objectContaining({ plano: 'pro' }))
+  })
 })

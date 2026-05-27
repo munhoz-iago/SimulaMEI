@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { gerarDiagnosticoFiscal } from '@/lib/ai/diagnostico'
+import { applyRateLimitHeaders, consumeRateLimit } from '@/lib/security/rate-limit'
 import { getCnae, normalizeCnaeCode, simular } from '@/lib/tributario'
 import type { EntradaSimulacao, ResultadoSimulacao } from '@/types/tributario'
 
 interface SimulationRow {
   resultado: ResultadoSimulacao
 }
+
+// P2: diagnóstico chama IA paga (Anthropic). 15/h cobre uso real
+// (re-roda após ajustar números) sem deixar um único user esgotar credit.
+const DIAGNOSTICO_RATE_LIMIT = 15
 
 const folhaDetalhadaSchema = z.object({
   salariosClt: z.number().finite().nonnegative().optional(),
@@ -66,6 +71,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'CNAE não reconhecido. Informe um código oficial válido.' }, { status: 400 })
     }
 
+    // P2: rate limit DEPOIS da validação de schema/CNAE (não desperdiça quota em payload bruto),
+    // mas ANTES de chamar simular()+IA (que custa CPU + token Anthropic).
+    const rateLimit = await consumeRateLimit({
+      namespace: 'diagnostico',
+      subjectHash: user.id,
+      limit: DIAGNOSTICO_RATE_LIMIT,
+      windowSeconds: 60 * 60,
+    })
+
+    if (!rateLimit.allowed) {
+      return applyRateLimitHeaders(
+        NextResponse.json({ error: 'Limite de diagnósticos atingido. Tente novamente mais tarde.' }, { status: 429 }),
+        rateLimit,
+        DIAGNOSTICO_RATE_LIMIT,
+      )
+    }
+
     const resultado = simular(entrada)
     const diagnostico = await gerarDiagnosticoFiscal(resultado)
     return NextResponse.json(diagnostico)
@@ -94,6 +116,22 @@ export async function GET() {
     const latest = (simulations?.[0] as SimulationRow | undefined)?.resultado
     if (!latest) {
       return NextResponse.json({ error: 'Nenhuma simulação encontrada.' }, { status: 404 })
+    }
+
+    // P2: rate limit antes da chamada IA paga.
+    const rateLimit = await consumeRateLimit({
+      namespace: 'diagnostico',
+      subjectHash: user.id,
+      limit: DIAGNOSTICO_RATE_LIMIT,
+      windowSeconds: 60 * 60,
+    })
+
+    if (!rateLimit.allowed) {
+      return applyRateLimitHeaders(
+        NextResponse.json({ error: 'Limite de diagnósticos atingido. Tente novamente mais tarde.' }, { status: 429 }),
+        rateLimit,
+        DIAGNOSTICO_RATE_LIMIT,
+      )
     }
 
     const diagnostico = await gerarDiagnosticoFiscal(latest)

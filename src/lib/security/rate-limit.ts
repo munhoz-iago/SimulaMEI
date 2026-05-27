@@ -94,5 +94,10 @@ export function applyRateLimitHeaders(
   response.headers.set('X-RateLimit-Limit', String(limit))
   response.headers.set('X-RateLimit-Remaining', String(rateLimit.remaining))
   response.headers.set('X-RateLimit-Reset', rateLimit.resetAt)
+  // P2: clientes que recebem 429 precisam saber quando podem tentar de novo.
+  // Retry-After em segundos (RFC 7231) — sempre >= 1 para garantir back-off.
+  const resetMs = new Date(rateLimit.resetAt).getTime() - Date.now()
+  const retryAfter = Math.max(1, Math.ceil(resetMs / 1000))
+  response.headers.set('Retry-After', String(retryAfter))
   return response
 }

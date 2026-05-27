@@ -4,15 +4,25 @@ const {
   createClientMock,
   gerarOportunidadesFiscaisMock,
   renderToBufferMock,
+  consumeRateLimitMock,
 } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
   gerarOportunidadesFiscaisMock: vi.fn(),
   renderToBufferMock: vi.fn(),
+  consumeRateLimitMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: createClientMock,
 }))
+
+vi.mock('@/lib/security/rate-limit', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/security/rate-limit')>('@/lib/security/rate-limit')
+  return {
+    ...actual,
+    consumeRateLimit: consumeRateLimitMock,
+  }
+})
 
 vi.mock('@react-pdf/renderer', () => ({
   Document: 'Document',
@@ -107,6 +117,12 @@ describe('/api/relatorio/gerar GET', () => {
         element.type(element.props)
       }
       return Buffer.from('pdf')
+    })
+    consumeRateLimitMock.mockResolvedValue({
+      allowed: true,
+      remaining: 29,
+      resetAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      hitCount: 1,
     })
   })
 
@@ -271,6 +287,28 @@ describe('/api/relatorio/gerar GET', () => {
       )
       expect(renderToBufferMock).toHaveBeenCalled()
     })
+  })
+
+  it('returns 429 with Retry-After when rate limit is exceeded (CPU-heavy PDF gen)', async () => {
+    createClientMock.mockResolvedValue(makeServerClient({
+      user: { id: 'user-1', email: 'user@example.com' },
+      profile: { plano: 'pro' },
+      purchases: [],
+      simulations: [{ resultado: makeResultado() }],
+    }))
+    consumeRateLimitMock.mockResolvedValue({
+      allowed: false,
+      remaining: 0,
+      resetAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      hitCount: 31,
+    })
+
+    const response = await GET(makeRequest())
+
+    expect(response.status).toBe(429)
+    expect(response.headers.get('Retry-After')).toBeTruthy()
+    expect(response.headers.get('X-RateLimit-Limit')).toBe('30')
+    expect(renderToBufferMock).not.toHaveBeenCalled()
   })
 })
 

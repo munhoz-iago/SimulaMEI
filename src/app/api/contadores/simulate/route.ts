@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
+import { applyRateLimitHeaders, consumeRateLimit } from '@/lib/security/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCnae, normalizeCnaeCode, simular } from '@/lib/tributario'
 import type { EntradaSimulacao } from '@/types/tributario'
@@ -20,6 +21,12 @@ const TIER_MONTHLY_LIMIT: Record<ApiKeyRow['tier'], number> = {
   free: 1000,
   pro: 500000,
 }
+
+// P2: a quota mensal protege custo total mas não impede burst.
+// 100 reqs/min por API key é mais que suficiente para uso legítimo
+// (planilha em lote dispara ~10/s = 600/min — quem precisa disso usa
+// batch endpoint ou negocia tier custom). Trava DDoS/script loop.
+const SIMULATE_BURST_LIMIT = 100
 
 function getBearerToken(request: NextRequest) {
   const header = request.headers.get('authorization') ?? ''
@@ -74,6 +81,24 @@ export async function GET(request: NextRequest) {
   const key = apiKey as ApiKeyRow | null
   if (!key || key.revoked_at) {
     return NextResponse.json({ error: 'Chave inválida ou revogada.' }, { status: 401 })
+  }
+
+  // P2: burst protection ANTES de validar params (não precisa parse pra decidir).
+  // Limita 100 reqs/min por API key — protege CPU/DB contra DDoS sem afetar
+  // uso legítimo (mesmo planilha em batch fica longe disso).
+  const burstLimit = await consumeRateLimit({
+    namespace: 'contadores_simulate_burst',
+    subjectHash: key.id,
+    limit: SIMULATE_BURST_LIMIT,
+    windowSeconds: 60,
+  })
+
+  if (!burstLimit.allowed) {
+    return applyRateLimitHeaders(
+      NextResponse.json({ error: 'Limite de requisições por minuto atingido. Aguarde antes de tentar novamente.' }, { status: 429 }),
+      burstLimit,
+      SIMULATE_BURST_LIMIT,
+    )
   }
 
   const faturamentoAcumulado = parseNumberParam(request, 'faturamentoAcumulado')

@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { createAdminClientMock, simularMock, getCnaeMock, normalizeCnaeCodeMock } = vi.hoisted(() => {
+const { createAdminClientMock, simularMock, getCnaeMock, normalizeCnaeCodeMock, consumeRateLimitMock } = vi.hoisted(() => {
   process.env.SIMULAMEI_API_KEY_SECRET = 'test-secret'
   return {
     createAdminClientMock: vi.fn(),
     simularMock: vi.fn(),
     getCnaeMock: vi.fn(),
     normalizeCnaeCodeMock: vi.fn(),
+    consumeRateLimitMock: vi.fn(),
   }
 })
 
@@ -20,6 +21,14 @@ vi.mock('@/lib/tributario', () => ({
   getCnae: getCnaeMock,
   normalizeCnaeCode: normalizeCnaeCodeMock,
 }))
+
+vi.mock('@/lib/security/rate-limit', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/security/rate-limit')>('@/lib/security/rate-limit')
+  return {
+    ...actual,
+    consumeRateLimit: consumeRateLimitMock,
+  }
+})
 
 import { GET } from './route'
 
@@ -50,6 +59,12 @@ describe('/api/contadores/simulate GET', () => {
     normalizeCnaeCodeMock.mockReturnValue('6204-0/00')
     getCnaeMock.mockReturnValue({ cnae: '6204-0/00' })
     simularMock.mockReturnValue({ ok: 'resultado' })
+    consumeRateLimitMock.mockResolvedValue({
+      allowed: true,
+      remaining: 99,
+      resetAt: new Date(Date.now() + 60 * 1000).toISOString(),
+      hitCount: 1,
+    })
   })
 
   it('returns 429 without simulating when atomic quota consumption returns no row', async () => {
@@ -152,5 +167,33 @@ describe('/api/contadores/simulate GET', () => {
       resultado: { ok: 'resultado' },
     })
     expect(rpcMock).toHaveBeenCalledWith('increment_quota', { p_api_key_id: 'key-1' })
+  })
+
+  it('returns 429 with Retry-After when burst rate limit (100/min) is exceeded', async () => {
+    const apiKeyQuery = makeApiKeyQuery({
+      id: 'key-1',
+      user_id: 'user-1',
+      tier: 'pro',
+      revoked_at: null,
+    })
+    const rpcMock = vi.fn()
+    createAdminClientMock.mockReturnValue({
+      from: vi.fn(() => apiKeyQuery),
+      rpc: rpcMock,
+    })
+    consumeRateLimitMock.mockResolvedValue({
+      allowed: false,
+      remaining: 0,
+      resetAt: new Date(Date.now() + 30 * 1000).toISOString(),
+      hitCount: 101,
+    })
+
+    const response = await GET(makeRequest())
+
+    expect(response.status).toBe(429)
+    expect(response.headers.get('Retry-After')).toBeTruthy()
+    expect(response.headers.get('X-RateLimit-Limit')).toBe('100')
+    expect(rpcMock).not.toHaveBeenCalled()
+    expect(simularMock).not.toHaveBeenCalled()
   })
 })
