@@ -44,10 +44,10 @@ export async function sendFiscalCalendarEmail({
   const html = `
     <div style="font-family:${EMAIL_FONT_STACK};line-height:1.6;color:#111">
       <h1 style="font-size:22px;margin-bottom:12px">Calendário fiscal do mês</h1>
-      <p>Olá, ${nome}.</p>
+      <p>Olá, ${escapeHtml(nome)}.</p>
       <p>Seu resumo mensal do SimulaMEI já está pronto:</p>
       <ul>
-        ${items.map(item => `<li><strong>${item.title}</strong><br/>${item.body}</li>`).join('')}
+        ${items.map(item => `<li><strong>${escapeHtml(item.title)}</strong><br/>${escapeHtml(item.body)}</li>`).join('')}
       </ul>
       <p><a href="${getSiteUrl()}/dashboard">Abrir dashboard</a></p>
     </div>
@@ -83,8 +83,8 @@ export async function sendAnexoAlertEmail({
   const html = `
     <div style="font-family:${EMAIL_FONT_STACK};line-height:1.6;color:#111">
       <h1 style="font-size:22px;margin-bottom:12px">Mudança de Anexo detectada</h1>
-      <p>Olá, ${nome}.</p>
-      <p>O SimulaMEI identificou transição de <strong>Anexo ${from}</strong> para <strong>Anexo ${toAnexo}</strong> em ${mes}/${ano}.</p>
+      <p>Olá, ${escapeHtml(nome)}.</p>
+      <p>O SimulaMEI identificou transição de <strong>Anexo ${escapeHtml(from)}</strong> para <strong>Anexo ${escapeHtml(toAnexo)}</strong> em ${mes}/${ano}.</p>
       <p>Fator R observado: <strong>${(fatorR * 100).toFixed(1)}%</strong>.</p>
       <p><a href="${getSiteUrl()}/dashboard">Abrir dashboard</a></p>
     </div>
