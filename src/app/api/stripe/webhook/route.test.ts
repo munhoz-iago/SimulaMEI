@@ -9,14 +9,22 @@ const {
   processedInsertMock,
   processedSelectMock,
   subscriptionRetrieveMock,
+  invoiceRetrieveMock,
+  chargeRetrieveMock,
   subscriptionSelectMock,
   subscriptionUpsertMock,
   subscriptionUpdateMock,
   officesUpdateMock,
+  officesSelectMock,
   clientsSelectMock,
   clientsUpdateMock,
   purchasesUpdateMock,
   profilesUpdateMock,
+  sendPaymentFailedNotificationMock,
+  sendSubscriptionPausedNotificationMock,
+  sendRefundNotificationMock,
+  sendDisputeNotificationMock,
+  authAdminGetUserByIdMock,
 } = vi.hoisted(() => ({
   constructEventMock: vi.fn(),
   createAdminClientMock: vi.fn(),
@@ -25,14 +33,22 @@ const {
   processedInsertMock: vi.fn(),
   processedSelectMock: vi.fn(),
   subscriptionRetrieveMock: vi.fn(),
+  invoiceRetrieveMock: vi.fn(),
+  chargeRetrieveMock: vi.fn(),
   subscriptionSelectMock: vi.fn(),
   subscriptionUpsertMock: vi.fn(),
   subscriptionUpdateMock: vi.fn(),
   officesUpdateMock: vi.fn(),
+  officesSelectMock: vi.fn(),
   clientsSelectMock: vi.fn(),
   clientsUpdateMock: vi.fn(),
   purchasesUpdateMock: vi.fn(),
   profilesUpdateMock: vi.fn(),
+  sendPaymentFailedNotificationMock: vi.fn(),
+  sendSubscriptionPausedNotificationMock: vi.fn(),
+  sendRefundNotificationMock: vi.fn(),
+  sendDisputeNotificationMock: vi.fn(),
+  authAdminGetUserByIdMock: vi.fn(),
 }))
 
 vi.mock('next/headers', () => ({
@@ -67,8 +83,21 @@ vi.mock('@/lib/stripe', () => ({
     subscriptions: {
       retrieve: subscriptionRetrieveMock,
     },
+    invoices: {
+      retrieve: invoiceRetrieveMock,
+    },
+    charges: {
+      retrieve: chargeRetrieveMock,
+    },
   }),
   isStripeConfigured: isStripeConfiguredMock,
+}))
+
+vi.mock('@/lib/resend', () => ({
+  sendPaymentFailedNotification: sendPaymentFailedNotificationMock,
+  sendSubscriptionPausedNotification: sendSubscriptionPausedNotificationMock,
+  sendRefundNotification: sendRefundNotificationMock,
+  sendDisputeNotification: sendDisputeNotificationMock,
 }))
 
 import { POST } from './route'
@@ -101,14 +130,31 @@ function makeSelectChain<T>(rows: T[]) {
   return chain
 }
 
+const DEFAULT_OFFICE_ROW = {
+  id: 'office-1',
+  name: 'Prime Contabilidade',
+  owner_user_id: 'owner-user-1',
+}
+
 function makeAdminClient(options?: {
   activeClients?: Array<{ id: string; created_at: string }>
   storedSubscription?: Record<string, unknown> | null
+  subscriptionContext?: Record<string, unknown> | null
+  officeRow?: Record<string, unknown> | null
 }) {
   const activeClients = options?.activeClients ?? []
   const storedSubscription = options && 'storedSubscription' in options
     ? options.storedSubscription
     : { office_id: 'office-1', plan: 'pro' }
+  const subscriptionContext = options && 'subscriptionContext' in options
+    ? options.subscriptionContext
+    : {
+        office_id: 'office-1',
+        accountant_offices: DEFAULT_OFFICE_ROW,
+      }
+  const officeRow = options && 'officeRow' in options
+    ? options.officeRow
+    : DEFAULT_OFFICE_ROW
 
   const fromMock = vi.fn((table: string) => {
     if (table === 'processed_stripe_events') {
@@ -122,14 +168,22 @@ function makeAdminClient(options?: {
       return {
         upsert: subscriptionUpsertMock,
         update: subscriptionUpdateMock,
-        select: subscriptionSelectMock.mockReturnValue(makeSelectChain(
-          storedSubscription ? [storedSubscription] : [],
-        )),
+        select: subscriptionSelectMock.mockImplementation((columns: string) => {
+          // Branch: handler de status -> seleciona o join completo
+          if (columns.includes('accountant_offices')) {
+            return makeSelectChain(subscriptionContext ? [subscriptionContext] : [])
+          }
+          // Branch padrao: storedSubscription
+          return makeSelectChain(storedSubscription ? [storedSubscription] : [])
+        }),
       }
     }
 
     if (table === 'accountant_offices') {
-      return { update: officesUpdateMock }
+      return {
+        update: officesUpdateMock,
+        select: officesSelectMock.mockReturnValue(makeSelectChain(officeRow ? [officeRow] : [])),
+      }
     }
 
     if (table === 'purchases') {
@@ -150,13 +204,22 @@ function makeAdminClient(options?: {
     throw new Error(`Unexpected table: ${table}`)
   })
 
-  return { from: fromMock }
+  return {
+    from: fromMock,
+    auth: {
+      admin: {
+        getUserById: authAdminGetUserByIdMock,
+      },
+    },
+  }
 }
 
 describe('/api/stripe/webhook POST', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test'
+    process.env.ADMIN_EMAIL = 'admin@simulamei.com.br'
+    process.env.ADMIN_EMAILS = ''
     headersMock.mockResolvedValue(new Headers({ 'stripe-signature': 'sig_test' }))
     isStripeConfiguredMock.mockReturnValue(true)
     processedSelectMock.mockReturnValue(makeSelectChain([]))
@@ -167,6 +230,13 @@ describe('/api/stripe/webhook POST', () => {
     clientsUpdateMock.mockReturnValue(makePromiseChain())
     purchasesUpdateMock.mockReturnValue(makePromiseChain())
     profilesUpdateMock.mockReturnValue(makePromiseChain())
+    sendPaymentFailedNotificationMock.mockResolvedValue({ id: 'email_1' })
+    sendSubscriptionPausedNotificationMock.mockResolvedValue({ id: 'email_2' })
+    sendRefundNotificationMock.mockResolvedValue({ id: 'email_3' })
+    sendDisputeNotificationMock.mockResolvedValue({ id: 'email_4' })
+    authAdminGetUserByIdMock.mockResolvedValue({
+      data: { user: { email: 'owner@example.com' } },
+    })
     createAdminClientMock.mockReturnValue(makeAdminClient())
     subscriptionRetrieveMock.mockResolvedValue({
       id: 'sub_1',
@@ -180,6 +250,10 @@ describe('/api/stripe/webhook POST', () => {
         produto: 'accountant_pro',
         plan: 'pro',
       },
+    })
+    invoiceRetrieveMock.mockResolvedValue({
+      id: 'in_1',
+      subscription: 'sub_1',
     })
   })
 
@@ -349,6 +423,10 @@ describe('/api/stripe/webhook POST', () => {
     }))
   })
 
+  // ─────────────────────────────────────────────────────────
+  // P2 batch (PR #19): cross-check de client_reference_id vs metadata.user_id
+  // ─────────────────────────────────────────────────────────
+
   it('refuses to credit consumer purchase when client_reference_id does not match metadata.user_id (P2 cross-check)', async () => {
     constructEventMock.mockReturnValue({
       id: 'evt_attack',
@@ -429,5 +507,166 @@ describe('/api/stripe/webhook POST', () => {
     expect(response.status).toBe(200)
     expect(purchasesUpdateMock).toHaveBeenCalled()
     expect(profilesUpdateMock).toHaveBeenCalledWith(expect.objectContaining({ plano: 'pro' }))
+  })
+
+  // ─────────────────────────────────────────────────────────
+  // Stripe handlers (PR #20): payment_failed / paused / refunded / dispute.created
+  // ─────────────────────────────────────────────────────────
+
+  it('handles invoice.payment_failed: status=past_due + notifica owner', async () => {
+    constructEventMock.mockReturnValue({
+      id: 'evt_payment_failed',
+      type: 'invoice.payment_failed',
+      data: {
+        object: {
+          id: 'in_payment_failed',
+          subscription: 'sub_1',
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ received: true })
+    expect(subscriptionUpdateMock).toHaveBeenCalledWith({ status: 'past_due' })
+    expect(officesUpdateMock).toHaveBeenCalledWith({ stripe_subscription_status: 'past_due' })
+    expect(sendPaymentFailedNotificationMock).toHaveBeenCalledWith({
+      to: 'owner@example.com',
+      officeName: 'Prime Contabilidade',
+    })
+    expect(processedInsertMock).toHaveBeenCalledWith({
+      stripe_event_id: 'evt_payment_failed',
+      event_type: 'invoice.payment_failed',
+    })
+  })
+
+  it('handles customer.subscription.paused: status=paused + plan limits aplicam', async () => {
+    const activeClients = Array.from({ length: 50 }, (_, index) => ({
+      id: `client-${String(index + 1).padStart(2, '0')}`,
+      created_at: `2026-01-01T00:00:${String(index).padStart(2, '0')}.000Z`,
+    }))
+    createAdminClientMock.mockReturnValue(makeAdminClient({ activeClients }))
+
+    constructEventMock.mockReturnValue({
+      id: 'evt_subscription_paused',
+      type: 'customer.subscription.paused',
+      data: {
+        object: {
+          id: 'sub_1',
+          customer: 'cus_1',
+          status: 'paused',
+          current_period_end: 1_800_000_000,
+          items: { data: [{ price: { id: 'price_pro' } }] },
+          metadata: { office_id: 'office-1' },
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ received: true })
+    // Primeiro o status update
+    expect(subscriptionUpdateMock).toHaveBeenCalledWith({ status: 'paused' })
+    // Depois o syncAccountantBilling rebaixa pra starter + paused
+    expect(subscriptionUpsertMock).toHaveBeenCalledWith(expect.objectContaining({
+      office_id: 'office-1',
+      plan: 'starter',
+      status: 'paused',
+    }), { onConflict: 'office_id' })
+    expect(officesUpdateMock).toHaveBeenCalledWith(expect.objectContaining({
+      plan: 'starter',
+      max_clients: 30,
+      stripe_subscription_status: 'paused',
+    }))
+    // Clientes excedentes (50 - 30 = 20) sao desativados
+    expect(clientsUpdateMock).toHaveBeenCalledWith(expect.objectContaining({
+      ativo: false,
+      inactive_reason: 'plan_limit',
+    }))
+    expect(sendSubscriptionPausedNotificationMock).toHaveBeenCalledWith({
+      to: 'owner@example.com',
+      officeName: 'Prime Contabilidade',
+    })
+  })
+
+  it('handles charge.refunded: status=canceled + revert plan', async () => {
+    const activeClients = Array.from({ length: 100 }, (_, index) => ({
+      id: `client-${String(index + 1).padStart(3, '0')}`,
+      created_at: `2026-01-01T00:00:${String(index).padStart(2, '0')}.000Z`,
+    }))
+    createAdminClientMock.mockReturnValue(makeAdminClient({ activeClients }))
+
+    constructEventMock.mockReturnValue({
+      id: 'evt_refunded',
+      type: 'charge.refunded',
+      data: {
+        object: {
+          id: 'ch_refunded',
+          invoice: 'in_refunded',
+          customer: 'cus_1',
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ received: true })
+    expect(invoiceRetrieveMock).toHaveBeenCalledWith('in_refunded')
+    expect(subscriptionUpsertMock).toHaveBeenCalledWith(expect.objectContaining({
+      office_id: 'office-1',
+      plan: 'starter',
+      status: 'canceled',
+    }), { onConflict: 'office_id' })
+    expect(officesUpdateMock).toHaveBeenCalledWith(expect.objectContaining({
+      plan: 'starter',
+      max_clients: 30,
+      stripe_subscription_status: 'canceled',
+    }))
+    expect(sendRefundNotificationMock).toHaveBeenCalledWith({
+      to: 'owner@example.com',
+      officeName: 'Prime Contabilidade',
+    })
+  })
+
+  it('handles charge.dispute.created: marca disputed_at + notifica admin', async () => {
+    chargeRetrieveMock.mockResolvedValue({
+      id: 'ch_disputed',
+      customer: 'cus_1',
+      invoice: 'in_disputed',
+    })
+
+    constructEventMock.mockReturnValue({
+      id: 'evt_dispute',
+      type: 'charge.dispute.created',
+      data: {
+        object: {
+          id: 'dp_1',
+          charge: 'ch_disputed',
+          reason: 'fraudulent',
+          amount: 24700,
+          currency: 'brl',
+        },
+      },
+    })
+
+    const response = await POST(makeRequest())
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ received: true })
+    expect(chargeRetrieveMock).toHaveBeenCalledWith('ch_disputed')
+    expect(officesUpdateMock).toHaveBeenCalledWith(expect.objectContaining({
+      disputed_at: expect.any(String),
+    }))
+    expect(sendDisputeNotificationMock).toHaveBeenCalledWith({
+      adminEmail: 'admin@simulamei.com.br',
+      officeName: 'Prime Contabilidade',
+      disputeId: 'dp_1',
+      reason: 'fraudulent',
+      amountCents: 24700,
+      currency: 'brl',
+    })
   })
 })
