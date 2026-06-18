@@ -63,8 +63,9 @@ export const metadata: Metadata = {
     follow: true,
   },
   verification: {
-    // Google Search Console (visível em qualquer HTML, é proof token público)
-    google: '9mH1Vpd5vvubT77mOe-MiFM7m2OOULn6rJvNGx2Yd3E',
+    // Google Search Console: verificado via /public/google2a0ea9e57a42ff93.html
+    // (método HTML file, conta correta). Meta tag removida porque o token
+    // anterior pertencia a outra conta Google.
     other: {
       // Bing Webmaster Tools
       'msvalidate.01': 'A2BAD1758DCF0A854CDE46F0EFC85546',
