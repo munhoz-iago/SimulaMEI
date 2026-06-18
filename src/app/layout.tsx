@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Space_Grotesk, JetBrains_Mono, Roboto_Slab } from 'next/font/google'
 import { headers } from 'next/headers'
 import Script from 'next/script'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import { AutoLogoutProvider } from '@/components/providers/AutoLogoutProvider'
 import { PostHogProvider } from '@/components/providers/PostHogProvider'
 import { SmoothScroll } from '@/components/effects/SmoothScroll'
@@ -61,6 +62,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    // Google Search Console (visível em qualquer HTML, é proof token público)
+    google: '9mH1Vpd5vvubT77mOe-MiFM7m2OOULn6rJvNGx2Yd3E',
+    other: {
+      // Bing Webmaster Tools
+      'msvalidate.01': 'A2BAD1758DCF0A854CDE46F0EFC85546',
+    },
+  },
   openGraph: {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
@@ -117,6 +126,8 @@ export default async function RootLayout({
         <PostHogProvider>
           <AutoLogoutProvider>{children}</AutoLogoutProvider>
         </PostHogProvider>
+        {/* Google Analytics 4 — carrega async, respeita CSP (next/third-parties trata nonce) */}
+        <GoogleAnalytics gaId="G-RJ38K5YZ8W" />
       </body>
     </html>
   )
