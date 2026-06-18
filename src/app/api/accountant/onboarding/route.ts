@@ -85,7 +85,8 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parsed.value
-    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+    // Trial: 7 dias (mudou de 14 para 7 com o redesign Mercury; só afeta novos onboardings)
+    const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     const officeResult = await officesTable
       .insert({
         owner_user_id: user.id,
