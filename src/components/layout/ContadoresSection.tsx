@@ -146,7 +146,7 @@ export function ContadoresSection() {
             style={{ '--reveal-delay': '220' } as React.CSSProperties}
           >
             <div className="instrument-panel-header">
-              <span className="instrument-label">Trial Starter · 14 dias</span>
+              <span className="instrument-label">Trial Starter · 7 dias</span>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 5,
                 padding: '3px 8px', borderRadius: 999,
@@ -165,7 +165,7 @@ export function ContadoresSection() {
                 letterSpacing: '-0.01em', lineHeight: 1.2,
               }}>
                 Comece hoje<br />
-                <span style={{ color: 'var(--lime)' }}>14 dias grátis</span>, sem cartão.
+                <span style={{ color: 'var(--lime)' }}>7 dias grátis</span>, sem cartão.
               </h3>
               <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.6, margin: '0 0 22px' }}>
                 Crie a conta do escritório, cadastre seus primeiros clientes MEI e teste
