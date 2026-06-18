@@ -22,6 +22,17 @@ const LEARNING_PAGES = [
   { path: '/aprenda/diferenca-anexo-iii-e-v', changeFrequency: 'monthly' as const, priority: 0.75 },
   { path: '/aprenda/limite-mei-2026', changeFrequency: 'monthly' as const, priority: 0.75 },
   { path: '/aprenda/mei-estourou-o-teto', changeFrequency: 'monthly' as const, priority: 0.75 },
+  // Long-tail SEO pages (lote 2026-06)
+  { path: '/aprenda/das-atrasado-mei', changeFrequency: 'monthly' as const, priority: 0.75 },
+  { path: '/aprenda/desenquadramento-mei', changeFrequency: 'monthly' as const, priority: 0.75 },
+  { path: '/aprenda/mei-caminhoneiro', changeFrequency: 'monthly' as const, priority: 0.75 },
+  { path: '/aprenda/como-sair-do-mei-sem-multa', changeFrequency: 'monthly' as const, priority: 0.75 },
+  { path: '/aprenda/pro-labore-mei', changeFrequency: 'monthly' as const, priority: 0.75 },
+  { path: '/aprenda/dasn-simei', changeFrequency: 'monthly' as const, priority: 0.75 },
+  { path: '/aprenda/segundo-cnae-mei', changeFrequency: 'monthly' as const, priority: 0.75 },
+  { path: '/aprenda/mei-funcionario', changeFrequency: 'monthly' as const, priority: 0.75 },
+  { path: '/aprenda/nota-fiscal-mei', changeFrequency: 'monthly' as const, priority: 0.75 },
+  { path: '/aprenda/cnae-mei-permitido', changeFrequency: 'monthly' as const, priority: 0.75 },
 ]
 
 export default function sitemap(): MetadataRoute.Sitemap {
