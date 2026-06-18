@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { ACCOUNTANT_PLAN_LIMITS, normalizeAccountantOfficeOnboarding } from '@/lib/accountant/office'
+import { ACCOUNTANT_PLAN_LIMITS, ACCOUNTANT_TRIAL_DAYS, normalizeAccountantOfficeOnboarding } from '@/lib/accountant/office'
 import { applyRateLimitHeaders, consumeRateLimit } from '@/lib/security/rate-limit'
 
 // P2: criar escritório é operação rara (1x na vida do user). 3/h cobre
@@ -85,8 +85,10 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parsed.value
-    // Trial: 7 dias (mudou de 14 para 7 com o redesign Mercury; só afeta novos onboardings)
-    const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    // Trial: ACCOUNTANT_TRIAL_DAYS (fonte única em lib/accountant/office.ts; mudou
+    // de 14 para 7 com o redesign Mercury). trial_ends_at = created_at + N dias —
+    // a UI deriva a duração total dessa diferença, sem hardcodar o número.
+    const trialEndsAt = new Date(Date.now() + ACCOUNTANT_TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString()
     const officeResult = await officesTable
       .insert({
         owner_user_id: user.id,

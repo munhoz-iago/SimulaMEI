@@ -18,6 +18,9 @@ export interface CurrentAccountantOffice {
   stripe_subscription_id: string | null
   stripe_subscription_status: string | null
   current_period_end: string | null
+  /** Início do trial (= criação do escritório). Usado para derivar a duração
+   *  total do trial dinamicamente. Opcional: o office admin-fallback não tem. */
+  created_at?: string | null
   role: AccountantMemberRole
   admin_access_fallback?: boolean
   admin_access_error?: string | null
@@ -93,6 +96,7 @@ interface OfficeMemberJoinRow {
     stripe_subscription_id: string | null
     stripe_subscription_status: string | null
     current_period_end: string | null
+    created_at: string | null
   } | null
 }
 
@@ -192,6 +196,7 @@ function toCurrentAccountantOffice(office: AdminOfficeRow, role: AccountantMembe
     stripe_subscription_id: office.stripe_subscription_id,
     stripe_subscription_status: office.stripe_subscription_status,
     current_period_end: office.current_period_end,
+    created_at: office.created_at,
     role,
   }
 }
@@ -227,7 +232,7 @@ async function getOrCreateAdminAccountantOffice(userId: string, userEmail: strin
     ) => Promise<{ error: { message: string } | null }>
   }
 
-  const columns = 'id, name, plan, max_clients, trial_ends_at, stripe_customer_id, stripe_subscription_id, stripe_subscription_status, current_period_end'
+  const columns = 'id, name, plan, max_clients, trial_ends_at, stripe_customer_id, stripe_subscription_id, stripe_subscription_status, current_period_end, created_at'
   const existing = await officesTable
     .select(columns)
     .eq('owner_user_id', userId)
@@ -289,7 +294,7 @@ export async function getCurrentAccountantOffice(
 ): Promise<{ office: CurrentAccountantOffice | null; error: string | null }> {
   const { data, error } = await supabase
     .from('office_members')
-    .select('role, accountant_offices(id, name, plan, max_clients, trial_ends_at, stripe_customer_id, stripe_subscription_id, stripe_subscription_status, current_period_end)')
+    .select('role, accountant_offices(id, name, plan, max_clients, trial_ends_at, stripe_customer_id, stripe_subscription_id, stripe_subscription_status, current_period_end, created_at)')
     .eq('user_id', userId)
     .not('accepted_at', 'is', null)
     .order('created_at', { ascending: true })
