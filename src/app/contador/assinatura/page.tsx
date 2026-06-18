@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { AccountantShell } from '@/components/accountant/AccountantShell'
 import { CheckoutButton } from '@/components/billing/CheckoutButton'
 import { getAccountantBillingState } from '@/lib/accountant/billing-state'
+import { getTrialProgress, getTrialUrgency } from '@/lib/accountant/office'
 import { getCurrentAccountantOffice, getOfficeClientStats } from '@/lib/accountant/server'
 import { createClient } from '@/lib/supabase/server'
 
@@ -75,14 +76,6 @@ function formatDate(value: string | null) {
   }).format(new Date(value))
 }
 
-/** Calcula dias restantes do trial */
-function daysUntil(iso: string | null): number | null {
-  if (!iso) return null
-  const target = new Date(iso).getTime()
-  if (!Number.isFinite(target)) return null
-  return Math.max(0, Math.ceil((target - Date.now()) / (1000 * 60 * 60 * 24)))
-}
-
 export default async function AccountantBillingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -103,9 +96,25 @@ export default async function AccountantBillingPage() {
   const usagePct = office.max_clients > 0
     ? Math.min(100, Math.round((stats.active / office.max_clients) * 100))
     : 0
-  const trialDays = daysUntil(office.trial_ends_at)
+  // Duração do trial é derivada das datas reais (trial_ends_at - created_at),
+  // cobrindo automaticamente escritórios legados de 14d e os novos de 7d.
+  const trialProgress = getTrialProgress(office.trial_ends_at, office.created_at)
+  const trialDays = trialProgress?.daysRemaining ?? null
+  const trialTotalDays = trialProgress?.totalDays ?? null
+  const trialUrgency = trialProgress ? getTrialUrgency(trialProgress) : null
   const inTrial = billingState.kind === 'trialing'
   const trialExpired = billingState.kind === 'trial_expired'
+
+  // Tokens de cor do hero conforme urgência (proporção do trial, não dias fixos).
+  const trialAccent = trialUrgency === 'critical' ? 'var(--red)' : trialUrgency === 'warning' ? 'var(--yellow)' : 'var(--lime)'
+  const trialTint = trialUrgency === 'critical' ? 'var(--tint-red)' : trialUrgency === 'warning' ? 'var(--tint-yellow)' : 'var(--tint-lime)'
+  const trialTintBorder = trialUrgency === 'critical' ? 'var(--tint-red-border)' : trialUrgency === 'warning' ? 'var(--tint-yellow-border)' : 'var(--tint-lime-border)'
+  const trialGradient = trialUrgency === 'critical'
+    ? 'linear-gradient(135deg, var(--bg1) 0%, rgba(255,59,59,0.04) 100%)'
+    : trialUrgency === 'warning'
+      ? 'linear-gradient(135deg, var(--bg1) 0%, rgba(245,197,66,0.04) 100%)'
+      : 'linear-gradient(135deg, var(--bg1) 0%, rgba(200,241,53,0.04) 100%)'
+  const trialIsUrgent = trialUrgency === 'critical'
 
   return (
     <AccountantShell office={office} active="billing">
@@ -119,18 +128,8 @@ export default async function AccountantBillingPage() {
               padding: '28px 32px',
               background: trialExpired
                 ? 'linear-gradient(135deg, var(--bg1) 0%, rgba(255,59,59,0.04) 100%)'
-                : trialDays !== null && trialDays <= 3
-                  ? 'linear-gradient(135deg, var(--bg1) 0%, rgba(255,59,59,0.04) 100%)'
-                  : trialDays !== null && trialDays <= 14
-                    ? 'linear-gradient(135deg, var(--bg1) 0%, rgba(245,197,66,0.04) 100%)'
-                    : 'linear-gradient(135deg, var(--bg1) 0%, rgba(200,241,53,0.04) 100%)',
-              borderColor: trialExpired
-                ? 'var(--tint-red-border)'
-                : trialDays !== null && trialDays <= 3
-                  ? 'var(--tint-red-border)'
-                  : trialDays !== null && trialDays <= 14
-                    ? 'var(--tint-yellow-border)'
-                    : 'var(--tint-lime-border)',
+                : trialGradient,
+              borderColor: trialExpired ? 'var(--tint-red-border)' : trialTintBorder,
             }}
           >
             <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -151,25 +150,13 @@ export default async function AccountantBillingPage() {
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   width: 80, height: 80, borderRadius: 16,
-                  background: trialDays !== null && trialDays <= 3
-                    ? 'var(--tint-red)'
-                    : trialDays !== null && trialDays <= 14
-                      ? 'var(--tint-yellow)'
-                      : 'var(--tint-lime)',
-                  border: `1px solid ${trialDays !== null && trialDays <= 3
-                    ? 'var(--tint-red-border)'
-                    : trialDays !== null && trialDays <= 14
-                      ? 'var(--tint-yellow-border)'
-                      : 'var(--tint-lime-border)'}`,
+                  background: trialTint,
+                  border: `1px solid ${trialTintBorder}`,
                   flexShrink: 0,
                 }}>
                   <div style={{
                     fontFamily: 'var(--mono)', fontSize: 32, fontWeight: 900, lineHeight: 1,
-                    color: trialDays !== null && trialDays <= 3
-                      ? 'var(--red)'
-                      : trialDays !== null && trialDays <= 14
-                        ? 'var(--yellow)'
-                        : 'var(--lime)',
+                    color: trialAccent,
                   }}>
                     {trialDays ?? '—'}
                   </div>
@@ -192,14 +179,14 @@ export default async function AccountantBillingPage() {
                 <h2 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 6px', letterSpacing: '-0.01em' }}>
                   {trialExpired
                     ? 'Escolha um plano para continuar'
-                    : trialDays !== null && trialDays <= 3
+                    : trialIsUrgent
                       ? 'Trial termina em breve!'
                       : 'Você está no trial Starter'}
                 </h2>
                 <p style={{ color: 'var(--text2)', fontSize: 14, lineHeight: 1.55, margin: 0, maxWidth: 600 }}>
                   {trialExpired
                     ? 'A carteira está bloqueada para novos cadastros e simulações. Escolha Starter ou Pro abaixo para reativar.'
-                    : `Você está usando o SimulaMEI com 0/30 clientes. ${trialDays !== null && trialDays <= 3 ? 'Escolha um plano AGORA para não perder o acesso.' : `Trial termina em ${formatDate(office.trial_ends_at)}.`}`}
+                    : `Você está usando o SimulaMEI com 0/30 clientes. ${trialIsUrgent ? 'Escolha um plano AGORA para não perder o acesso.' : `Trial termina em ${formatDate(office.trial_ends_at)}.`}`}
                 </p>
               </div>
 
@@ -212,17 +199,17 @@ export default async function AccountantBillingPage() {
               </Link>
             </div>
 
-            {inTrial && trialDays !== null && (
+            {inTrial && trialProgress !== null && (
               <div style={{ marginTop: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text3)', marginBottom: 6 }}>
                   <span>Trial iniciado</span>
-                  <span>{trialDays}/14 dias restantes</span>
+                  <span>{trialProgress.daysRemaining}/{trialTotalDays} dias restantes</span>
                 </div>
                 <div style={{ height: 6, background: 'var(--bg3)', borderRadius: 999, overflow: 'hidden' }}>
                   <div style={{
-                    width: `${Math.min(100, ((14 - trialDays) / 14) * 100)}%`,
+                    width: `${Math.round(trialProgress.fractionElapsed * 100)}%`,
                     height: '100%',
-                    background: trialDays <= 3 ? 'var(--red)' : trialDays <= 14 ? 'var(--yellow)' : 'var(--lime)',
+                    background: trialAccent,
                     borderRadius: 999,
                     transition: 'width .5s var(--ease-out)',
                   }} />

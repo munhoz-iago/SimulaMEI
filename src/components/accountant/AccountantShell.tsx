@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { getAccountantBillingState } from '@/lib/accountant/billing-state'
+import { getTrialProgress, getTrialUrgency } from '@/lib/accountant/office'
 import type { CurrentAccountantOffice } from '@/lib/accountant/server'
 
 interface AccountantShellProps {
@@ -10,25 +11,20 @@ interface AccountantShellProps {
   children: ReactNode
 }
 
-/** Calcula dias restantes do trial, contado a partir da data atual */
-function daysUntil(iso: string | null): number | null {
-  if (!iso) return null
-  const target = new Date(iso).getTime()
-  const now = Date.now()
-  if (!Number.isFinite(target)) return null
-  return Math.max(0, Math.ceil((target - now) / (1000 * 60 * 60 * 24)))
-}
-
 /** Badge persistente que aparece em todas as abas quando o escritório está em trial.
- *  Cor escala conforme aproxima do fim: lime (>14d) → yellow (4-14d) → red (≤3d). */
-function TrialBadge({ trialEndsAt }: { trialEndsAt: string | null }) {
-  const days = daysUntil(trialEndsAt)
-  if (days === null) return null
+ *  Cor escala conforme PROPORÇÃO do trial decorrida (não dias fixos), então
+ *  funciona igual para trial de 7d ou 14d: lime no início → yellow após a metade
+ *  → red nos últimos ~20% ou 2 dias. A duração total vem de (trialEndsAt - createdAt). */
+function TrialBadge({ trialEndsAt, createdAt }: { trialEndsAt: string | null; createdAt: string | null | undefined }) {
+  const progress = getTrialProgress(trialEndsAt, createdAt)
+  if (progress === null) return null
 
-  const color = days <= 3 ? 'var(--red)' : days <= 14 ? 'var(--yellow)' : 'var(--lime)'
-  const bg = days <= 3 ? 'var(--tint-red)' : days <= 14 ? 'var(--tint-yellow)' : 'var(--tint-lime)'
-  const border = days <= 3 ? 'var(--tint-red-border)' : days <= 14 ? 'var(--tint-yellow-border)' : 'var(--tint-lime-border)'
-  const isUrgent = days <= 3
+  const days = progress.daysRemaining
+  const urgency = getTrialUrgency(progress)
+  const color = urgency === 'critical' ? 'var(--red)' : urgency === 'warning' ? 'var(--yellow)' : 'var(--lime)'
+  const bg = urgency === 'critical' ? 'var(--tint-red)' : urgency === 'warning' ? 'var(--tint-yellow)' : 'var(--tint-lime)'
+  const border = urgency === 'critical' ? 'var(--tint-red-border)' : urgency === 'warning' ? 'var(--tint-yellow-border)' : 'var(--tint-lime-border)'
+  const isUrgent = urgency === 'critical'
 
   return (
     <Link
@@ -180,7 +176,7 @@ export function AccountantShell({ office, active, children }: AccountantShellPro
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
-            {inTrial && <TrialBadge trialEndsAt={office.trial_ends_at} />}
+            {inTrial && <TrialBadge trialEndsAt={office.trial_ends_at} createdAt={office.created_at} />}
             <ThemeToggle size={32} />
             <Link
               href="/dashboard"
